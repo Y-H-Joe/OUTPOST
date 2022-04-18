@@ -1,0 +1,277 @@
+library(vegan)
+library(amplicon)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(wesanderson)
+library(ggpubr)
+
+script.dir <- dirname(sys.frame(1)$ofile)
+setwd(script.dir)
+
+#dir.create(file.path("../taxa_abun/alpha_beta_diversity/"), showWarnings = FALSE)
+
+input_dir=r"{../taxa_abun/alpha_beta_diversity/sample12_rel_abun.8.rmU.euk.csv.alpha_beta.csv}"
+alphabeta_group=r"{alpha_beta_diversity_group.tsv}" ## REMEMBER to modify group in alphabeta_group file
+#level='rxn'
+spe<-read.csv(input_dir,sep=",")
+group=read.csv(alphabeta_group,row.names = 1,sep="\t")
+rownames(spe)=rownames(group)
+
+my_comparisons <- list( c("horse","donkey"))
+
+# spe_trans=t(spe)#行列转换
+# env<-read.csv("/Users/yihangzhou/CurrentProjects/cattle_fescue/taxo_abun/namefile.txt",row.names=1)#输入环境数据
+# 
+# head(env)
+##############计算alpha多样性
+#香浓指数
+Shannon<-diversity(spe)#计算Shannon指数
+#Inversed Simpson
+Inv_Simpson<-diversity(spe,"invsimpson")
+#Simpson
+Simpson<-diversity(spe,"simpson")
+#统计物种个数
+S<-specnumber(spe)#统计每个样品内的物种个数
+#均匀度指数
+Pielou_evenness<-Shannon/log(S)
+Simpson_evenness<-Simpson/S
+#数据输出
+report=cbind(Shannon,Simpson, Inv_Simpson,Pielou_evenness, Simpson_evenness)
+#head(report)
+report <- as.data.frame(report) %>% rownames_to_column(var = "ID")
+
+write.table(report,file="../taxa_abun/alpha_beta_diversity/alpha.csv",sep=",",row.names = FALSE)#输出txt格式，拖进excel即可
+
+
+#### draw box-plot
+#### need to manually modify the first column to be "before, after, before ...."
+# use one sided
+# in python, increase when group2 compared to group1 corresponds to "less" in wilcoxon
+# but at here, is "greater" that corresponded
+
+input_csv=read.csv("../taxa_abun/alpha_beta_diversity/alpha.csv",sep = ",")  ### change the input_table
+colnames(input_csv)[1]="group"
+input_csv$group=group$group
+input_csv=Filter(function(x)!all(is.na(x)), input_csv)
+
+taxa=colnames(input_csv)
+taxa=taxa[taxa!="group"]
+
+
+for (taxo in taxa){
+  print(taxo)
+  #relative_change_box_plot(df=input_csv,status=status,alter=alter,level=level,output_dir=output_dir,taxo=taxo)
+  pdf(file=paste("../taxa_abun/alpha_beta_diversity/",paste(taxo,"alpha_diveristy.pdf",sep="."),sep=''))
+  #pdf(file=paste(output_dir,"box_chart_",taxo,"_",status,".u-test.pdf",sep=""),width = 5, height = 6)
+  #draw scatter-plots and mark outliers
+  #df=input_csv[taxo]
+  #stats <- boxplot.stats(df[,])$stats
+  p<-#ggplot(input_csv, aes_string(x="treatment", y=taxo,fill="treatment")) + 
+    ggboxplot(input_csv,x="group",y=taxo,add="dotplot",color = "group", palette = "jco") + 
+    #geom_boxplot(outlier.colour=NULL, outlier.shape=NULL,outlier.size=NULL,coef=1.5)+
+    #ylim1 = boxplot.stats(input_csv$y)$stats[c(1, 5)]
+    theme(legend.position="right")+
+    labs(title=taxo, y = "alpha_diversity")+
+    #geom_dotplot(binaxis='y', stackdir='center', stackratio=1.5, dotsize=1,colour="treatment")+
+    theme_classic()+
+    #the following compare is for increase/decrease comparison
+    #stat_compare_means(method = "wilcox",paired = F, hide.ns = TRUE,method.args = list(alternative=alter))
+    stat_compare_means(method = "wilcox",paired = F,comparisons = my_comparisons)+
+    stat_compare_means()
+  print(p)
+  dev.off()
+  ##Sys.sleep(2)
+}
+
+
+
+########计算beta多样性
+#基于丰度的原始数据的Bray-curtis距离矩阵
+#bray.dist<-vegdist(spe)#默认即为bray-curtis距离
+bray.dist<-vegdist(spe,method="bray")
+#head(bray.dist)#查看结果的前几行
+bray.mat=as.matrix(bray.dist)
+write.table(bray.mat,file="../taxa_abun/alpha_beta_diversity/bray.dist.txt",sep="\t",col.names=NA)
+#对数转换后的基于丰度的Bray-curtis距离矩阵
+bray.dist.ln<-vegdist(log1p(spe))#此处是log1p（数字1）
+#head(bray.dist.ln)
+bray.mat.ln=as.matrix(bray.dist.ln)
+write.table(bray.mat.ln,file="../taxa_abun/alpha_beta_diversity/bray.dist.ln.txt",sep="\t",col.names=NA)
+#基于有无（0, 1矩阵）的Jaccard距离矩阵
+spe.jaccard<-vegdist(spe,method="jaccard")#不用自己转换，binary=TRUE会实现自动转换
+#head(spe.jaccard)
+spe.jaccard.mat=as.matrix(spe.jaccard)
+write.table(spe.jaccard.mat,file="../taxa_abun/alpha_beta_diversity/jaccard.dist.txt",sep="\t",col.names=NA)
+#环境数据的Euclidean距离矩阵（欧式距离）
+env.dist<-dist(scale(env))
+env.mat=as.matrix(env.dist)
+write.table(env.mat,file="../taxa_abun/alpha_beta_diversity/env.dist.txt",sep="\t",col.names=NA)
+
+# 使用内置数据，输入距离矩阵、元数据和分组绘制PCoA
+beta_pcoa=function (dis_mat, metadata, groupID = "group", ellipse = T, 
+          label = F, PCo = 12) 
+{
+  p_list = c("ggplot2", "vegan", "ggrepel")
+  for (p in p_list) {
+    if (!requireNamespace(p)) {
+      install.packages(p)
+    }
+    suppressWarnings(suppressMessages(library(p, character.only = T)))
+  }
+  idx = rownames(metadata) %in% rownames(dis_mat)
+  metadata = metadata[idx, , drop = F]
+  dis_mat = dis_mat[rownames(metadata), rownames(metadata)]
+  sampFile = as.data.frame(metadata[, groupID], row.names = row.names(metadata))
+  pcoa = cmdscale(dis_mat, k = 3, eig = T)
+  points = as.data.frame(pcoa$points)
+  eig = pcoa$eig
+  sum_eig=sum(abs(eig))
+  points = cbind(points, sampFile[rownames(points), ])
+  colnames(points) = c("x", "y", "z", "group")
+  if (PCo == 12) {
+    p = ggplot(points, aes(x = x, y = y, color = group)) + 
+      labs(x = paste("PCo 1 (", format(100 * eig[1]/sum_eig, 
+      digits = 4), "%)", sep = ""), y = paste("PCo 2 (", 
+      format(100 * eig[2]/sum_eig, digits = 4), "%)", 
+      sep = ""), color = groupID)
+  }
+  if (PCo == 13) {
+    p = ggplot(points, aes(x = x, y = z, color = group)) + 
+      labs(x = paste("PCo 1 (", format(100 * eig[1]/sum_eig, 
+       digits = 4), "%)", sep = ""), y = paste("PCo 3 (", 
+        format(100 * eig[3]/sum_eig, digits = 4), "%)", 
+       sep = ""), color = groupID)
+  }
+  if (PCo == 23) {
+    p = ggplot(points, aes(x = y, y = z, color = group)) + 
+      labs(x = paste("PCo 2 (", format(100 * eig[2]/sum_eig, 
+       digits = 4), "%)", sep = ""), y = paste("PCo 3 (", 
+       format(100 * eig[3]/sum_eig, digits = 4), "%)", 
+      sep = ""), color = groupID)
+  }
+  
+  p = p + geom_point(alpha = 0.7, size = 2) + theme_classic() + 
+    theme(text = element_text(family = "sans", size = 7))
+  
+  if (ellipse == T) {
+    p = p + stat_ellipse(level = 0.68)
+  }
+  
+  if (label == T) {
+    p = p + geom_text_repel(label = paste(rownames(points)), 
+                            colour = "black", size = 1)
+  }
+  if (PCo == 123) {
+    # library("scatterplot3d") # load
+    # colors=c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99")
+    # colors <- colors[as.numeric(as.factor(points$group))]
+    # p = scatterplot3d(points[,1:3],
+    #                   main="3D-PCoA plot",
+    #                   xlab = "PCo 1",
+    #                   ylab = "PCo 2",
+    #                   zlab = "PCo 3",
+    #                   color=colors, pch = 16)
+    library("car")
+    # 3D plot with the regression plane
+    p=scatter3d(x=points[,1],y=points[,2],z=points[,3],
+              groups = as.factor(points$group),
+              ellipsoid = TRUE)
+    }
+  return(list(one=p,two=pcoa))
+}
+
+beta_pcoa_stat=function (dis_mat, metadata, groupID = "group", result = "../taxa_abun/alpha_beta_diversity/beta_pcoa_stat.txt",method="bray") 
+{
+  p_list = c("vegan")
+  for (p in p_list) {
+    if (!requireNamespace(p)) {
+      install.packages(p)
+    }
+    library(p, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
+  }
+  metadata$group = metadata[[groupID]]
+  # write.table(date(), file = result, append = T, sep = "\t", 
+  #             quote = F, row.names = F, col.names = F)
+  idx = rownames(metadata) %in% rownames(dis_mat)
+  metadata = metadata[idx, , drop = F]
+  dis_mat = dis_mat[rownames(metadata), rownames(metadata)]
+  
+  da_adonis = function(sampleV) {
+    sampleA = as.matrix(sampleV$sampA)
+    sampleB = as.matrix(sampleV$sampB)
+    design2 = subset(metadata, group %in% c(sampleA, sampleB))
+    if (length(unique(design2$group)) > 1) {
+      sub_dis_table = dis_table[rownames(design2), rownames(design2)]
+      ## 下面这句是核心，删掉了对角线，只保留下三角
+      sub_dis_table = as.dist(sub_dis_table, diag = FALSE, 
+                              upper = FALSE)
+      adonis_table = adonis(sub_dis_table ~ group, data = design2, 
+                            permutations = 10000)
+      adonis_pvalue = adonis_table$aov.tab$`Pr(>F)`[1]
+      adonis_pvalue = paste(sampleA, sampleB, adonis_pvalue, 
+                            sep = "\t")
+      write.table(adonis_pvalue, file = result, append = TRUE, 
+                  sep = "\t", quote = F, row.names = F, col.names = F)
+    }
+  }
+  
+  dis_table = as.matrix(dis_mat)
+  
+  compare_data = as.vector(unique(metadata$group))
+  len_compare_data = length(compare_data)
+  for (i in 1:(len_compare_data - 1)) {
+    for (j in (i + 1):len_compare_data) {
+      tmp_compare = as.data.frame(cbind(sampA = compare_data[i], 
+                                        sampB = compare_data[j]))
+      print(tmp_compare)
+      da_adonis(tmp_compare)
+    }
+  }
+  
+}
+
+
+p12=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="group", ellipse = T, 
+            label = T, PCo = 12)
+p13=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="group", ellipse = T, 
+              label = T, PCo = 13)
+p23=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="group", ellipse = T, 
+              label = T, PCo = 23)
+# 保存位图和矢量图，分别用于预览和出版
+#ggsave(paste0(level,".PCoA12.jaccard.jpg"), p12$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA12.jaccard.pdf", p12$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA13.jaccard.pdf", p13$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA23.jaccard.pdf", p23$one, width=89, height=56, units="mm")
+## write PCoA values
+#write.table(p12$two$points,file="jaccard.PCoA.p12.values.csv",sep = ",",col.names = F)
+# 使用adonis检测组件差异，注意是两两检测，并且将检测结果保存到当前路径下。
+beta_pcoa_stat(spe.jaccard.mat, group, "group", paste0("../taxa_abun/alpha_beta_diversity/jaccard.beta_pcoa_P-value.txt"),"jaccard")
+
+#### apply the same beta-diversity pipeline to bray_curtis
+p12=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="group", ellipse = T, label = T, PCo = 12)
+p13=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="group", ellipse = T, label = T, PCo = 13)
+p23=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="group", ellipse = T, label = T, PCo = 23)
+# 保存位图和矢量图，分别用于预览和出版
+#ggsave(paste0(level,".PCoA12.bray.jpg"), p12$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA12.bray.pdf", p12$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA13.bray.pdf", p13$one, width=89, height=56, units="mm")
+ggsave("../taxa_abun/alpha_beta_diversity/PCoA23.bray.pdf", p23$one, width=89, height=56, units="mm")
+## write PCA values
+#write.table(p12$two$points,file="bray.PCoA.p12.values.csv",sep = ",",col.names = F)
+beta_pcoa_stat(bray.mat, group, "group","../taxa_abun/alpha_beta_diversity/bray.beta_pcoa_P-value.txt","bray")
+
+
+## 3d pca
+# library(pca3d)
+# data( metabo )
+# pca <- prcomp( metabo[,-1], scale.= TRUE )
+# pca2d( pca, group= metabo[,1] )
+# pca3d( pca,show.ellipses = T,group= metabo[,1] )
+# 
+# pcaa=prcomp(spe.jaccard.mat,scale. = T)
+# pca2d(spe.jaccard.mat,group = group$group)
+# pca3d( pcaa,show.ellipses = T,group= group$group )
+# 
+# p12=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="group", ellipse = T, 
+#               label = F, PCo = 12)

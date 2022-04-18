@@ -1,0 +1,61 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job               count    min threads    max threads
+--------------  -------  -------------  -------------
+all                   1              1              1
+bcftools_call         1              1              1
+plot_quals            1              1              1
+samtools_index        2              1              1
+total                 5              1              1
+
+Select jobs to execute...
+
+[Tue Dec 14 21:00:21 2021]
+rule samtools_index:
+    input: sorted_reads/A.bam
+    output: sorted_reads/A.bam.bai
+    jobid: 7
+    wildcards: sample=A
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 21:00:21 2021]
+Finished job 7.
+1 of 5 steps (20%) done
+Select jobs to execute...
+
+[Tue Dec 14 21:00:21 2021]
+rule samtools_index:
+    input: sorted_reads/B.bam
+    output: sorted_reads/B.bam.bai
+    jobid: 8
+    wildcards: sample=B
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 21:00:21 2021]
+Finished job 8.
+2 of 5 steps (40%) done
+Select jobs to execute...
+
+[Tue Dec 14 21:00:21 2021]
+rule bcftools_call:
+    input: data/genome.fa, sorted_reads/A.bam, sorted_reads/B.bam, sorted_reads/A.bam.bai, sorted_reads/B.bam.bai
+    output: calls/all.vcf
+    jobid: 2
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 21:00:21 2021]
+Error in rule bcftools_call:
+    jobid: 2
+    output: calls/all.vcf
+    shell:
+        samtools mpileup -g -f data/genome.fa sorted_reads/A.bam sorted_reads/B.bam | bcftools call -mv - > calls/all.vcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job bcftools_call since they might be corrupted:
+calls/all.vcf
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /mmfs1/scratch/yzz0191/pipeline/snakemake-demo/.snakemake/log/2021-12-14T210021.468378.snakemake.log

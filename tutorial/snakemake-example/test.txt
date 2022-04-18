@@ -1,0 +1,2 @@
+Sample1 genome.fa fastq/Sample1.R1.fastq.gz fastq/Sample1.R2.fastq.gz
+Sample2 genome.fa fastq/Sample2.R1.fastq.gz fastq/Sample2.R2.fastq.gz

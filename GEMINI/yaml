@@ -1,0 +1,9 @@
+graphviz
+snakemake
+kaiju
+bwa
+samtools
+humann3
+seqkit
+parallel
+humann3 (optional)

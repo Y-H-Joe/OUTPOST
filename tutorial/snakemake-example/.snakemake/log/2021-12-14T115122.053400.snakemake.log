@@ -1,0 +1,49 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job               count    min threads    max threads
+--------------  -------  -------------  -------------
+all                   1              1              1
+quantify_genes        2              1              1
+total                 3              1              1
+
+Select jobs to execute...
+
+[Tue Dec 14 11:51:26 2021]
+rule quantify_genes:
+    input: genome.fa, fastq/Sample1.R1.fastq.gz, fastq/Sample1.R2.fastq.gz
+    output: Sample1.txt
+    jobid: 1
+    wildcards: sample=Sample1
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 11:51:26 2021]
+Finished job 1.
+1 of 3 steps (33%) done
+Select jobs to execute...
+
+[Tue Dec 14 11:51:26 2021]
+rule quantify_genes:
+    input: genome.fa, fastq/Sample2.R1.fastq.gz, fastq/Sample2.R2.fastq.gz
+    output: Sample2.txt
+    jobid: 2
+    wildcards: sample=Sample2
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 11:51:26 2021]
+Finished job 2.
+2 of 3 steps (67%) done
+Select jobs to execute...
+
+[Tue Dec 14 11:51:26 2021]
+localrule all:
+    input: Sample1.txt, Sample2.txt
+    jobid: 0
+    resources: tmpdir=/tmp
+
+[Tue Dec 14 11:51:26 2021]
+Finished job 0.
+3 of 3 steps (100%) done
+Complete log: /mmfs1/scratch/yzz0191/pipeline/snakemake-example/.snakemake/log/2021-12-14T115122.053400.snakemake.log

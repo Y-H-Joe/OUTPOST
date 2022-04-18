@@ -1,0 +1,12 @@
+donkey_3611_meta.align2contigs.hmdh.counts
+donkey_3446_meta.align2contigs.hmdh.counts
+donkey_3418_meta.align2contigs.hmdh.counts
+donkey_4058_meta.align2contigs.hmdh.counts
+donkey_4282_meta.align2contigs.hmdh.counts
+donkey_4687_meta.align2contigs.hmdh.counts
+horse_3474_meta.align2contigs.hmdh.counts
+horse_4964_meta.align2contigs.hmdh.counts
+horse_3912_meta.align2contigs.hmdh.counts
+horse_3729_meta.align2contigs.hmdh.counts
+horse_4231_meta.align2contigs.hmdh.counts
+horse_4986_meta.align2contigs.hmdh.counts
