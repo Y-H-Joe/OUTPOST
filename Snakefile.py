@@ -47,7 +47,8 @@ rule all:
     input:
         f"{assembly}/log/humann.done",
         f"{assembly}/log/prepare_contig_table_from_counts_table.done",
-        f"{assembly}/log/scale_rel_abun_table.done"
+        f"{assembly}/log/scale_rel_abun_table.done",
+        f"{assembly}/log/alpha_beta_diversity.done"
 
 # %% bam
 """
@@ -252,6 +253,57 @@ rule humann_init:
             " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
             " --threads {threads} --memory-use maximum")
         shell("touch {assembly}/log/humann_init.done")
+
+# %% alpha_beta_diversity
+rule alpha_beta_diversity:
+    input:
+        "{assembly}/log/counts_table2rel_abun.done"
+    output:
+        "{assembly}/log/alpha_beta_diversity.done"
+    log:
+        "{assembly}/log/alpha_beta_diversity.log"
+    benchmark:
+        "{assembly}/benchmark/alpha_beta_diversity.benchmark"
+    threads: 4
+    run:
+        for group1,group2 in group_pair_list:
+            wkdir = f"{assembly}/alpha_beta_analysis/alpha_beta_{group1}_vs_{group2}"
+            os.makedirs(wkdir, exist_ok=True)
+            group1_new_name = [f"{sample}_{group1}" for sample in comparison_dict[group1]]
+            group2_new_name = [f"{sample}_{group2}" for sample in comparison_dict[group2]]
+
+            group1_name = comparison_dict[group1]
+            group2_name = comparison_dict[group2]
+
+            species_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.species.rmU.csv"
+            genus_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.genus.rmU.csv"
+            species_df = pd.read_csv(species_dp,index_col=0)
+            genus_df = pd.read_csv(genus_dp,index_col=0)
+
+            species_new_df = species_df.reindex(group1_name + group2_name)
+            genus_new_df = genus_df.reindex(group1_name + group2_name)
+
+            species_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.species.rmU.{group1}_vs_{group2}.csv"
+            genus_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.genus.rmU.{group1}_vs_{group2}.csv"
+            species_new_df.to_csv(species_new_dp,index=True)
+            genus_new_df.to_csv(genus_new_dp,index=True)
+
+            index_file = wkdir + "/index.txt"
+            with open(index_file,'w') as w:
+                for new_name in group1_new_name + group2_new_name:
+                    w.write(new_name + "\n")
+
+            group_file = wkdir + "/group.csv"
+            with open(group_file,'w') as w:
+                w.write("sample,Group,Others\n")
+                for new_name in group1_new_name:
+                    w.write(f"{new_name},{group1},A\n")
+                for new_name in group2_new_name:
+                    w.write(f"{new_name},{group2},A\n")
+
+            shell("{Rscript} GEMINI/alpha_beta_diversity.R {genus_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} > {log} 2>&1")
+        shell("touch {assembly}/log/alpha_beta_diversity.done")
+
 
 
 
