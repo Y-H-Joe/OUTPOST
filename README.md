@@ -1,4 +1,4 @@
-# mwgx_pipeline
+# GEMINI
 A light, fast, comprehensive and easy downstream pipeline for metagenomics whole genome sequencing
 
 # format of contig.tsv
