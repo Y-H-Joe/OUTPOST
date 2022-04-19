@@ -45,27 +45,28 @@ import pandas as pd
 import re
 import sys
 
-for i in ['ko','eggnog','level4ec','pfam','rxn']:
+def humann2rel_abun(dp):
     #dp=r'../metabolism/humann3/horsedonkey_genefamilies_uniref90names_cpm_{}_unstratified.named.tsv'.format(i)
-    dp=r'C:\CurrentProjects\equids_MHC\Prj1\humann3\horsemuledonkeyhinny_genefamilies_uniref90names_cpm_eggnog_unstratified.named.tsv'.format(i)
+    dp = r'C:\CurrentProjects\equids_MHC\Prj1\humann3\horsemuledonkeyhinny_genefamilies_uniref90names_cpm_eggnog_unstratified.named.tsv'.format(i)
     #dp_config='config.tsv'
-    dp_config=r'C:\CurrentProjects\equids_MHC\Prj1\humann3\equids.prj1.humann3.index'
-    
-    rmUMAPPED=True
-    rmUNGROUPED=True
-    
-    top=0 # 0 means select all, 20 means select top rich 20
+    dp_config = r'C:\CurrentProjects\equids_MHC\Prj1\humann3\equids.prj1.humann3.index'
+
+    rmUMAPPED = True
+    rmUNGROUPED = True
+
+    top = 0 # 0 means select all, 20 means select top rich 20
     """
     'donkey_3418_meta_nonEquCab3donkeyviralrRNA_merger1r2_Abundance-RPKs'
     clean_hum_head=2  means only keep donkey_3418
     """
     clean_hum_head=0 # 0 means keep all
-    
-    df_hum=pd.read_csv(dp,sep='\t',index_col=0)
-    df_config=pd.read_csv(dp_config,sep='\t')
-    
-    df_hum_columns=list(df_hum.columns)
+
+    df_hum = pd.read_csv(dp,sep='\t',index_col=0)
+    df_config = pd.read_csv(dp_config,sep='\t')
+
+    df_hum_columns = list(df_hum.columns)
     samples=list(df_config['samples'])
+
     reordered_df_hum_columns=[]
     for s in samples:
         for c in df_hum_columns:
@@ -75,12 +76,12 @@ for i in ['ko','eggnog','level4ec','pfam','rxn']:
         print("[{}] error. the sample name cannot be reordered. script confuses about the name. exit.".format(sys.argv[0]))
         sys.exit()
     df_hum=df_hum[reordered_df_hum_columns]
-    
+
     if rmUMAPPED==True:
         df_hum.drop('UNMAPPED',inplace=True,axis=0)
     if rmUNGROUPED==True:
         df_hum.drop('UNGROUPED',inplace=True,axis=0)
-    
+
     if top!=0:
         suffix='top{}.'.format(str(top))
         df_hum['sum']=df_hum.sum(axis=1)
@@ -89,24 +90,27 @@ for i in ['ko','eggnog','level4ec','pfam','rxn']:
             df_hum=df_hum.loc[df_hum.index[:top]]
     else:
         suffix=''
-    
-    
+
+
     df_hum=df_hum.T
     try:
         df_hum.drop('sum',axis=0,inplace=True)
     except:
         pass
-    
+
     if clean_hum_head!=0:
         import re
         clean_df_hum_index=['_'.join(re.split('_|-| |\.',x)[:clean_hum_head]) for x in df_hum.index]
-    
-    
-    
+
     output_value="{}.rel_abun.{}csv".format(dp,suffix)
     df_hum.to_csv(output_value,sep=',',index=True)
 
+if __name__ == '__main__':
+    dp_list = sys.argv[1].split(',')
+    output_list = sys.argv[2].split(',')
 
+    for dp in zip(dp_list,output_list):
+        humann2rel_abun(dp,output)
 
 
 

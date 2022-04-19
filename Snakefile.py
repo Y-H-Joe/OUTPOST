@@ -45,7 +45,7 @@ group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
 
 rule all:
     input:
-        f"{assembly}/log/humann.done",
+        f"{assembly}/log/humann2rel_abun.done",
         f"{assembly}/log/prepare_contig_table_from_counts_table.done",
         f"{assembly}/log/scale_rel_abun_table.done",
         f"{assembly}/log/alpha_beta_diversity.done"
@@ -73,17 +73,139 @@ rule bam2fastq:
         shell("rm data/reads/{wildcards.sample}.fq.tmp")
         shell("touch bam2fastq.done")
 """
+# %% heatmap
+rule heatmap:
+    input:
+        "taxa_abun/rel_abun/sample12_rel_abun.1.rmU.euk.csv.top30.csv.log10.fillmin.csv"
+    output:
+        "taxa_abun/figs/sample12_rel_abun.1.rmU.euk.csv.top30.csv.log10.fillmin.csv.heatmap.pdf"
+    log:
+        "{assembly}/log/heatmap.log"
+    benchmark:
+        "{assembly}/benchmark/heatmap.benchmark"
+    run:
+        "code/heatmap.py"
 
 # %% humann
+rule extract_top_humann:
+    input:
+        "{assembly}/log/rel_abun_utest.done"
+    output:
+        "{assembly}/log/extract_top_taxa.done"
+    log:
+        "{assembly}/log/extract_top_taxa.log"
+    benchmark:
+        "{assembly}/benchmark/extract_top_taxa.benchmark"
+    threads: 4
+    run:
+        # top abundant
+        dp_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                            for level in taxa_level])
+        output_name_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
+                            for level in taxa_level])
+        error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_abundant.error"
+        shell("{python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+              " {top} {error_log}")
+        result = ge.wait_unti_file_exists(output_name_list.split(','),error_log)
+        assert result is True, "GEMINI: extract_top_taxa_top_abundant has errors. exit."
+
+        # top unequal abundant
+        output_list = []
+        for group1,group2 in group_pair_list:
+            os.makedirs(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
+                                for level in taxa_level])
+            output_name_list = ','.join([
+                    f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
+                    for level in taxa_level])
+            error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_unequal_abundant.error"
+            output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.unequal.top{top}.csv")
+            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+              " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
+        result = ge.wait_unti_file_exists(output_list,error_log)
+        assert result is True, "GEMINI: extract_top_taxa_top_unequal_abundant has errors. exit."
+
+       # top equal abundant
+        output_list = []
+        for group1,group2 in group_pair_list:
+            os.makedirs(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
+                                for level in taxa_level])
+            output_name_list = ','.join([
+                    f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
+                    for level in taxa_level])
+            error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_equal_abundant.error"
+            output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.equal.top{top}.csv")
+            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+              " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
+        result = ge.wait_unti_file_exists(output_list,error_log)
+        assert result is True, "GEMINI: extract_top_taxa_top_equal_abundant has errors. exit."
+
+        shell("touch {assembly}/log/extract_top_taxa.done")
+
+
+rule humann_utest:
+    input:
+        "{assembly}/log/counts_table2rel_abun.done"
+    output:
+        "{assembly}/log/humann_utest.done"
+    log:
+        "{assembly}/log/humann_utest.log"
+    benchmark:
+        "{assembly}/benchmark/humann_utest.benchmark"
+    threads: 4
+    run:
+        os.makedirs(f"{assembly}/metabolism_analysis/humann3/utest", exist_ok=True)
+        output_list = []
+        for group1,group2 in group_pair_list:
+            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+                       for database in ['rxn','eggnog','ko','level4ec','pfam']])
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            prefix_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}"
+                       for database in ['rxn','eggnog','ko','level4ec','pfam']])
+            output = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
+            output_list.append(output)
+            error_log = os.getcwd() + f"/{assembly}/log/humann_utest.error"
+            try:
+                os.remove(error_log) # clean former residual error log
+            except:
+                pass
+            shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
+                  " {group2_index} {group2} {prefix_list} {paired} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
+        result = ge.wait_unti_file_exists(output_list,error_log)
+        assert result is True, "GEMINI: rel_abun_utest has errors. exit."
+        shell("touch {assembly}/log/humann_utest.done")
+
+rule humann2rel_abun:
+    input:
+        "{assembly}/log/humann_output.done"
+    output:
+        "{assembly}/log/humann2rel_abun.done"
+    log:
+        "{assembly}/log/humann2rel_abun.log"
+    benchmark:
+        "{assembly}/benchmark/humann2rel_abun.benchmark"
+    run:
+        for group in list(comparison_dict.keys()) + ['allSamples']:
+            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.tsv"
+                       for database in ['rxn','eggnog','ko','level4ec','pfam']])
+            output_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+                       for database in ['rxn','eggnog','ko','level4ec','pfam']])
+            shell("{python3} GEMINI/humann2rel_abun.py {dp_list} {output_list}")
+        shell("touch {assembly}/log/humann2rel_abun.done")
+
 rule humann_output:
     input:
-        f"{assembly}/log/humann_group.done"
+        "{assembly}/log/humann_group.done"
     output:
-        f"{assembly}/log/humann.done",
-        expand("{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.named.tsv",
-               assembly = assembly, group = comparison_dict.keys())
+        "{assembly}/log/humann_output.done"
+    log:
+        "{assembly}/log/humann_output.log"
+    benchmark:
+        "{assembly}/benchmark/humann_output.benchmark"
     run:
-        for group in comparison_dict.keys():
+        for group in list(comparison_dict.keys()) + ['allSamples']:
             # join tables for each group
             shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
                   " -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
@@ -103,48 +225,21 @@ rule humann_output:
             shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
                   " -o {assembly}/metabolism_analysis/humann3/output/{group}_pathcoverage_cpm.tsv "
                   "--file_name _pathcoverage_cpm.tsv ")
+
             # regroup tables for each group
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec.tsv --groups uniref90_level4ec")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko.tsv --groups uniref90_ko")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog.tsv --groups uniref90_eggnog")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam.tsv --groups uniref90_pfam")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn.tsv --groups uniref90_rxn")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec.tsv --groups uniref90_level4ec")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko.tsv --groups uniref90_ko")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog.tsv --groups uniref90_eggnog")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam.tsv --groups uniref90_pfam")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn.tsv --groups uniref90_rxn")
+            for database in ['rxn','eggnog','ko','level4ec','pfam']:
+                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
+                      " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv --groups uniref90_{database}")
+                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
+                      " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv --groups uniref90_{database}")
+
             # stratify tables for each group
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
-            shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn.tsv "
-                  "-o {assembly}/metabolism_analysis/humann3/output/")
+            for database in ['rxn','eggnog','ko','level4ec','pfam']:
+                shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv "
+                      "-o {assembly}/metabolism_analysis/humann3/output/")
+                shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv "
+                      "-o {assembly}/metabolism_analysis/humann3/output/")
+
             # rename tables for each group
             shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.tsv "
                   " --names kegg-orthology -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.named.tsv")
@@ -166,29 +261,37 @@ rule humann_output:
                   " --names pfam -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam_unstratified.named.tsv")
             shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.tsv "
                   " --names metacyc-rxn -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.named.tsv")
-            shell("touch {assembly}/log/humann.done")
+        shell("touch {assembly}/log/humann_output.done")
 
 rule humann_group:
     input:
-        f"{assembly}/log/humann_annotate.done",
+        "{assembly}/log/humann_annotate.done",
     output:
-        f"{assembly}/log/humann_group.done"
+        "{assembly}/log/humann_group.done"
+    log:
+        "{assembly}/log/humann_group.log"
+    benchmark:
+        "{assembly}/benchmark/humann_group.benchmark"
     run:
         for group,samples in comparison_dict.items():
             os.makedirs(f"{assembly}/metabolism_analysis/humann3/{group}", exist_ok=True)
             for sample in samples:
                 os.system(f"cp {assembly}/metabolism_analysis/humann3/ori_results/{sample}*tsv  {assembly}/metabolism_analysis/humann3/{group} ")
+        # allSamples
+        os.makedirs(f"{assembly}/metabolism_analysis/humann3/allSamples", exist_ok=True)
+        for sample in sample_list:
+            os.system(f"cp {assembly}/metabolism_analysis/humann3/ori_results/{sample}*tsv  {assembly}/metabolism_analysis/humann3/allSamples ")
         shell("touch {assembly}/log/humann_group.done")
 
 rule humann_annotate:
     input:
-        f"{assembly}/log/humann_init.done"
+        "{assembly}/log/humann_init.done"
     output:
-        f"{assembly}/log/humann_annotate.done"
+        "{assembly}/log/humann_annotate.done"
     log:
-        f"{assembly}/log/humann_annotate.log"
+        "{assembly}/log/humann_annotate.log"
     benchmark:
-        f"{assembly}/benchmark/humann_annotate.benchmark"
+        "{assembly}/benchmark/humann_annotate.benchmark"
     run:
         for sample in sample_list:
             # normalize
@@ -211,30 +314,13 @@ rule humann_annotate:
                   " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage_cpm.tsv "
                   " --units cpm")
             # regroup
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_level4ec.tsv --groups uniref90_level4ec")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_level4ec.tsv --groups uniref90_level4ec")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_ko.tsv --groups uniref90_ko")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_ko.tsv --groups uniref90_ko")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_eggnog.tsv --groups uniref90_eggnog")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_eggnog.tsv --groups uniref90_eggnog")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_pfam.tsv --groups uniref90_pfam")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_pfam.tsv --groups uniref90_pfam")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_rxn.tsv --groups uniref90_rxn")
-            shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_rxn.tsv --groups uniref90_rxn")
-            shell("touch {assembly}/log/humann_annotate.done")
+            for database in ['rxn','eggnog','ko','level4ec','pfam']:
+                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
+                      " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_{database}.tsv --groups uniref90_{database}")
+                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
+                      " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_{database}.tsv --groups uniref90_{database}")
 
-def return_fq(wildcards):
-    return fq_list[sample_list.index(wildcards.sample)]
+        shell("touch {assembly}/log/humann_annotate.done")
 
 rule humann_init:
     input:
@@ -606,32 +692,9 @@ rule idxstats:
 
 
 
-rule heatmap:
-    input:
-        "taxa_abun/rel_abun/sample12_rel_abun.1.rmU.euk.csv.top30.csv.log10.fillmin.csv",
-    output:
-        "taxa_abun/figs/sample12_rel_abun.1.rmU.euk.csv.top30.csv.log10.fillmin.csv.heatmap.pdf",
-    scripts:
-        "code/heatmap.py"
 
-rule config2alphabeta_group:
-    input:
-        "config.tsv",
-        "../taxa_abun/rel_abun/sample12_rel_abun.8.rmU.euk.csv"
-    output:
-        "alpha_beta_diversity_group.tsv",
-        "../taxa_abun/alpha_beta_diversity/sample12_rel_abun.8.rmU.euk.csv.alpha_beta.csv"
-    scripts:
-        "config2alphabeta_group_20211221.py"
 
-rule alpha_beta_diversity:
-    input:
-        "../taxa_abun/alpha_beta_diversity/sample12_rel_abun.8.rmU.euk.csv.alpha_beta.csv",
-        "alpha_beta_diversity_group.tsv"
-    output:
-        "../taxa_abun/alpha_beta_diversity/..."
-    scripts:
-        "alpha_beta_diversity.R"
+
 
 rule rel_abun2lefse:
     input:
@@ -651,13 +714,7 @@ rule run_lefse:
 
 
 
-rule humann2rel_abun:
-    input:
-        "../metabolism/humann3/horsedonkey_genefamilies_uniref90names_cpm_{}_unstratified.named.tsv"
-    output:
-        "../metabolism/humann3/horsedonkey_genefamilies_uniref90names_cpm_{}_unstratified.named.tsv.rel_abun.csv"
-    scripts:
-        "humann2rel_abun.py"
+
 
 rule alluvial_plot:
     input:
