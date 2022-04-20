@@ -216,6 +216,7 @@ def part2(df,target,group1,group1_name,group2,group2_name,subgroup,groups,paired
     # file1_df = file1_df.reindex(groups)
     # file 2
     ## relative change
+    # file2_y: ['305A', '396', '473B', '705E', '7108E', '711E', '778E', '782']
     ## if the increase change is more than one, set it as ceil_change
     ## the decrease change will never lower than -1
     if subgroup !=None:

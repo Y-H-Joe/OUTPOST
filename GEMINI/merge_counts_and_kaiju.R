@@ -4,7 +4,7 @@ kaiju_dp=args[2]
 output=args[3]
 
 counts=read.csv(counts_dp,header = FALSE,sep="\t")
-kaiju=read.csv(kaiju_dp,header=FALSE,sep = "\t")
+kaiju=read.csv(kaiju_dp,sep = "\t",header=FALSE)
 
 sample_num=dim(counts)[2]-1
 withTaxaID=TRUE
