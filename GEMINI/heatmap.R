@@ -9,14 +9,17 @@ args = commandArgs(T)
 dp = args[1]
 wkdir = args[2]
 index_dir = args[3]
-data_type = args[4]
+data_type = args[4] # data_type = taxa or humann or function or species or pvalue
+output = args[5]
 
-dp=r"{humann3\pvalue_matrix_eggnog_upper_KO_down.csv.log10.fillmin.csv}"
-wkdir=r"{D:\CurrentProjects\equids_MHC\Prj1\}"
-index_dir=r"{humann3\pvalue_matrix.index}"
-data_type='pvalue' ## data_type = taxa or humann or function or species or pvalue
+# dp=r"{C:\CurrentProjects\GEMINI\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.csv}"
+# wkdir=r"{C:\CurrentProjects\GEMINI}"
+# index_dir=r"{C:\CurrentProjects\GEMINI\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.index}"
+# data_type='taxa'
+# output = 'heatmap.pdf'
 
-data=as.matrix(read.csv(dp,sep = ','))
+data = read.csv(dp,sep = ',')
+data = as.matrix(data[, 2:ncol(data)])
 row_index=read.csv(index_dir,sep=',',header = FALSE)
 rownames(data)=c(as.vector(as.matrix(row_index)))
 
@@ -52,7 +55,7 @@ if(data_type=='species'){
   height= dim(data)[1]/2
 }else if(data_type=='humann'){
   width=dim(data)[2]/3
-  height= dim(data)[1]/2
+  height= dim(data)[1]*2
 }else if(data_type=='function'){
   width=dim(data)[2]/8
   height= dim(data)[1]*0.7
@@ -69,6 +72,6 @@ save_pheatmap_pdf <- function(x, filename, width, height) {
   grid::grid.draw(x$gtable)
   dev.off()
 }
-save_pheatmap_pdf(x, paste(data_file,".heatmap.ScaleNone.pdf",sep=""),width,height)
-
+save_pheatmap_pdf(x, output ,width,height)
+dev.off()
 
