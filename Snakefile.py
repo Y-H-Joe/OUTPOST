@@ -3,6 +3,7 @@ import os
 import sys
 import GEMINI as ge
 import itertools
+import time
 
 # %% settings
 
@@ -263,7 +264,7 @@ rule heatmap_taxa:
 
 rule heatmap_humann:
     input:
-        "{assembly}/log/humann_utest.done"
+        "{assembly}/log/extract_top_humann.done"
     output:
         "{assembly}/log/heatmap_humann.done"
     log:
@@ -273,6 +274,11 @@ rule heatmap_humann:
     run:
         wkdir = f"{assembly}/metabolism_analysis/figs/"
         os.makedirs(wkdir, exist_ok=True)
+
+        with open(f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
+            line = r.readline()
+            humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
+
         # top humann heatmap
         data_type = 'humann'
         for database in databases:
@@ -280,7 +286,7 @@ rule heatmap_humann:
             output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
             index_dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.index"
             with open(index_dp,'w') as w:
-                for sample in sample_list:
+                for sample in humann_sample_list:
                     w.write(sample + '\n')
             try:
                 shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
@@ -383,13 +389,13 @@ rule humann_utest:
     threads: cores
     run:
         output_list = []
+        dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+                   for database in databases])
+        with open(f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
+            line = r.readline()
+            humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
         for group1,group2 in group_pair_list:
             os.makedirs(f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}", exist_ok=True)
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
-                       for database in databases])
-            with open(dp_list.split(',')[0],'r') as r:
-                line = r.readline()
-                humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
 
             group1_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group2]])
@@ -672,6 +678,7 @@ rule taxa_barplots:
     benchmark:
         "{assembly}/benchmark/taxa_barplots.benchmark"
     run:
+        os.makedirs(f"{assembly}/taxa_analysis/figs/", exist_ok=True)
         for level in taxa_level:
             dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
             new_dp = dp.replace(".csv",".addOthers.csv")
