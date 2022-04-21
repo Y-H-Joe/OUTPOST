@@ -58,7 +58,7 @@ if  __name__ == '__main__':
                 df_top.to_csv(output_name,index=True)
             else:
                 print("GEMINI: ",dp," has no enough taxa to extract. remain original file.")
-                df.to_csv(output_name,index=True)
+                os.system(f'cp {dp} {output_name}')
 
 
     except Exception as e:

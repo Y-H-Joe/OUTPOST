@@ -45,7 +45,8 @@ rule all:
         f"{assembly}/log/prepare_contig_table_from_counts_table.done",
         f"{assembly}/log/alpha_beta_diversity.done",
         f"{assembly}/log/lefse_humann.done",
-        f"{assembly}/log/lefse_taxa.done"
+        f"{assembly}/log/lefse_taxa.done",
+        f"{assembly}/log/taxa_barplots.done"
 
 
 # %% lefse
@@ -654,6 +655,26 @@ rule scale_rel_abun_table:
         output_list = ','.join(output_list)
         shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
         shell("touch {assembly}/log/scale_rel_abun_table.done")
+
+rule taxa_barplots:
+    input:
+        "{assembly}/log/extract_top_taxa.done"
+    output:
+        "{assembly}/log/taxa_barplots.done"
+    log:
+        "{assembly}/log/taxa_barplots.log"
+    benchmark:
+        "{assembly}/benchmark/taxa_barplots.benchmark"
+    run:
+        for level in taxa_level:
+            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
+            new_dp = dp.replace(".csv",".addOthers.csv")
+            output = f"{assembly}/taxa_analysis/figs/" + os.path.basename(dp).replace(".csv",".barplot.pdf")
+            df = pd.read_csv(dp, index_col = 0)
+            df['Others'] = 1 - df.sum(axis = 1)
+            df.to_csv(new_dp)
+            shell("{Rscript} GEMINI/barplots.R {new_dp} {output}")
+        shell("touch {assembly}/log/taxa_barplots.done")
 
 rule extract_top_taxa:
     input:
