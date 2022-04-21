@@ -387,8 +387,12 @@ rule humann_utest:
             os.makedirs(f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}", exist_ok=True)
             dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
                        for database in databases])
-            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
-            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            with open(dp_list.split(',')[0],'r') as r:
+                line = r.readline()
+                humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
+
+            group1_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group2]])
             prefix_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}"
                        for database in databases])
             output = f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
