@@ -6,8 +6,8 @@ import itertools
 
 # %% settings
 
-wkdir = "/analysis1/yihang_analysis/pipeline"
-os.chdir(wkdir)
+# wkdir = "/analysis1/yihang_analysis/pipeline"
+# os.chdir(wkdir)
 
 bwa = 'bwa'
 kaiju = 'kaiju'
@@ -30,6 +30,7 @@ lefse_format_input = 'lefse_format_input.py'
 lefse_run = 'lefse_run.py'
 paired = False
 top = 30
+cores = 32
 
 config="GEMINI/config.tsv"
 df_config=pd.read_csv(config,sep='\t')
@@ -324,7 +325,7 @@ rule extract_top_humann:
         "{assembly}/log/extract_top_humann.log"
     benchmark:
         "{assembly}/benchmark/extract_top_humann.benchmark"
-    threads: 4
+    threads: cores
     run:
         # top abundant
         dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
@@ -379,7 +380,7 @@ rule humann_utest:
         "{assembly}/log/humann_utest.log"
     benchmark:
         "{assembly}/benchmark/humann_utest.benchmark"
-    threads: 4
+    threads: cores
     run:
         output_list = []
         for group1,group2 in group_pair_list:
@@ -431,6 +432,7 @@ rule humann_output:
     benchmark:
         "{assembly}/benchmark/humann_output.benchmark"
     run:
+        os.makedirs(f"{assembly}/metabolism_analysis/humann3/output/", exist_ok=True)
         for group in list(comparison_dict.keys()) + ['allSamples']:
             # join tables for each group
             shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
@@ -557,7 +559,7 @@ rule humann_init:
         "{assembly}/log/humann_init.log"
     benchmark:
         "{assembly}/benchmark/humann_init.benchmark"
-    threads: 4
+    threads: cores
     run:
         os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
         for fq in fq_list:
@@ -576,7 +578,7 @@ rule alpha_beta_diversity:
         "{assembly}/log/alpha_beta_diversity.log"
     benchmark:
         "{assembly}/benchmark/alpha_beta_diversity.benchmark"
-    threads: 4
+    threads: cores
     run:
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/alpha_beta_analysis/alpha_beta_{group1}_vs_{group2}"
@@ -685,7 +687,7 @@ rule extract_top_taxa:
         "{assembly}/log/extract_top_taxa.log"
     benchmark:
         "{assembly}/benchmark/extract_top_taxa.benchmark"
-    threads: 4
+    threads: cores
     run:
         # top abundant
         dp_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
@@ -742,7 +744,7 @@ rule rel_abun_utest:
         "{assembly}/log/rel_abun_utest.log"
     benchmark:
         "{assembly}/benchmark/rel_abun_utest.benchmark"
-    threads: 4
+    threads: cores
     run:
         output_list = []
         for group1,group2 in group_pair_list:
@@ -768,7 +770,8 @@ rule rel_abun_utest:
 
 rule counts_table2rel_abun:
     input:
-        "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+        "{assembly}/log/merge_counts_pure_and_kaiju.done",
+        real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
     output:
         "{assembly}/log/counts_table2rel_abun.done"
     log:
@@ -778,19 +781,20 @@ rule counts_table2rel_abun:
     run:
         prefix = f"{assembly}/taxa_analysis/{assembly}.taxa_counts"
         samples = ','.join(sample_list)
-        shell("{python3} GEMINI/counts_table2rel_abun.py {input} {prefix} {samples} > {log} 2>&1 ")
+        shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
 rule prepare_contig_table_from_counts_table:
     input:
-        "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+        "{assembly}/log/merge_counts_pure_and_kaiju.done",
+        real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
     output:
         "{assembly}/log/prepare_contig_table_from_counts_table.done"
     log:
         "{assembly}/log/prepare_contig_table_from_counts_table.log"
     benchmark:
         "{assembly}/benchmark/prepare_contig_table_from_counts_table.benchmark"
-    threads: 4
+    threads: cores
     run:
         output_list = []
         for group1,group2 in group_pair_list:
@@ -804,7 +808,7 @@ rule prepare_contig_table_from_counts_table:
                 os.remove(error_log) # clean former residual error log
             except:
                 pass
-            shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input} "
+            shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
                   " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
@@ -812,9 +816,12 @@ rule prepare_contig_table_from_counts_table:
 
 rule merge_counts_pure_and_kaiju:
     input:
+        "{assembly}/log/format_kaiju_output.done",
+        "{assembly}/log/paste_counts_table.done",
         counts_dp = "{assembly}/taxa_analysis/temp/{assembly}.counts.pure",
         kaiju_dp = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
     output:
+        "{assembly}/log/merge_counts_pure_and_kaiju.done",
         "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
     log:
         "{assembly}/log/merge_counts_pure_and_kaiju.log"
@@ -823,57 +830,72 @@ rule merge_counts_pure_and_kaiju:
     run:
         os.makedirs(f"{assembly}/assembly_analysis/", exist_ok=True)
         shell("{Rscript} GEMINI/merge_counts_and_kaiju.R {input.counts_dp} {input.kaiju_dp} {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv")
-
+        shell("touch {assembly}/log/merge_counts_pure_and_kaiju.done")
 
 rule format_kaiju_output:
     input:
-        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+        "{assembly}/log/kaiju_addTaxonNames.done",
+        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
     output:
-       "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+        "{assembly}/log/format_kaiju_output.done",
+        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
     log:
         "{assembly}/log/format_kaiju_output.log"
     benchmark:
         "{assembly}/benchmark/format_kaiju_output.benchmark"
-    shell:
-        "{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {input}"
+    run:
+        shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {input.real}")
+        shell("touch {assembly}/log/format_kaiju_output.done")
 
 rule kaiju_addTaxonNames:
     input:
-        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+        "{assembly}/log/kaiju_annotate.done",
+        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
     output:
-        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+        "{assembly}/log/kaiju_addTaxonNames.done",
+        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
     log:
         "{assembly}/log/kaiju_addTaxonNames.log"
     benchmark:
         "{assembly}/benchmark/kaiju_addTaxonNames.benchmark"
-    threads: 4
-    shell:
-        "{kaiju_addTaxonNames} -i {input} -o {output} -t  {kaiju_nodes} -n {kaiju_names} "
-        " -v -r superkingdom,phylum,class,order,family,genus,species > {log} 2>&1 "
+    threads: cores
+    run:
+        shell("{kaiju_addTaxonNames} -i {input.real} -o {output.real} -t  {kaiju_nodes} -n {kaiju_names} "
+        " -v -r superkingdom,phylum,class,order,family,genus,species > {log} 2>&1 ")
+        shell("touch {assembly}/log/kaiju_addTaxonNames.done")
 
 rule kaiju_annotate:
     input:
         assembly_dir
     output:
-        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
-    threads: 4
+        "{assembly}/log/kaiju_annotate.done",
+        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+    threads: cores
     log:
         "{assembly}/log/kaiju_annotate.log"
     benchmark:
         "{assembly}/benchmark/kaiju_annotate.benchmark"
-    shell:
-        "{kaiju} -t {kaiju_nodes} -v -f {kaiju_fmi} -z {threads} -i {input}  -o {output} > {log} 2>&1 "
+    run:
+        shell("{kaiju} -t {kaiju_nodes} -v -f {kaiju_fmi} -z {threads} -i {input}  -o {output.real} > {log} 2>&1 ")
+        shell("touch {assembly}/log/kaiju_annotate.done")
+
 
 
 rule paste_counts_table:
     input:
         "{assembly}/log/idxstats.done"
     output:
+        "{assembly}/log/paste_counts_table.done",
         "{assembly}/taxa_analysis/temp/{assembly}.counts.pure"
+    log:
+        "{assembly}/log/paste_counts_table.log"
+    benchmark:
+        "{assembly}/benchmark/paste_counts_table.benchmark"
     run:
         counts_table_list = ','.join(expand("{assembly}/taxa_analysis/temp/{basename}.idxstats",
                                    assembly = assembly, basename = bam_basename))
         shell("{python3} GEMINI/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure")
+        shell("touch {assembly}/log/paste_counts_table.done")
 
 rule idxstats:
     input:
@@ -884,11 +906,11 @@ rule idxstats:
         "{assembly}/log/idxstats.log"
     benchmark:
         "{assembly}/benchmark/idxstats.benchmark"
-    threads: 4
+    threads: cores
     run:
         os.makedirs(f"{assembly}/taxa_analysis/temp/", exist_ok=True)
         for bam,basename in zip(bam_list,bam_basename):
-            shell(f"{samtools} idxstats --threads {threads} {bam} > {assembly}/taxa_analysis/temp/{basename}.idxstats  > {log} 2>&1 ")
+            shell(f"{samtools} idxstats --threads {threads} {bam} > {assembly}/taxa_analysis/temp/{basename}.idxstats ")
         shell("touch {assembly}/log/idxstats.done")
 
 
