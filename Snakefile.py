@@ -48,7 +48,8 @@ rule all:
         f"{assembly}/log/alpha_beta_diversity.done",
         f"{assembly}/log/lefse_humann.done",
         f"{assembly}/log/lefse_taxa.done",
-        f"{assembly}/log/taxa_barplots.done"
+        f"{assembly}/log/taxa_barplots.done",
+        f"{assembly}/log/taxa_boxplot.done"
 
 
 # %% lefse
@@ -686,7 +687,10 @@ rule taxa_barplots:
             df = pd.read_csv(dp, index_col = 0)
             df['Others'] = 1 - df.sum(axis = 1)
             df.to_csv(new_dp)
-            shell("{Rscript} GEMINI/barplots.R {new_dp} {output}")
+            try:
+                shell("{Rscript} GEMINI/barplots.R {new_dp} {output} > {log} 2>&1")
+            except:
+                pass
         shell("touch {assembly}/log/taxa_barplots.done")
 
 rule extract_top_taxa:
@@ -745,6 +749,30 @@ rule extract_top_taxa:
 
         shell("touch {assembly}/log/extract_top_taxa.done")
 
+rule taxa_boxplot:
+    input:
+        "{assembly}/log/rel_abun_utest.done"
+    output:
+        "{assembly}/log/taxa_boxplot.done"
+    log:
+        "{assembly}/log/taxa_boxplot.log"
+    benchmark:
+        "{assembly}/benchmark/taxa_boxplot.benchmark"
+    threads: cores
+    run:
+        output_list = []
+        for group1,group2 in group_pair_list:
+            os.makedirs(f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}", exist_ok=True)
+            group_pair = ','.join([group1,group2])
+            groups = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
+            dp_list = [f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv" for level in taxa_level]
+            for dp in dp_list:
+                output = f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{os.path.basename(dp).replace('.csv','')}"
+            try:
+                shell("{Rscript} GEMINI/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
+            except:
+                pass
+        shell("touch {assembly}/log/taxa_boxplot.done")
 
 rule rel_abun_utest:
     input:
