@@ -5,11 +5,7 @@ import GEMINI as ge
 import itertools
 import time
 
-# %% settings
-
-# wkdir = "/analysis1/yihang_analysis/pipeline"
-# os.chdir(wkdir)
-
+# %% command parameters
 bwa = 'bwa'
 kaiju = 'kaiju'
 python3 = 'python3'
@@ -18,8 +14,6 @@ kaiju_addTaxonNames = 'kaiju-addTaxonNames'
 kaiju_nodes = '/home/yihang/software/kaijudb_nr_euk/nodes.dmp'
 kaiju_fmi = '/home/yihang/software/kaijudb_nr_euk/nr_euk/kaiju_db_nr_euk.fmi'
 kaiju_names = '/home/yihang/software/kaijudb_nr_euk/names.dmp'
-taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
-databases = ['rxn','eggnog','ko','level4ec','pfam']
 samtools = 'samtools'
 humann = '/home/yihang/anaconda3/envs/pipeline2/bin/humann3'
 humann_renorm_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_renorm_table'
@@ -29,13 +23,17 @@ humann_split_stratified_table = '/home/yihang/anaconda3/envs/pipeline2/bin/human
 humann_rename_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_rename_table'
 lefse_format_input = 'lefse_format_input.py'
 lefse_run = 'lefse_run.py'
+
+# %% settings
+taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
+databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
 top = 30
 cores = 32
-
 config="GEMINI/config.tsv"
-df_config=pd.read_csv(config,sep='\t')
 
+# %% GEMINI starts
+df_config=pd.read_csv(config,sep='\t')
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
@@ -51,7 +49,6 @@ rule all:
         f"{assembly}/log/taxa_barplots.done",
         f"{assembly}/log/taxa_boxplot.done",
         f"{assembly}/log/process_contig_table.done"
-
 
 # %% lefse
 rule lefse_taxa:
