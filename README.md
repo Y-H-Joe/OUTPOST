@@ -62,10 +62,26 @@ I just list some warnings.
 
 # GEMINI outpus
 ## assembly analysis
-`horsedonkey.taxa_counts.tsv`: contig_ID  NCBI_taxa_ID  superkingdom  phylum  class order family  genus species number_of_sample1_reads_aligned_to_this_contig  number_of_sample2_reads_aligned_to_this_contig...
-`horsedonkey.horsedonkey_vs_hinny.contig_table.tsv`: similar as `horsedonkey.taxa_counts.tsv` besides q value and p value (group horsedonkey v.s. group hinny)
-`horsedonkey.horsedonkey_vs_hinny.contig_table.processed.tsv`: similar as `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv` besides relative abundance and counts per million reads for each sample in each contig.
+1. `horsedonkey.taxa_counts.tsv`: contig_ID  NCBI_taxa_ID  superkingdom  phylum  class order family  genus species number_of_sample1_reads_aligned_to_this_contig  number_of_sample2_reads_aligned_to_this_contig...
+2. `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv`: similar as `horsedonkey.taxa_counts.tsv` besides q value and p value (group horsedonkey v.s. group hinny)
+3. `horsedonkey.horsedonkey_vs_hinny.contig_table.processed.tsv`: similar as `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv` besides relative abundance and counts per million reads for each sample in each contig.
+
 ## taxa analysis
+`horsedonkey.taxa_counts.rel_abun.phylum.rmU.top30.barplot.pdf`: the barplot of all samples, only top 30 abundant phlyum were labeled.
+![image](https://user-images.githubusercontent.com/28485220/166333192-718409d2-3fce-47cf-b0ae-682bccdbf086.png)
+
+`horsedonkey.taxa_counts.rel_abun.phylum.rmU.top30.fillmin.log10.heatmap.pdf`: the top 30 abundant phlyum 
+![image](https://user-images.githubusercontent.com/28485220/166333440-0a4163a3-baac-4f97-832a-2c9dd0bbf6d7.png)
+
+`horsedonkey.rel_abun.horsedonkey_vs_hinny.at_species.rel_abun.equal.top30.fillmin.log10.heatmap.pdf`: the top 30 equal species comparing horsedonkey and hinny. Missing values (relative abundance) were filled using global minimum value. All values were log10 transfered.
+
+![image](https://user-images.githubusercontent.com/28485220/166330581-d9906ab6-332f-423d-9cb9-49fdb2edb00f.png)
+`horsedonkey.rel_abun.horsedonkey_vs_hinny.at_species.rel_abun.unequal.top30.fillmin.log10.heatmap.pdf`: the top 30 unequal species comparing horsedonkey and hinny. Missing values (relative abundance) were filled using global minimum value. All values were log10 transfered.
+
+![image](https://user-images.githubusercontent.com/28485220/166333038-9a1153f0-0aea-4344-9206-ceced0e9d47e.png)
+
+`horsedonkey.rel_abun.horsedonkey_vs_hinny.at_species.rel_abun.unequal.Bacteroides.sp..CAG.144.boxplot.pdf`: the boxplot of Bacteroides.sp..CAG.144 showing statistic significant different 
+![image](https://user-images.githubusercontent.com/28485220/166333863-731a9747-b775-4fb3-a585-afdbab300883.png)
 
 ## metabolism analysis
 ## alpha/beta diversity analysis
