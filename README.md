@@ -62,7 +62,11 @@ I just list some warnings.
 
 # GEMINI outpus
 ## assembly analysis
+`horsedonkey.taxa_counts.tsv`: contig_ID  NCBI_taxa_ID  superkingdom  phylum  class order family  genus species number_of_sample1_reads_aligned_to_this_contig  number_of_sample2_reads_aligned_to_this_contig...
+`horsedonkey.horsedonkey_vs_hinny.contig_table.tsv`: similar as `horsedonkey.taxa_counts.tsv` besides q value and p value (group horsedonkey v.s. group hinny)
+`horsedonkey.horsedonkey_vs_hinny.contig_table.processed.tsv`: similar as `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv` besides relative abundance and counts per million reads for each sample in each contig.
 ## taxa analysis
+
 ## metabolism analysis
 ## alpha/beta diversity analysis
 ## lefse analysis
