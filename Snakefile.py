@@ -49,7 +49,8 @@ rule all:
         f"{assembly}/log/lefse_humann.done",
         f"{assembly}/log/lefse_taxa.done",
         f"{assembly}/log/taxa_barplots.done",
-        f"{assembly}/log/taxa_boxplot.done"
+        f"{assembly}/log/taxa_boxplot.done",
+        f"{assembly}/log/process_contig_table.done"
 
 
 # %% lefse
@@ -823,6 +824,23 @@ rule counts_table2rel_abun:
         shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
+rule process_contig_table:
+    input:
+        "{assembly}/log/prepare_contig_table_from_counts_table.done",
+    output:
+        "{assembly}/log/process_contig_table.done"
+    log:
+        "{assembly}/log/process_contig_table.log"
+    benchmark:
+        "{assembly}/benchmark/process_contig_table.benchmark"
+    run:
+        for group1, group2 in group_pair_list:
+            dp = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
+            samples = ','.join(sample_list)
+            output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.processed.tsv"
+            shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
+        shell("touch {assembly}/log/process_contig_table.done")
+
 rule prepare_contig_table_from_counts_table:
     input:
         "{assembly}/log/merge_counts_pure_and_kaiju.done",
@@ -917,8 +935,6 @@ rule kaiju_annotate:
     run:
         shell("{kaiju} -t {kaiju_nodes} -v -f {kaiju_fmi} -z {threads} -i {input}  -o {output.real} > {log} 2>&1 ")
         shell("touch {assembly}/log/kaiju_annotate.done")
-
-
 
 rule paste_counts_table:
     input:
