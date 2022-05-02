@@ -10,11 +10,12 @@ A light, fast, comprehensive and easy downstream pipeline for metagenomics whole
 6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
 8. check your humann databases `cd /path/to/databases` then `ll`
-9. check you're using right kaiju `which kaiju`
-10. download kaiju databases ``
-11. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-12. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
-13. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
+9. check your humann running `humann -i sample_reads.fastq -o sample_results`
+10. check you're using right kaiju `which kaiju`
+11. download kaiju databases ``
+12. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
+13. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
+14. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
 
 
 
