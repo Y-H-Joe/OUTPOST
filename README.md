@@ -9,49 +9,48 @@ A light, fast, comprehensive and easy downstream pipeline for metagenomics whole
 5. download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
 6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
-8. check your humann databases `cd /path/to/databases` then `ll`
-9. check your humann running `humann -i sample_reads.fastq -o sample_results`
+8. check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
+9. check your humann by running `humann -i sample_reads.fastq -o sample_results`
 10. check you're using right kaiju `which kaiju`
-11. download kaiju databases ``
+11. download kaiju databases `mkdir /path/to/kaijudb` them `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk`
 12. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-13. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
-14. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
-
-
-
+13. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
+14. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
+15. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
 
 # format of contig.tsv
-| samples | bam_dir                                                  | assembly1   | assembly1_dir                                                | assembly2 | assembly2_dir                                                | group1 | group2      |
-|---------|----------------------------------------------------------|-------------|--------------------------------------------------------------|-----------|--------------------------------------------------------------|--------|-------------|
-| donkey1 | /analysis1/yihang_analysis/pipeline/data/bam/donkey1.bam | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | donkey | horsedonkey |
-| donkey2 | /analysis1/yihang_analysis/pipeline/data/bam/donkey2.bam | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | donkey | horsedonkey |
-| donkey3 | /analysis1/yihang_analysis/pipeline/data/bam/donkey3.bam | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | donkey | horsedonkey |
-| hinny1  | /analysis1/yihang_analysis/pipeline/data/bam/hinny1.bam  |             | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      |                                                              |        | hinny       |
-| hinny2  | /analysis1/yihang_analysis/pipeline/data/bam/hinny2.bam  |             | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      |                                                              |        | hinny       |
-| hinny3  | /analysis1/yihang_analysis/pipeline/data/bam/hinny3.bam  |             | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      |                                                              |        | hinny       |
-| horse1  | /analysis1/yihang_analysis/pipeline/data/bam/horse1.bam  | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | horse  | horsedonkey |
-| horse2  | /analysis1/yihang_analysis/pipeline/data/bam/horse2.bam  | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | horse  | horsedonkey |
-| horse3  | /analysis1/yihang_analysis/pipeline/data/bam/horse3.bam  | hd | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hmdh      | /analysis1/yihang_analysis/pipeline/data/assembly/sample2.fa | horse  | horsedonkey |
+| samples | fq_dir                                                       | bam_dir                                                  | assembly    | assembly_dir                                                 | group               |   |   |
+|---------|--------------------------------------------------------------|----------------------------------------------------------|-------------|--------------------------------------------------------------|---------------------|---|---|
+| donkey1 | /analysis1/yihang_analysis/pipeline/data/reads/donkey1.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey1.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
+| hinny2  | /analysis1/yihang_analysis/pipeline/data/reads/hinny2.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny2.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
+| hinny3  | /analysis1/yihang_analysis/pipeline/data/reads/hinny3.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny3.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
+| horse1  | /analysis1/yihang_analysis/pipeline/data/reads/horse1.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse1.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
+| horse3  | /analysis1/yihang_analysis/pipeline/data/reads/horse3.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse3.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
+| donkey2 | /analysis1/yihang_analysis/pipeline/data/reads/donkey2.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey2.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
+| donkey3 | /analysis1/yihang_analysis/pipeline/data/reads/donkey3.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey3.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
+| horse2  | /analysis1/yihang_analysis/pipeline/data/reads/horse2.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse2.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
+| hinny1  | /analysis1/yihang_analysis/pipeline/data/reads/hinny1.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny1.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
 
-The ***samples*** column contains the ids of each sample. Each sample id should be unique. The id can be seperated with '_', but ***not*** with any other separators. 
 
-The ***bam_dir*** column contains the absolute directory of each ***bam***. The bam file should be generated by users, via aligning reads to assembly. Both PE and SE alignment are acceptable.
+The ***samples*** column contains the ids of each sample. Each sample id should be unique. The id can contain special characters like '_', but no ',' allowed.
 
-The ***assembly1*** column contains the name of 1st assembly. 
+The ***fq_dir*** column contains the absolute location of each fastq file. If you use PE end sequencing, `cat` them to one file, because humann3 asked so. 
 
-The ***assembly1_dir*** column contains the absolute directory of ***assembly1***.
+The ***bam_dir*** column contains the absolute directory of each ***bam***. The bam file should be generated by users, via aligning reads (both SE and PE mapping is acceptable) to assembly. 
 
-The ***group1*** column contains the group name of the each sample.
+The ***assembly*** column contains the name of 1st assembly. 
 
-For group comparison, we can have multiple ***assembly*** and ***group*** columns. Just change the suffix number of column, do ***not*** create 'interesting' columns like 'Assembly_3' or 'group-1', etc.
+The ***assembly_dir*** column contains the absolute directory of ***assembly***.
 
-The same group id should retain in same column. We should not see 'hinny' in both ***group1*** column and ***group2*** column.
+The ***group*** column contains the group name of the each sample. If one sample belong to multiple groups, seperate by ','. Each group should at least have 3 samples for statistical power concern.
+
+***do not change the name of columns***
 
 # group comparison starting from contig.tsv
-In the above case. We have two references, hd and hmdh. For groups, we have 'donkey', 'horse', 'horsedonkey', 'hinny'.
+In the above case. We have one reference, hmdh. For groups, we have 'donkey', 'horse', 'horsedonkey', 'hinny'.
 
 The pipeline will pair-wise compare all of them. Which are, 
-['donkey_vs_horse.hd','donkey_vs_horsedonkey.hd','donkey_vs_hinny.hd','horse_vs_horsedonky.hd','horse_vs_hinny.hd','horsedonkey_vs_hinny.hd',... and replace 'hd' with 'hmdh'].
+['donkey_vs_horse','donkey_vs_horsedonkey','donkey_vs_hinny','horse_vs_horsedonky','horse_vs_hinny','horsedonkey_vs_hinny',...].
 
 Since the statistic part is ultra-fast, finishing the group comparison should not cost too much time.
 
