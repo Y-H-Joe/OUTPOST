@@ -122,6 +122,15 @@ def check_config(df_config):
     assert "," not in "".join(sample_list + fq_list + bam_list) + assembly_dir + assembly,\
     "GEMINI: ',' is not allowed in names. exit."
 
+    # duplicate sample_list/fq_list/bam_list/comparison_dict for downstream comparison analysis
+    if len(group_list) == 1:
+        print("GEMINI: only one group detected. Duplicate to smooth downstream analysis")
+        sample_list_copy = [sample + '_copy' for sample in sample_list]
+        sample_list = sample_list + sample_list_copy
+        fq_list = fq_list * 2
+        bam_list = bam_list * 2
+        comparison_dict.update({(group_list[0] + '_copy') : sample_list_copy})
+
     return sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict
 
 
