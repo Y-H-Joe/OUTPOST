@@ -1,5 +1,5 @@
 # GEMINI
-A light, fast, comprehensive and easy downstream pipeline for metagenomics whole genome sequencing
+An auto-comparative, flexible, light and fast, downstream pipeline for metagenomics whole genome sequencing
 
 # GEMINI installation
 1. download `GEMINI.yml`
@@ -10,9 +10,9 @@ A light, fast, comprehensive and easy downstream pipeline for metagenomics whole
 6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
 8. check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
-9. check your humann by running `humann -i sample_reads.fastq -o sample_results`
+9. check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
 10. check you're using right kaiju `which kaiju`
-11. download kaiju databases `mkdir /path/to/kaijudb` them `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk`
+11. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk`
 12. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
 13. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
 14. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
@@ -46,13 +46,27 @@ The ***group*** column contains the group name of the each sample. If one sample
 
 ***do not change the name of columns***
 
-# group comparison starting from contig.tsv
 In the above case. We have one reference, hmdh. For groups, we have 'donkey', 'horse', 'horsedonkey', 'hinny'.
 
 The pipeline will pair-wise compare all of them. Which are, 
-['donkey_vs_horse','donkey_vs_horsedonkey','donkey_vs_hinny','horse_vs_horsedonky','horse_vs_hinny','horsedonkey_vs_hinny',...].
+['donkey_vs_horse','donkey_vs_horsedonkey','donkey_vs_hinny','horse_vs_horsedonky','horse_vs_hinny','horsedonkey_vs_hinny'].
 
-Since the statistic part is ultra-fast, finishing the group comparison should not cost too much time.
+# GEMINI usuage
+The usuage of GEMINI is very easy and light. If you successfully installed GEMINI and got all the expected outputs files in `horsedonkey` folder, you just need to replace the sample data with your own data, and modify the `GEMINI/config.tsv`.
+
+I just list some warnings.
+
+1. The working directory must be the parent directory of `GEMINI`, becasue the command line in Snakemake.py contains many sentences like `python3 GEMINI/python_script.py`.
+2. Snakemake (the framework GEMINI relied on) will lock working directory during running. So you should prepare two working directories if you're running two GEMINI pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/GEMINI` and `mkdir folder2/GEMINI`, copy the `Snakemake.py` to `folder1/Snakemake.py` and `folder2/Snakemake.py`. Then `cd folder1`, run GEMINI. Then `cd folder2`, run GEMINI.
+3. One GEMINI process only take one assembly. If you have multi assemblies to analyze, run GEMINI multiple times (fake parallel) on multiple computing nodes (in different working directories)
+
+# GEMINI outpus
+## assembly analysis
+## taxa analysis
+## metabolism analysis
+## alpha/beta diversity analysis
+## lefse analysis
+
 
 # common questions
 ## When running humann3, get `No MetaPhlAn BowTie2 database found (--index option)!` error.
