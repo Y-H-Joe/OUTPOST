@@ -30,7 +30,7 @@ databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
 top = 30
 cores = 32
-config="GEMINI/config.tsv"
+config="GEMINI/GEMINI_config.tsv"
 
 # %% GEMINI starts
 df_config=pd.read_csv(config,sep='\t')

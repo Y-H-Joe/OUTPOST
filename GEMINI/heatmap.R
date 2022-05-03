@@ -49,7 +49,7 @@ assignInNamespace(x="draw_colnames", value="draw_colnames_90",
 x=pheatmap(data,scale="none",fontsize_row = 6,cluster_rows=T, border_color = "NA",cluster_cols=T)
 if(data_type=='species'){
   width=dim(data)[2]/6
-  height= dim(data)[1]/3
+  height= dim(data)[1]
 }else if(data_type=='taxa'){
   width=dim(data)[2]/4
   height= dim(data)[1]/2
