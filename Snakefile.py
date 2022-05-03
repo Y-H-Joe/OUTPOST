@@ -355,6 +355,7 @@ rule extract_top_humann:
             output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv")
             shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: extract_top_humann_top_unequal_abundant has errors. exit."
 
@@ -370,6 +371,7 @@ rule extract_top_humann:
             output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv")
             shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: extract_top_humann_top_equal_abundant has errors. exit."
 
@@ -409,6 +411,7 @@ rule humann_utest:
                 pass
             shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
                   " {group2_index} {group2} {prefix_list} {paired} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/humann_utest.done")
@@ -522,7 +525,7 @@ rule humann_group:
 
 rule humann_annotate:
     input:
-        "{assembly}/log/humann_init.done"
+        "{assembly}/log/rename_humann_ori_output.done"
     output:
         "{assembly}/log/humann_annotate.done"
     log:
@@ -558,6 +561,55 @@ rule humann_annotate:
                       " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
 
         shell("touch {assembly}/log/humann_annotate.done")
+
+rule rename_humann_ori_output:
+    input:
+        "{assembly}/log/humann_init.done"
+    output:
+        "{assembly}/log/rename_humann_ori_output.done"
+    log:
+        "{assembly}/log/rename_humann_ori_output.log"
+    benchmark:
+        "{assembly}/benchmark/humann_init.benchmark"
+    run:
+        for sample,fq in zip(sample_list, fq_list):
+            # get the humann renamed file name, taken from humann source code
+            fq_humann = os.path.basename(fq)
+            # Remove gzip extension if present
+            if re.search('.gz$',fq_humann):
+                fq_humann='.'.join(fq_humann.split('.')[:-1])
+            # Remove input file extension if present
+            if '.' in input_file_basename:
+                fq_humann='.'.join(fq_humann.split('.')[:-1])
+
+            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
+                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv")
+            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
+                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv")
+            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv "
+                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv")
+
+            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv"
+            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv"
+            with open(file1,'r') as r, open(file2,'w') as w:
+                lines = r.readlines()
+                lines[0] = "# Gene Family\t" + sample + "_Abundance-RPKs\n"
+                w.write(lines)
+
+            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv"
+            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv"
+            with open(file1,'r') as r, open(file2,'w') as w:
+                lines = r.readlines()
+                lines[0] = "# Pathway\t" + sample + "_Abundance\n"
+                w.write(lines)
+
+            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv"
+            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv"
+            with open(file1,'r') as r, open(file2,'w') as w:
+                lines = r.readlines()
+                lines[0] = "# Pathway\t" + sample + "_Coverage\n"
+                w.write(lines)
+        shell("touch {assembly}/log/rename_humann_ori_output.done")
 
 rule humann_init:
     input:
@@ -726,6 +778,7 @@ rule extract_top_taxa:
             output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.unequal.top{top}.csv")
             shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: extract_top_taxa_top_unequal_abundant has errors. exit."
 
@@ -742,6 +795,7 @@ rule extract_top_taxa:
             output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.equal.top{top}.csv")
             shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: extract_top_taxa_top_equal_abundant has errors. exit."
 
@@ -801,6 +855,7 @@ rule rel_abun_utest:
                 pass
             shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
                   " {group2_index} {group2} {prefix_list} {paired} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/rel_abun_utest.done")
@@ -864,6 +919,7 @@ rule prepare_contig_table_from_counts_table:
                 pass
             shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
                   " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
+            time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
         shell("touch {assembly}/log/prepare_contig_table_from_counts_table.done")
