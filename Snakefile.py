@@ -582,11 +582,11 @@ rule rename_humann_ori_output:
             if '.' in fq_humann:
                 fq_humann='.'.join(fq_humann.split('.')[:-1])
 
-            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
+            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
                   " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv")
-            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
+            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
                   " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv")
-            shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv "
+            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv "
                   " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv")
 
             file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv"
