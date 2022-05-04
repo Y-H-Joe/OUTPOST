@@ -6,7 +6,6 @@ import itertools
 import time
 
 # %% command parameters
-bwa = 'bwa'
 kaiju = 'kaiju'
 python3 = 'python3'
 Rscript = 'Rscript'
@@ -594,21 +593,24 @@ rule rename_humann_ori_output:
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Gene Family\t" + sample + "_Abundance-RPKs\n"
-                w.write(lines)
+                for line in lines:
+                    w.write(line)
 
             file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv"
             file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv"
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Pathway\t" + sample + "_Abundance\n"
-                w.write(lines)
+                for line in lines:
+                    w.write(line)
 
             file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv"
             file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv"
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Pathway\t" + sample + "_Coverage\n"
-                w.write(lines)
+                for line in lines:
+                    w.write(line)
         shell("touch {assembly}/log/rename_humann_ori_output.done")
 
 rule humann_init:
