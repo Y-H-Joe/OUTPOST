@@ -71,19 +71,19 @@ def check_config(df_config):
     samples = df_config['samples']
     assert len(samples) == len(rm_nan_from_set(set(samples))),\
     "GEMINI: sample ids are not unique. exit."
-    sample_list=list(samples)
+    sample_list = [x.strip() for x in samples]
 
     # the bam of each sample should be unique
     bams = df_config['bam_dir']
     assert len(bams) == len(rm_nan_from_set(set(bams))),\
     "GEMINI: bam directory is not unique. exit."
-    bam_list = list(bams)
+    bam_list = [x.strip() for x in bams]
 
     # the fq of each sample should be unique
     fqs = df_config['fq_dir']
     assert len(fqs) == len(rm_nan_from_set(set(fqs))),\
     "GEMINI: fastq files are not unique. exit."
-    fq_list = list(fqs)
+    fq_list = [x.strip() for x in fqs]
 
     # only one assembly is accepted each run
     assert len(rm_nan_from_set(set(df_config['assembly']))) == 1,\
@@ -100,7 +100,7 @@ def check_config(df_config):
     groups_list = df_config['group']
     assert len(set(groups_list)) == len(rm_nan_from_set(set(groups_list))),\
     "GEMINI: detected sample which belongs to no group. exit."
-    groups_list = [x.split(',') for x in groups_list]
+    groups_list = [x.strip().split(',') for x in groups_list]
     group_list = [val for sublist in groups_list for val in sublist]
     group_count = dict(Counter(group_list))
     assert all([x >= 3 for x in group_count.values()]),\

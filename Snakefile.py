@@ -579,7 +579,7 @@ rule rename_humann_ori_output:
             if re.search('.gz$',fq_humann):
                 fq_humann='.'.join(fq_humann.split('.')[:-1])
             # Remove input file extension if present
-            if '.' in input_file_basename:
+            if '.' in fq_humann:
                 fq_humann='.'.join(fq_humann.split('.')[:-1])
 
             shell("mv {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
