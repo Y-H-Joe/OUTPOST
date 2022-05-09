@@ -28,27 +28,53 @@ taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus',
 databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
 top = 30
-cores = 32
+cores = 128
 config="GEMINI/GEMINI_config.tsv"
+skip_assembly_analysis = True
+skip_humann_init = True
 
-# %% GEMINI starts
+# %% GEMINI prepare
 df_config=pd.read_csv(config,sep='\t')
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
 
-rule all:
-    input:
-        f"{assembly}/log/heatmap_humann.done",
-        f"{assembly}/log/heatmap_taxa.done",
-        f"{assembly}/log/prepare_contig_table_from_counts_table.done",
-        f"{assembly}/log/alpha_beta_diversity.done",
-        f"{assembly}/log/lefse_humann.done",
-        f"{assembly}/log/lefse_taxa.done",
-        f"{assembly}/log/taxa_barplots.done",
-        f"{assembly}/log/taxa_boxplot.done",
-        f"{assembly}/log/process_contig_table.done"
+fq_humann_list = []
+for sample,fq in zip(sample_list, fq_list):
+    # get the humann renamed file name, taken from humann source code
+    fq_humann = os.path.basename(fq)
+    # Remove gzip extension if present
+    if re.search('.gz$',fq_humann):
+        fq_humann='.'.join(fq_humann.split('.')[:-1])
+    # Remove input file extension if present
+    if '.' in fq_humann:
+        fq_humann='.'.join(fq_humann.split('.')[:-1])
+    fq_humann_list.append(fq_humann)
 
+# %% GEMINI starts
+if skip_assembly_analysis:
+    rule all:
+        input:
+            f"{assembly}/log/heatmap_humann.done",
+            f"{assembly}/log/heatmap_taxa.done",
+            f"{assembly}/log/alpha_beta_diversity.done",
+            f"{assembly}/log/lefse_humann.done",
+            f"{assembly}/log/lefse_taxa.done",
+            f"{assembly}/log/taxa_barplots.done",
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/process_contig_table.done"
+else:
+    rule all:
+        input:
+            f"{assembly}/log/heatmap_humann.done",
+            f"{assembly}/log/heatmap_taxa.done",
+            f"{assembly}/log/prepare_contig_table_from_counts_table.done",
+            f"{assembly}/log/alpha_beta_diversity.done",
+            f"{assembly}/log/lefse_humann.done",
+            f"{assembly}/log/lefse_taxa.done",
+            f"{assembly}/log/taxa_barplots.done",
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/process_contig_table.done"
 # %% lefse
 rule lefse_taxa:
     input:
@@ -571,16 +597,7 @@ rule rename_humann_ori_output:
     benchmark:
         "{assembly}/benchmark/humann_init.benchmark"
     run:
-        for sample,fq in zip(sample_list, fq_list):
-            # get the humann renamed file name, taken from humann source code
-            fq_humann = os.path.basename(fq)
-            # Remove gzip extension if present
-            if re.search('.gz$',fq_humann):
-                fq_humann='.'.join(fq_humann.split('.')[:-1])
-            # Remove input file extension if present
-            if '.' in fq_humann:
-                fq_humann='.'.join(fq_humann.split('.')[:-1])
-
+        for sample, fq_humann in zip(sample_list, fq_humann_list):
             shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
                   " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv")
             shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
@@ -613,23 +630,31 @@ rule rename_humann_ori_output:
                     w.write(line)
         shell("touch {assembly}/log/rename_humann_ori_output.done")
 
-rule humann_init:
-    input:
-        fq_list
-    output:
-        "{assembly}/log/humann_init.done"
-    log:
-        "{assembly}/log/humann_init.log"
-    benchmark:
-        "{assembly}/benchmark/humann_init.benchmark"
-    threads: cores
-    run:
-        os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
-        for fq in fq_list:
-            shell("{humann} --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
-            " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
-            " --threads {threads} --memory-use maximum > {log} 2>&1 ")
-        shell("touch {assembly}/log/humann_init.done")
+if not skip_humann_init:
+    rule humann_init:
+        input:
+            fq_list
+        output:
+            "{assembly}/log/humann_init.done"
+        log:
+            "{assembly}/log/humann_init.log"
+        benchmark:
+            "{assembly}/benchmark/humann_init.benchmark"
+        threads: cores
+        run:
+            os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
+            for fq in fq_list:
+                shell("{humann} --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
+                " --threads {threads} --memory-use maximum > {log} 2>&1 ")
+            shell("touch {assembly}/log/humann_init.done")
+else:
+    humann_genefamilies = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv" for fq_humann in fq_humann_list]
+    humann_pathabundance = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv" for fq_humann in fq_humann_list]
+    humann_pathcoverage = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
+    assert all([os.path.exists(x) for x in humann_genefamilies + humann_pathabundance + humann_pathcoverage]),
+    f"GEMINI: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit."
+    shell("touch {assembly}/log/humann_init.done")
 
 # %% alpha_beta_diversity
 rule alpha_beta_diversity:
@@ -878,53 +903,55 @@ rule counts_table2rel_abun:
         shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
-rule process_contig_table:
-    input:
-        "{assembly}/log/prepare_contig_table_from_counts_table.done",
-    output:
-        "{assembly}/log/process_contig_table.done"
-    log:
-        "{assembly}/log/process_contig_table.log"
-    benchmark:
-        "{assembly}/benchmark/process_contig_table.benchmark"
-    run:
-        for group1, group2 in group_pair_list:
-            dp = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
-            samples = ','.join(sample_list)
-            output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.processed.tsv"
-            shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
-        shell("touch {assembly}/log/process_contig_table.done")
+if not skip_assembly_analysis:
+    rule process_contig_table:
+        input:
+            "{assembly}/log/prepare_contig_table_from_counts_table.done",
+        output:
+            "{assembly}/log/process_contig_table.done"
+        log:
+            "{assembly}/log/process_contig_table.log"
+        benchmark:
+            "{assembly}/benchmark/process_contig_table.benchmark"
+        run:
+            for group1, group2 in group_pair_list:
+                dp = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
+                samples = ','.join(sample_list)
+                output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.processed.tsv"
+                shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
+            shell("touch {assembly}/log/process_contig_table.done")
 
-rule prepare_contig_table_from_counts_table:
-    input:
-        "{assembly}/log/merge_counts_pure_and_kaiju.done",
-        real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
-    output:
-        "{assembly}/log/prepare_contig_table_from_counts_table.done"
-    log:
-        "{assembly}/log/prepare_contig_table_from_counts_table.log"
-    benchmark:
-        "{assembly}/benchmark/prepare_contig_table_from_counts_table.benchmark"
-    threads: cores
-    run:
-        output_list = []
-        for group1,group2 in group_pair_list:
-            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
-            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
-            samples = ','.join(sample_list)
-            output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
-            output_list.append(output)
-            error_log = os.getcwd() + f"/{assembly}/log/prepare_contig_table_from_counts_table.error"
-            try:
-                os.remove(error_log) # clean former residual error log
-            except:
-                pass
-            shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
-                  " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
-            time.sleep(60)
-        result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
-        shell("touch {assembly}/log/prepare_contig_table_from_counts_table.done")
+if not skip_assembly_analysis:
+    rule prepare_contig_table_from_counts_table:
+        input:
+            "{assembly}/log/merge_counts_pure_and_kaiju.done",
+            real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+        output:
+            "{assembly}/log/prepare_contig_table_from_counts_table.done"
+        log:
+            "{assembly}/log/prepare_contig_table_from_counts_table.log"
+        benchmark:
+            "{assembly}/benchmark/prepare_contig_table_from_counts_table.benchmark"
+        threads: cores
+        run:
+            output_list = []
+            for group1,group2 in group_pair_list:
+                group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+                group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+                samples = ','.join(sample_list)
+                output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
+                output_list.append(output)
+                error_log = os.getcwd() + f"/{assembly}/log/prepare_contig_table_from_counts_table.error"
+                try:
+                    os.remove(error_log) # clean former residual error log
+                except:
+                    pass
+                shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
+                      " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
+                time.sleep(60)
+            result = ge.wait_unti_file_exists(output_list,error_log)
+            assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
+            shell("touch {assembly}/log/prepare_contig_table_from_counts_table.done")
 
 rule merge_counts_pure_and_kaiju:
     input:
