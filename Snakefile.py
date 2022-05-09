@@ -652,7 +652,7 @@ else:
     humann_genefamilies = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv" for fq_humann in fq_humann_list]
     humann_pathabundance = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv" for fq_humann in fq_humann_list]
     humann_pathcoverage = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
-    assert all([os.path.exists(x) for x in humann_genefamilies + humann_pathabundance + humann_pathcoverage]),
+    assert all([os.path.exists(x) for x in humann_genefamilies + humann_pathabundance + humann_pathcoverage]),\
     f"GEMINI: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit."
     shell("touch {assembly}/log/humann_init.done")
 
