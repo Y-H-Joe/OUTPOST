@@ -61,8 +61,7 @@ if skip_assembly_analysis:
             f"{assembly}/log/lefse_humann.done",
             f"{assembly}/log/lefse_taxa.done",
             f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done",
-            f"{assembly}/log/process_contig_table.done"
+            f"{assembly}/log/taxa_boxplot.done"
 else:
     rule all:
         input:
@@ -73,8 +72,7 @@ else:
             f"{assembly}/log/lefse_humann.done",
             f"{assembly}/log/lefse_taxa.done",
             f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done",
-            f"{assembly}/log/process_contig_table.done"
+            f"{assembly}/log/taxa_boxplot.done"
 # %% lefse
 rule lefse_taxa:
     input:
