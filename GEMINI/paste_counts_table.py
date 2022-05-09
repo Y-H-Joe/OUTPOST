@@ -9,29 +9,17 @@ Contact: yihangjoe@foxmail.com
          https://github.com/Y-H-Joe/
 
 ####============================ description ==============================####
-namefile:
-CPS20007_meta_w01_meta_onlyPE_nonCanFam31virusrRNA_align2meta22_sorted.bam.CPS_meta22_contigs.counts
-CPS20007_meta_w02_meta_onlyPE_nonCanFam31virusrRNA_align2meta22_sorted.bam.CPS_meta22_contigs.counts
-CPS20007_meta_w03_meta_onlyPE_nonCanFam31virusrRNA_align2meta22_sorted.bam.CPS_meta22_contigs.counts
+idx file:
+hmdh_nucl_000000001	96	0	0
+hmdh_nucl_000000002	156	0	0
 
-this script should be processed in the folder containing all needed files.
-
-counts file:
-horsedonkeymeta18_000000000032	492	0	0
-horsedonkeymeta18_000000000033	523	2	0
-
-the 4 columns are: equence name, sequence length, # mapped read-segments and # unmapped read-segments.
+the 4 columns are: sequence name, sequence length, # mapped read-segments and # unmapped read-segments.
 we need the 3rd column.
 #================================== input =====================================
-
 #================================== output ====================================
-
 #================================ parameters ==================================
-
 #================================== example ===================================
-python3 paste_counts_table_together.py 4 namefile.paste_counts_table_together.txt CPS_freewhelp.counts.pure
 #================================== warning ===================================
-
 ####=======================================================================####
 """
 import os
