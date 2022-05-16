@@ -10,13 +10,14 @@ An auto-comparative, flexible, light and fast, downstream pipeline for metagenom
 6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
 8. check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
-9. check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
-10. check you're using right kaiju `which kaiju`
-11. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory)
-12. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-13. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
-14. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
-15. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
+9. check your humann's misc folder. Located at `/path/to/your/anaconda/envs/GEMINI/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . 
+10. check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
+11. check you're using right kaiju `which kaiju`
+12. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory)
+13. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
+14. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
+15. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
+16. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
 
 # format of contig.tsv
 | samples | fq_dir                                                       | bam_dir                                                  | assembly    | assembly_dir                                                 | group               |   |   |
