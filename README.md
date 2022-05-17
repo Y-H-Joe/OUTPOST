@@ -19,7 +19,7 @@ An auto-comparative, flexible, light and fast, downstream pipeline for metagenom
 15. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
 16. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
 
-# format of contig.tsv
+# format of GEMINI_config.tsv
 | samples | fq_dir                                                       | bam_dir                                                  | assembly    | assembly_dir                                                 | group               |   |   |
 |---------|--------------------------------------------------------------|----------------------------------------------------------|-------------|--------------------------------------------------------------|---------------------|---|---|
 | donkey1 | /analysis1/yihang_analysis/pipeline/data/reads/donkey1.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey1.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
@@ -60,6 +60,8 @@ I just list some warnings.
 1. The working directory must be the parent directory of `GEMINI`, becasue the command line in Snakemake.py contains many sentences like `python3 GEMINI/python_script.py`.
 2. Snakemake (the framework GEMINI relied on) will lock working directory during running. So you should prepare two working directories if you're running two GEMINI pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/GEMINI` and `mkdir folder2/GEMINI`, copy the `Snakemake.py` to `folder1/Snakemake.py` and `folder2/Snakemake.py`. Then `cd folder1`, run GEMINI. Then `cd folder2`, run GEMINI.
 3. One GEMINI process only take one assembly. If you have multi assemblies to analyze, run GEMINI multiple times (fake parallel) on multiple computing nodes (in different working directories)
+4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based GEMINI can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So GEMINI provide `skip_humann_init` option. Set `skip_humann_init = True` in `GEMINI_config.tsv`, then GEMINI will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder.
+5. GEMINI offers `skip_assembly_analysis` in `GEMINI_config.tsv`. 
 
 # GEMINI outpus
 ## assembly analysis
