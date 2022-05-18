@@ -2,6 +2,7 @@
 An auto-comparative, flexible, light and fast, downstream pipeline for metagenomics whole genome sequencing
 
 # GEMINI installation
+0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
 1. download `GEMINI.yml`
 2. create the conda environment `conda env create --name GEMINI --file GEMINI.yml `
 3. activate the environment `conda activate GEMINI`
