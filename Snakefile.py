@@ -22,6 +22,7 @@ humann_split_stratified_table = '/home/yihang/anaconda3/envs/pipeline2/bin/human
 humann_rename_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_rename_table'
 lefse_format_input = 'lefse_format_input.py'
 lefse_run = 'lefse_run.py'
+abricate = 'abricate'
 
 # %% settings
 taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
@@ -30,7 +31,7 @@ paired = False
 top = 30
 cores = 128
 config="GEMINI/GEMINI_config.tsv"
-skip_assembly_analysis = True
+skip_MAG_analysis = True
 skip_humann_init = True
 
 # %% GEMINI prepare
@@ -52,7 +53,7 @@ for sample,fq in zip(sample_list, fq_list):
     fq_humann_list.append(fq_humann)
 
 # %% GEMINI starts
-if skip_assembly_analysis:
+if skip_MAG_analysis:
     rule all:
         input:
             f"{assembly}/log/heatmap_humann.done",
@@ -61,7 +62,10 @@ if skip_assembly_analysis:
             f"{assembly}/log/lefse_humann.done",
             f"{assembly}/log/lefse_taxa.done",
             f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done"
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/virulence_analysis.done",
+            f"{assembly}/log/plasmid_analysis.done",
+            f"{assembly}/log/antibiotic_analysis.done"
 else:
     rule all:
         input:
@@ -72,7 +76,12 @@ else:
             f"{assembly}/log/lefse_humann.done",
             f"{assembly}/log/lefse_taxa.done",
             f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done"
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/virulence_analysis.done",
+            f"{assembly}/log/plasmid_analysis.done",
+            f"{assembly}/log/antibiotic_analysis.done"
+
+
 # %% lefse
 rule lefse_taxa:
     input:
@@ -719,7 +728,67 @@ rule alpha_beta_diversity:
         shell("touch {assembly}/log/alpha_beta_diversity.done")
 
 
+# %% plasmid
+rule plasmid_analysis:
+    input:
+        assembly_dir
+    output:
+        "{assembly}/log/plasmid_analysis.done"
+    log:
+        "{assembly}/log/plasmid_analysis.log"
+    benchmark:
+        "{assembly}/benchmark/plasmid_analysis.benchmark"
+    run:
+        output_dir = f"{assembly}/plasmid_analysis"
+        os.makedirs(output_dir, exist_ok=True)
 
+        shell("{abricate} {input} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
+
+        shell("touch {assembly}/log/plasmid_analysis.done")
+
+
+# %% virulence
+rule virulence_analysis:
+    input:
+        assembly_dir
+    output:
+        "{assembly}/log/virulence_analysis.done"
+    log:
+        "{assembly}/log/virulence_analysis.log"
+    benchmark:
+        "{assembly}/benchmark/virulence_analysis.benchmark"
+    run:
+        output_dir = f"{assembly}/virulence_analysis"
+        os.makedirs(output_dir, exist_ok=True)
+
+        shell("{abricate} {input} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
+        shell("{abricate} {input} --db vfdb --quiet > {output_dir}/{assembly}.vfdb.tsv")
+
+        shell("touch {assembly}/log/virulence_analysis.done")
+
+
+# %% antibiotic
+rule antibiotic_analysis:
+    input:
+        assembly_dir
+    output:
+        "{assembly}/log/antibiotic_analysis.done"
+    log:
+        "{assembly}/log/antibiotic_analysis.log"
+    benchmark:
+        "{assembly}/benchmark/antibiotic_analysis.benchmark"
+    run:
+        output_dir = f"{assembly}/antibiotic_analysis"
+        os.makedirs(output_dir, exist_ok=True)
+
+        shell("{abricate} {input} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
+        shell("{abricate} {input} --db argannot --quiet > {output_dir}/{assembly}.argannot.tsv")
+        shell("{abricate} {input} --db card --quiet > {output_dir}/{assembly}.card.tsv")
+        shell("{abricate} {input} --db ecoh --quiet > {output_dir}/{assembly}.ecoh.tsv")
+        shell("{abricate} {input} --db megares --quiet > {output_dir}/{assembly}.megares.tsv")
+        shell("{abricate} {input} --db ncbi --quiet > {output_dir}/{assembly}.ncbiAMR.tsv")
+
+        shell("touch {assembly}/log/antibiotic_analysis.done")
 
 
 # %% taxonomy
@@ -915,7 +984,7 @@ rule counts_table2rel_abun:
         shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
-if not skip_assembly_analysis:
+if not skip_MAG_analysis:
     rule process_contig_table:
         input:
             "{assembly}/log/prepare_contig_table_from_counts_table.done",
@@ -933,7 +1002,7 @@ if not skip_assembly_analysis:
                 shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
             shell("touch {assembly}/log/process_contig_table.done")
 
-if not skip_assembly_analysis:
+if not skip_MAG_analysis:
     rule prepare_contig_table_from_counts_table:
         input:
             "{assembly}/log/merge_counts_pure_and_kaiju.done",
