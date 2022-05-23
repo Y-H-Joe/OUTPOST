@@ -97,3 +97,5 @@ I just list some warnings.
 Basically, the cause is the wrong installation of humann3.
 1. google it. Try `metaphlan —install`. Then re-run snakemake.
 2. if 1. not work. check the error log, try to find this sentence `Expecting location /the/expection/location`; `cd` to the location, examine any file truncation/loss. If there be, remove all files in the `/the/expection/location`, re-run `metaphlan —install`. Then re-run snakemake.
+## How to deploy GEMINI on Slurm/PBS system?
+Refer to this [answer](https://stackoverflow.com/questions/53545690/how-to-activate-a-specific-python-environment-as-part-of-my-submission-to-slurm). I tried and succeeded. 
