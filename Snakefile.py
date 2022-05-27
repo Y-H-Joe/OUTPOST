@@ -33,6 +33,7 @@ cores = 128
 config="GEMINI/GEMINI_config.tsv"
 skip_MAG_analysis = True
 skip_humann_init = True
+skip_kaiju = True
 
 # %% GEMINI prepare
 df_config=pd.read_csv(config,sep='\t')
@@ -1002,7 +1003,6 @@ if not skip_MAG_analysis:
                 shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
             shell("touch {assembly}/log/process_contig_table.done")
 
-if not skip_MAG_analysis:
     rule prepare_contig_table_from_counts_table:
         input:
             "{assembly}/log/merge_counts_pure_and_kaiju.done",
@@ -1052,52 +1052,76 @@ rule merge_counts_pure_and_kaiju:
         shell("{Rscript} GEMINI/merge_counts_and_kaiju.R {input.counts_dp} {input.kaiju_dp} {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv")
         shell("touch {assembly}/log/merge_counts_pure_and_kaiju.done")
 
-rule format_kaiju_output:
-    input:
-        "{assembly}/log/kaiju_addTaxonNames.done",
-        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
-    output:
-        "{assembly}/log/format_kaiju_output.done",
-        "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
-    log:
-        "{assembly}/log/format_kaiju_output.log"
-    benchmark:
-        "{assembly}/benchmark/format_kaiju_output.benchmark"
-    run:
-        shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {input.real}")
-        shell("touch {assembly}/log/format_kaiju_output.done")
+if not skip_kaiju:
+    rule format_kaiju_output:
+        input:
+            "{assembly}/log/kaiju_addTaxonNames.done",
+            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+        output:
+            "{assembly}/log/format_kaiju_output.done",
+            "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+        log:
+            "{assembly}/log/format_kaiju_output.log"
+        benchmark:
+            "{assembly}/benchmark/format_kaiju_output.benchmark"
+        run:
+            shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {input.real}")
+            shell("touch {assembly}/log/format_kaiju_output.done")
 
-rule kaiju_addTaxonNames:
-    input:
-        "{assembly}/log/kaiju_annotate.done",
-        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
-    output:
-        "{assembly}/log/kaiju_addTaxonNames.done",
-        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
-    log:
-        "{assembly}/log/kaiju_addTaxonNames.log"
-    benchmark:
-        "{assembly}/benchmark/kaiju_addTaxonNames.benchmark"
-    threads: cores
-    run:
-        shell("{kaiju_addTaxonNames} -i {input.real} -o {output.real} -t  {kaiju_nodes} -n {kaiju_names} "
-        " -v -r superkingdom,phylum,class,order,family,genus,species > {log} 2>&1 ")
-        shell("touch {assembly}/log/kaiju_addTaxonNames.done")
+    rule kaiju_addTaxonNames:
+        input:
+            "{assembly}/log/kaiju_annotate.done",
+            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+        output:
+            "{assembly}/log/kaiju_addTaxonNames.done",
+            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+        log:
+            "{assembly}/log/kaiju_addTaxonNames.log"
+        benchmark:
+            "{assembly}/benchmark/kaiju_addTaxonNames.benchmark"
+        threads: cores
+        run:
+            shell("{kaiju_addTaxonNames} -i {input.real} -o {output.real} -t  {kaiju_nodes} -n {kaiju_names} "
+            " -v -r superkingdom,phylum,class,order,family,genus,species > {log} 2>&1 ")
+            shell("touch {assembly}/log/kaiju_addTaxonNames.done")
 
-rule kaiju_annotate:
-    input:
-        assembly_dir
-    output:
-        "{assembly}/log/kaiju_annotate.done",
-        real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
-    threads: cores
-    log:
-        "{assembly}/log/kaiju_annotate.log"
-    benchmark:
-        "{assembly}/benchmark/kaiju_annotate.benchmark"
-    run:
-        shell("{kaiju} -t {kaiju_nodes} -v -f {kaiju_fmi} -z {threads} -i {input}  -o {output.real} > {log} 2>&1 ")
-        shell("touch {assembly}/log/kaiju_annotate.done")
+    rule kaiju_annotate:
+        input:
+            assembly_dir
+        output:
+            "{assembly}/log/kaiju_annotate.done",
+            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+        threads: cores
+        log:
+            "{assembly}/log/kaiju_annotate.log"
+        benchmark:
+            "{assembly}/benchmark/kaiju_annotate.benchmark"
+        run:
+            shell("{kaiju} -t {kaiju_nodes} -v -f {kaiju_fmi} -z {threads} -i {input}  -o {output.real} > {log} 2>&1 ")
+            shell("touch {assembly}/log/kaiju_annotate.done")
+else:
+    rule skip_kaiju:
+        input:
+            assembly_dir
+        output:
+            "{assembly}/log/format_kaiju_output.done",
+            "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+        log:
+            "{assembly}/log/skip_kaiju.log"
+        benchmark:
+            "{assembly}/benchmark/skip_kaiju.benchmark"
+        run:
+            files = [f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref",\
+                     f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm",\
+                     f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"]
+            assert all([os.path.exists(x) for x in files]),\
+            f"GEMINI: detected missing kaiju files under {assembly}/taxa_analysis/kaiju/. cannot skip kaiju. exit."
+            try:
+                shell("mkdir -p {assembly}/log/")
+            except:
+                pass
+            shell("touch {assembly}/log/format_kaiju_output.done")
+
 
 rule paste_counts_table:
     input:
