@@ -1111,6 +1111,7 @@ else:
         benchmark:
             "{assembly}/benchmark/skip_kaiju.benchmark"
         run:
+            shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm")
             files = [f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref",\
                      f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm",\
                      f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"]
