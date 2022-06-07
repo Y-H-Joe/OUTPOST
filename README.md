@@ -1,5 +1,5 @@
 # GEMINI
-An multi-group comparative, flexible, light and fast, downstream pipeline for metagenomics whole genome sequencing
+An multi-group comparative, flexible, light and fast, downstream pipeline for metagenomics whole genome sequencing analysis.
 
 # GEMINI installation
 0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
