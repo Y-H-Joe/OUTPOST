@@ -10,16 +10,16 @@ kaiju = 'kaiju'
 python3 = 'python3'
 Rscript = 'Rscript'
 kaiju_addTaxonNames = 'kaiju-addTaxonNames'
-kaiju_nodes = '/home/yihang/software/kaijudb_nr_euk/nodes.dmp'
-kaiju_fmi = '/home/yihang/software/kaijudb_nr_euk/nr_euk/kaiju_db_nr_euk.fmi'
-kaiju_names = '/home/yihang/software/kaijudb_nr_euk/names.dmp'
+kaiju_nodes = '/data0/yihang/databases/kaiju/nodes.dmp'
+kaiju_fmi = '/data0/yihang/databases/kaiju/nr_euk/kaiju_db_nr_euk.fmi'
+kaiju_names = '/data0/yihang/databases/kaiju/names.dmp'
 samtools = 'samtools'
-humann = '/home/yihang/anaconda3/envs/pipeline2/bin/humann3'
-humann_renorm_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_renorm_table'
-humann_regroup_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_regroup_table'
-humann_join_tables = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_join_tables'
-humann_split_stratified_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_split_stratified_table'
-humann_rename_table = '/home/yihang/anaconda3/envs/pipeline2/bin/humann_rename_table'
+humann = '/home/yihang/anaconda3/envs/GEMINI/bin/humann3'
+humann_renorm_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_renorm_table'
+humann_regroup_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_regroup_table'
+humann_join_tables = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_join_tables'
+humann_split_stratified_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_split_stratified_table'
+humann_rename_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_rename_table'
 lefse_format_input = 'lefse_format_input.py'
 lefse_run = 'lefse_run.py'
 abricate = 'abricate'
@@ -29,11 +29,11 @@ taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus',
 databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
 top = 30
-cores = 128
-config="GEMINI/GEMINI_config.tsv"
-skip_MAG_analysis = True
+cores = 32
+config="GEMINI/GEMINI_config_3.tsv"
+skip_MAG_analysis = False
 skip_humann_init = True
-skip_kaiju = True
+skip_kaiju = False
 
 # %% GEMINI prepare
 df_config=pd.read_csv(config,sep='\t')
@@ -652,7 +652,7 @@ if not skip_humann_init:
         run:
             os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
             for fq in fq_list:
-                shell("{humann} --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
                 " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
                 " --threads {threads} --memory-use maximum > {log} 2>&1 ")
             shell("touch {assembly}/log/humann_init.done")
@@ -670,8 +670,9 @@ else:
             humann_genefamilies = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv" for fq_humann in fq_humann_list]
             humann_pathabundance = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv" for fq_humann in fq_humann_list]
             humann_pathcoverage = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
-            assert all([os.path.exists(x) for x in humann_genefamilies + humann_pathabundance + humann_pathcoverage]),\
-            f"GEMINI: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit."
+            missing_humann = [file for file in humann_genefamilies + humann_pathabundance + humann_pathcoverage if not os.path.exists(file)]
+            assert len(missing_humann) == 0,\
+            f"GEMINI: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit. expecting {missing_humann}"
             try:
                 shell("mkdir -p {assembly}/log/")
             except:
