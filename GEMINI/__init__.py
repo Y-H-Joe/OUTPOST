@@ -35,14 +35,18 @@ check_config = GEMINI.check_config.check_config
 func_begin = GEMINI.functools.func_begin
 func_end = GEMINI.functools.func_end
 
-def wait_unti_file_exists(dp_list, error_log):
+def wait_unti_file_exists(dp_list, error_log, max_circle = 1800):
+    print(f"GEMINI: waiting for {dp_list}")
+    circle = 0
     for dp in dp_list:
-        while True:
+        while circle <= max_circle:
             if os.path.exists(dp):
                 time.sleep(5)
                 break
             else:
                 time.sleep(10)
+                circle += 1
             if os.path.exists(error_log):
                 return False
     return True
+    

@@ -31,11 +31,12 @@ paired = False
 top = 30
 cores = 32
 config="GEMINI/GEMINI_config_3.tsv"
-skip_MAG_analysis = False
+skip_MAG_analysis = True
 skip_humann_init = True
 skip_kaiju = False
 
 # %% GEMINI prepare
+shell("ulimit -s 65535")
 df_config=pd.read_csv(config,sep='\t')
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config)
 bam_basename=[os.path.basename(x) for x in bam_list]
@@ -826,7 +827,14 @@ rule scale_rel_abun_table:
             output_list += output_list_unequal
         dp_list = ','.join(dp_list)
         output_list = ','.join(output_list)
-        shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+        try:
+            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+        except:
+            # in case augment is too long
+            dp_list_chunks = [dp_list.split(',')[i:i + 100] for i in range(0, len(dp_list.split(',')), 100)]
+            output_list_chunks = [output_list.split(',')[i:i + 100] for i in range(0, len(output_list.split(',')), 100)]
+            for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
+                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
         shell("touch {assembly}/log/scale_rel_abun_table.done")
 
 rule taxa_barplots:
