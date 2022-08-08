@@ -48,5 +48,6 @@ def wait_unti_file_exists(dp_list, error_log, max_circle = 1800):
                 circle += 1
             if os.path.exists(error_log):
                 return False
+            if circle == max_circle:
+                print(f"GEMINI: reached max_circle {max_circle}. quit waiting.")
     return True
-    
