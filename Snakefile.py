@@ -31,7 +31,7 @@ paired = False
 top = 30
 cores = 32
 config="GEMINI/GEMINI_config_3.tsv"
-skip_MAG_analysis = True
+skip_MAG_analysis = False
 skip_humann_init = True
 skip_kaiju = False
 
@@ -831,9 +831,12 @@ rule scale_rel_abun_table:
             shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
         except:
             # in case augment is too long
+            print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
             dp_list_chunks = [dp_list.split(',')[i:i + 100] for i in range(0, len(dp_list.split(',')), 100)]
             output_list_chunks = [output_list.split(',')[i:i + 100] for i in range(0, len(output_list.split(',')), 100)]
             for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
+                dp_list_chunk = ','.join(dp_list_chunk)
+                output_list_chunk = ','.join(output_list_chunk)
                 shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
         shell("touch {assembly}/log/scale_rel_abun_table.done")
 
@@ -1038,7 +1041,7 @@ if not skip_MAG_analysis:
                     pass
                 shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
                       " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
-                time.sleep(60)
+                time.sleep(300)
             result = ge.wait_unti_file_exists(output_list,error_log)
             assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
             shell("touch {assembly}/log/prepare_contig_table_from_counts_table.done")
