@@ -26,14 +26,15 @@ import sys
 from collections import Counter
 # import re
 import os
+import pandas as pd
 
-def check_config(df_config):
+def check_config(df_config, rm_batch_effect):
     """ check the config.tsv. """
     def rm_nan_from_set(s):
         return {x for x in s if x==x}
 
     # the column names should be formated
-    samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col = 0,0,0,0,0,0
+    samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col,batch_col = 0,0,0,0,0,0,0
     cols = df_config.columns
 
     if len(cols) > len(rm_nan_from_set(set(cols))):
@@ -64,9 +65,14 @@ def check_config(df_config):
             group_col += 1
             continue
 
-    assert all([x == 1 for x in [samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col]]),\
+        elif col == 'batch':
+            batch_col += 1
+            continue
+
+    assert all([x == 1 for x in [samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col,batch_col]]),\
     "GEMINI: detected errors in columns of contig.tsv. exit."
 
+    ###================= check each column =================###
     # the id of each sample should be unique
     samples = df_config['samples']
     assert len(samples) == len(rm_nan_from_set(set(samples))),\
@@ -113,6 +119,14 @@ def check_config(df_config):
                 samples.append(sample_list[index])
         comparison_dict[group] = samples
 
+    # batch column should be full or empty
+    batch_list = [x for x in df_config['batch']]
+    assert sum(pd.isna(batch_list)) in [0,len(batch_list)],\
+        "GEMINI: the batch column should be full or empty. exit."
+    assert bool(rm_batch_effect) is not bool(pd.isna(batch_list[0])),\
+        "GEMINI: conflicts between the parameter 'rm_batch_effect' and actual 'batch' column filling status. exit."
+
+    ###================= check others =================###
     # detect files existence
     files = bam_list + fq_list + [assembly_dir]
     assert all([os.path.exists(x) for x in files]),\

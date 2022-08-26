@@ -29,7 +29,7 @@ import numpy as np
 import heapq
 import os
 
-def scal_rel_abun(dp,output, rmOthers = False, drop_or_fill = 1):
+def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False, drop_or_fill = 1):
     #basename=os.path.basename(dp)
     #output_name=os.path.join(r"../taxa_abun/figs/",basename)
     #dp=r"C:\CurrentProjects\CPS_micro_ts\sample140_abun_top.20.7.rmU.euk.tsv"
@@ -54,14 +54,19 @@ def scal_rel_abun(dp,output, rmOthers = False, drop_or_fill = 1):
     if dropna_or_fillmin==0:
         pass
     else:
-        df.replace(0,second_min/10,inplace=True)
+        if not rm_batch_effect:
+            df.replace(0,second_min/10,inplace=True)
     ## norm
     # df_norm = (df - df.min()) / (df.max() - df.min())
 
     ## log10
-    df_log10=df.apply(np.log)
-    df_log10.replace([np.inf, -np.inf], np.nan, inplace=True)
-
+    if not rm_batch_effect:
+        df_log10=df.apply(np.log)
+        df_log10.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df_log10.to_csv(output,index = True,sep = ',')
+    else:
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df.to_csv(output,index = True,sep = ',')
 
     ## log2
     # df_log2=df.apply(np.log2)
@@ -81,11 +86,6 @@ def scal_rel_abun(dp,output, rmOthers = False, drop_or_fill = 1):
 # =============================================================================
 
     # output_log10=str(dp.strip('.csv')+suffix1+suffix2+".log10"+".csv")
-    df_log10.to_csv(output,index = True,sep = ',')
-    # output_log2=str(dp.strip('.csv')+suffix1+suffix2+".log2"+".csv")
-    # df_log2.to_csv(output_log2,index=True,sep=',')
-    # output_norm=str(dp.strip('.csv'+suffix1+suffix2+".norm"+".csv")
-    # df_norm.to_csv(output_norm,index=True,sep=',')
 
     """
     sns.set(color_codes=True)
@@ -111,13 +111,14 @@ def scal_rel_abun(dp,output, rmOthers = False, drop_or_fill = 1):
 if __name__=='__main__':
     dp_list = sys.argv[1].split(',')
     output_list = sys.argv[2].split(',')
+    rm_batch_effect = sys.argv[3]
 
     for dp,output in zip(dp_list,output_list):
         #dp=str(r"../taxa_abun/rel_abun/sample12_rel_abun."+str(i)+".rmU.euk.csv.top30.csv")
         #dp=r"../taxa_abun/utest/sample12_rel_abun.{}.rmU.euk.csv_relative_abun_unequal_horse_vs_donkey.csv.top30.csv".format(str(i))
         assert os.path.exists(dp), f"GEMINI: scale_rel_abun_table: {dp} doesn't exist. exit."
         try:
-            scal_rel_abun(dp, output)
+            scal_rel_abun(dp, output, rm_batch_effect)
         except:
             os.system(f"touch {output}")
 

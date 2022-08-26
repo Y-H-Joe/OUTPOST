@@ -1,9 +1,11 @@
 import pandas as pd
+import numpy as np
 import os
 import sys
 import GEMINI as ge
 import itertools
 import time
+import shutil
 
 # %% command parameters
 kaiju = 'kaiju'
@@ -30,15 +32,16 @@ databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
 top = 30
 cores = 32
-config="GEMINI/GEMINI_config_3.tsv"
-skip_MAG_analysis = False
+config="GEMINI/GEMINI_config_3_batch_effect.tsv"
+skip_MAG_analysis = True
 skip_humann_init = True
 skip_kaiju = False
+rm_batch_effect = [False,'Combat','Limma'][2]
 
 # %% GEMINI prepare
 shell("ulimit -s 65535")
 df_config=pd.read_csv(config,sep='\t')
-sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config)
+sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config, rm_batch_effect)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
 
@@ -168,9 +171,12 @@ rule lefse_humann:
             output_list = [wkdir + os.path.basename(dp).replace(".tsv",".pdf") for dp in dp_list]
 
             for dp,format_,res,output in zip(dp_list,format_list,res_list,output_list):
-                shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
-                shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                try:
+                    shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
+                    shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
+                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                except:
+                    print(f"GEMINI: lefse_humann: cannot process {dp}. skip.")
 
         shell("touch {assembly}/log/lefse_humann.done")
 
@@ -256,9 +262,9 @@ rule heatmap_taxa:
         # top taxa heatmap
         data_type = 'taxa'
         for level in taxa_level:
-            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.log10.csv"
+            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
             output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-            index_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.log10.index"
+            index_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.index"
             with open(index_dp,'w') as w:
                 for sample in sample_list:
                     w.write(sample + '\n')
@@ -268,9 +274,9 @@ rule heatmap_taxa:
         # top unequal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.log10.csv"
+                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.log10.index"
+                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -282,9 +288,9 @@ rule heatmap_taxa:
         # top equal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.log10.csv"
+                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.log10.index"
+                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -414,7 +420,7 @@ rule extract_top_humann:
 
 rule humann_utest:
     input:
-        "{assembly}/log/humann2rel_abun.done"
+        "{assembly}/log/humann_batch_effect.done"
     output:
         "{assembly}/log/humann_utest.done"
     log:
@@ -449,6 +455,32 @@ rule humann_utest:
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/humann_utest.done")
+
+rule humann_batch_effect:
+    input:
+        "{assembly}/log/humann2rel_abun.done"
+    output:
+        "{assembly}/log/humann_batch_effect.done"
+    log:
+        "{assembly}/log/humann_batch_effect.log"
+    benchmark:
+        "{assembly}/benchmark/humann_batch_effect.benchmark"
+    run:
+        if rm_batch_effect:
+            os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
+            for group in list(comparison_dict.keys()) + ['allSamples']:
+                for database in databases:
+                    source_rel_abun_table = f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+                    target_rel_abun_table = f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.has_batch_effect.csv"
+                    before_plot = f"{assembly}/batch_effect/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.before_rm_batch_effect.pdf"
+                    after_plot =  f"{assembly}/batch_effect/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.after_rm_batch_effect.pdf"
+                    try:
+                        shutil.copy(source_rel_abun_table,target_rel_abun_table)
+                    except IOError as e:
+                        print("GEMINI: humann_batch_effect: ", e)
+                        continue
+                    shell("{Rscript} GEMINI/rm_batch_effect.R {rm_batch_effect} {target_rel_abun_table} {source_rel_abun_table} {config} {before_plot} {after_plot} > {log} 2>&1")
+        shell("touch {assembly}/log/humann_batch_effect.done")
 
 rule humann2rel_abun:
     input:
@@ -709,10 +741,17 @@ rule alpha_beta_diversity:
             species_new_df = species_df.reindex(group1_name + group2_name)
             genus_new_df = genus_df.reindex(group1_name + group2_name)
 
+            # alpha beta diversity need values be positive
+            # inverse transfer of CLR, but doesnot multiply geometric mean back
+            if rm_batch_effect:
+                species_new_df = np.exp(species_new_df)
+                genus_new_df = np.exp(genus_new_df)
+
             species_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.species.rmU.{group1}_vs_{group2}.csv"
             genus_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.genus.rmU.{group1}_vs_{group2}.csv"
             species_new_df.to_csv(species_new_dp,index=True)
             genus_new_df.to_csv(genus_new_dp,index=True)
+
 
             index_file = wkdir + "/index.txt"
             with open(index_file,'w') as w:
@@ -807,18 +846,18 @@ rule scale_rel_abun_table:
     run:
         dp_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
                        for level in taxa_level]
-        output_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.log10.csv"
+        output_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
                        for level in taxa_level]
 
         for group1,group2 in group_pair_list:
             dp_list_equal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
                                       for level in taxa_level]
-            output_list_equal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.log10.csv"
+            output_list_equal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                                           for level in taxa_level]
 
             dp_list_unequal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
                                         for level in taxa_level]
-            output_list_unequal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.log10.csv"
+            output_list_unequal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                                             for level in taxa_level]
 
             dp_list += dp_list_equal
@@ -828,7 +867,7 @@ rule scale_rel_abun_table:
         dp_list = ','.join(dp_list)
         output_list = ','.join(output_list)
         try:
-            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list} {rm_batch_effect}")
         except:
             # in case augment is too long
             print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
@@ -837,7 +876,7 @@ rule scale_rel_abun_table:
             for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
                 dp_list_chunk = ','.join(dp_list_chunk)
                 output_list_chunk = ','.join(output_list_chunk)
-                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
+                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk} {rm_batch_effect}")
         shell("touch {assembly}/log/scale_rel_abun_table.done")
 
 rule taxa_barplots:
@@ -949,7 +988,7 @@ rule taxa_boxplot:
 
 rule rel_abun_utest:
     input:
-        "{assembly}/log/counts_table2rel_abun.done"
+        "{assembly}/log/taxa_batch_effect.done"
     output:
         "{assembly}/log/rel_abun_utest.done"
     log:
@@ -980,6 +1019,31 @@ rule rel_abun_utest:
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/rel_abun_utest.done")
+
+rule taxa_batch_effect:
+    input:
+        "{assembly}/log/counts_table2rel_abun.done"
+    output:
+        "{assembly}/log/taxa_batch_effect.done"
+    log:
+        "{assembly}/log/taxa_batch_effect.log"
+    benchmark:
+        "{assembly}/benchmark/taxa_batch_effect.benchmark"
+    run:
+        if rm_batch_effect:
+            os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
+            for level in taxa_level:
+                source_rel_abun_table = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                target_rel_abun_table = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.has_batch_effect.csv"
+                before_plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.before_rm_batch_effect.pdf"
+                after_plot =  f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.after_rm_batch_effect.pdf"
+                try:
+                    shutil.copy(source_rel_abun_table,target_rel_abun_table)
+                except IOError as e:
+                    print("GEMINI: taxa_batch_effect: ", e)
+                    continue
+                shell("{Rscript} GEMINI/rm_batch_effect.R {rm_batch_effect} {target_rel_abun_table} {source_rel_abun_table} {config} {before_plot} {after_plot} > {log} 2>&1")
+        shell("touch {assembly}/log/taxa_batch_effect.done")
 
 rule counts_table2rel_abun:
     input:
