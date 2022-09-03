@@ -48,20 +48,20 @@ assignInNamespace(x="draw_colnames", value="draw_colnames_90",
 # x=pheatmap(data,scale='none',fontsize_row = 6,cluster_rows=F, border_color = "NA",cluster_cols=F,breaks=c(seq(-6,0,by=((0-(-6))/100))))
 x=pheatmap(data,scale="none",fontsize_row = 6,cluster_rows=T, border_color = "NA",cluster_cols=T)
 if(data_type=='species'){
-  width=dim(data)[2]/6
-  height= dim(data)[1]
+  width= max(dim(data)[2]/6, 8)
+  height= max(dim(data)[1]/3, 8)
 }else if(data_type=='taxa'){
-  width=dim(data)[2]/4
-  height= dim(data)[1]/2
+  width= max(dim(data)[2]/4, 8)
+  height= max(dim(data)[1]/2, 8)
 }else if(data_type=='humann'){
-  width=dim(data)[2]/3
-  height= dim(data)[1]*2
+  width= max(dim(data)[2]/3, 8)
+  height= max(dim(data)[1]*2, 8)
 }else if(data_type=='function'){
-  width=dim(data)[2]/8
-  height= dim(data)[1]*0.7
+  width= max(dim(data)[2]/8, 8)
+  height= max(dim(data)[1]*0.7, 8)
 }else if(data_type=='pvalue'){
-  width=dim(data)[2]
-  height= dim(data)[1]
+  width= max(dim(data)[2], 8)
+  height= max(dim(data)[1], 8)
 }
 
 save_pheatmap_pdf <- function(x, filename, width, height) {
