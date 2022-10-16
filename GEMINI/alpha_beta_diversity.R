@@ -12,6 +12,7 @@ wkdir = args[2]
 index_dir = args[3]
 group_dir = args[4]
 groups = args[5]
+level = args[6]
 
 # dp = r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\horsedonkey.taxa_counts.rel_abun.genus.rmU.horsedonkey_vs_hinny.csv}"
 # wkdir=r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny}"
@@ -42,7 +43,7 @@ Simpson_evenness = Simpson/taxa_num
 # output
 report = cbind(Shannon,Simpson, Inv_Simpson,Pielou_evenness, Simpson_evenness)
 report = as.data.frame(report) %>% rownames_to_column(var = "ID")
-report_dp = "alpha_diversity.csv"
+report_dp = paste("alpha_diversity.at_",level,".csv",sep = "")
 write.table(report,file = report_dp,sep=",",row.names = FALSE)
 
 # draw alpha_diversity box plot
@@ -55,7 +56,7 @@ alphas = colnames(alpha_diversity)
 alphas = alphas[alphas!="Group"]
 
 for (alpha in alphas){
-  pdf(file=paste(alpha,"alpha_diveristy.pdf",sep="."))
+  pdf(file=paste(alpha,"alpha_diveristy.at_",level,"pdf",sep="."))
   #draw scatter-plots and mark outliers
   p <- ggboxplot(alpha_diversity,x="Group",y=alpha,add="dotplot",color = "Group", palette = "jco") +
       theme(legend.position="right") +
@@ -75,9 +76,9 @@ bray.mat.ln=as.matrix(bray.dist.ln)
 spe.jaccard<-vegdist(spe,method="jaccard")
 spe.jaccard.mat=as.matrix(spe.jaccard)
 
-write.table(bray.mat,file="bray.csv",sep=",",col.names=NA)
-write.table(bray.mat.ln,file="bray_ln.csv",sep=",",col.names=NA)
-write.table(spe.jaccard.mat,file="jaccard.csv",sep=",",col.names=NA)
+write.table(bray.mat,file= paste("bray.at_",level,".csv",sep = ""),sep=",",col.names=NA)
+write.table(bray.mat.ln,file=paste("bray_ln.at_",level,".csv",sep = ""),sep=",",col.names=NA)
+write.table(spe.jaccard.mat,file=paste("jaccard.at_",level,".csv",sep = ""),sep=",",col.names=NA)
 
 #plot PCoA
 beta_pcoa=function (dis_mat, metadata, groupID = "Group", ellipse = T,
@@ -155,19 +156,19 @@ beta_pcoa=function (dis_mat, metadata, groupID = "Group", ellipse = T,
 p12=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="Group", ellipse = T,label = T, PCo = 12)
 p13=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="Group", ellipse = T,label = T, PCo = 13)
 p23=beta_pcoa(dis_mat=spe.jaccard.mat,metadata=group, groupID="Group", ellipse = T,label = T, PCo = 23)
-ggsave(paste0("PCoA12.jaccard.pdf"), p12$one, width=89, height=56, units="mm")
-ggsave(paste0("PCoA13.jaccard.pdf"), p13$one, width=89, height=56, units="mm")
-ggsave(paste0("PCoA23.jaccard.pdf"), p23$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA12.jaccard.at_",level,".pdf",sep = "")), p12$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA13.jaccard.at_",level,".pdf",sep = "")), p13$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA23.jaccard.at_",level,".pdf",sep = "")), p23$one, width=89, height=56, units="mm")
 # bray curtis
 p12=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="Group", ellipse = T, label = T, PCo = 12)
 p13=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="Group", ellipse = T, label = T, PCo = 13)
 p23=beta_pcoa(dis_mat=bray.mat,metadata=group, groupID="Group", ellipse = T, label = T, PCo = 23)
-ggsave(paste0("PCoA12.bray.pdf"), p12$one, width=89, height=56, units="mm")
-ggsave(paste0("PCoA13.bray.pdf"), p13$one, width=89, height=56, units="mm")
-ggsave(paste0("PCoA23.bray.pdf"), p23$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA12.bray.at_",level,".pdf",sep = "")), p12$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA13.bray.at_",level,".pdf",sep = "")), p13$one, width=89, height=56, units="mm")
+ggsave(paste0(paste("PCoA23.bray.at_",level,".pdf",sep = "")), p23$one, width=89, height=56, units="mm")
 
 # add P-value
-beta_pcoa_stat=function (dis_mat, metadata, groupID = "Group", result = "beta_pcoa_stat.txt",method="bray")
+beta_pcoa_stat=function (dis_mat, metadata, groupID = "Group", result = paste("beta_pcoa_stat_at",level,".txt",sep = ""),method="bray")
 {
   p_list = c("vegan")
   for (p in p_list) {
@@ -213,8 +214,8 @@ beta_pcoa_stat=function (dis_mat, metadata, groupID = "Group", result = "beta_pc
 }
 
 # use adonis to detect pair-wise difference and save
-beta_pcoa_stat(spe.jaccard.mat, group, "Group", "beta_pcoa_P-value.jaccard.csv","jaccard")
-beta_pcoa_stat(bray.mat, group, "Group","beta_pcoa_P-value.bray.csv","bray")
+beta_pcoa_stat(spe.jaccard.mat, group, "Group", paste("beta_pcoa_P-value.jaccard.at_",level,".csv",sep = ""),"jaccard")
+beta_pcoa_stat(bray.mat, group, "Group",paste("beta_pcoa_P-value.bray.at_",level,".csv",sep = ""),"bray")
 
 
 # 3d pca

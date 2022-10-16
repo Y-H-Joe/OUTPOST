@@ -23,8 +23,8 @@ taxa = taxa[taxa!="treatment"]
 for (taxo in taxa){
   pdf(file=paste(output,taxo,"boxplot.pdf",sep="."))
   #draw scatter-plots and mark outliers
-  p<-#ggplot(input_csv, aes_string(x="treatment", y=taxo,fill="treatment")) + 
-    ggboxplot(input_csv,x="treatment",y=taxo,add="dotplot", color = "treatment", palette = "jco") + 
+  p<-#ggplot(input_csv, aes_string(x="treatment", y=taxo,fill="treatment")) +
+    ggboxplot(input_csv,x="treatment",y=taxo,add="dotplot", color = "treatment", palette = "jco") +
     #geom_boxplot(outlier.colour=NULL, outlier.shape=NULL,outlier.size=NULL,coef=1.5)+
     theme(legend.position="right")+
     labs(title=taxo, y = "relative abundance")+
@@ -36,7 +36,7 @@ for (taxo in taxa){
   print(p)
   dev.off()
 }
-dev.off()
+try(dev.off())
 
 
 

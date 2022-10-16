@@ -46,7 +46,7 @@ assignInNamespace(x="draw_colnames", value="draw_colnames_90",
 ## scale = column/row/none
 # x=pheatmap(data,scale='none',fontsize_row = 6,cluster_rows=T, border_color = "NA",cluster_cols=T ,breaks=c(seq(0,0.05,by=((0.05-(0))/100))))
 # x=pheatmap(data,scale='none',fontsize_row = 6,cluster_rows=F, border_color = "NA",cluster_cols=F,breaks=c(seq(-6,0,by=((0-(-6))/100))))
-x=pheatmap(data,scale="none",fontsize_row = 6,cluster_rows=T, border_color = "NA",cluster_cols=T)
+x=pheatmap(data,scale="none",fontsize_row = 6,cluster_rows=T, border_color = "NA",cluster_cols=F)
 if(data_type=='species'){
   width= max(dim(data)[2]/6, 8)
   height= max(dim(data)[1]/3, 8)

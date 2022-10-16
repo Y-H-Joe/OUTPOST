@@ -442,7 +442,7 @@ rule humann_utest:
             group2_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group2]])
             prefix_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}"
                        for database in databases])
-            output = f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
+            output = f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{databases[-1]}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
             output_list.append(output)
             error_log = os.getcwd() + f"/{assembly}/log/humann_utest.error"
             try:
@@ -725,16 +725,22 @@ rule alpha_beta_diversity:
     threads: cores
     run:
         for group1,group2 in group_pair_list:
-            wkdir = f"{assembly}/alpha_beta_analysis/alpha_beta_{group1}_vs_{group2}"
+            wkdir = f"{assembly}/diversity_analysis/alpha_beta_{group1}_vs_{group2}"
             os.makedirs(wkdir, exist_ok=True)
             group1_new_name = [f"{sample}_{group1}" for sample in comparison_dict[group1]]
             group2_new_name = [f"{sample}_{group2}" for sample in comparison_dict[group2]]
 
             group1_name = comparison_dict[group1]
             group2_name = comparison_dict[group2]
-
-            species_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.species.rmU.csv"
-            genus_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.genus.rmU.csv"
+            if ('species' in taxa_level) and ('genus' in taxa_level):
+                species = 'species'
+                genus = 'genus'
+            else:
+                species = taxa_level[-1]
+                genus = taxa_level[-2]
+                print(f"GEMINI: rule alpha_beta_diversity species and genus not in {taxa_level}. use the last two {taxa_level[-1]} {taxa_level[-2]} instead.")
+            species_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{species}.rmU.csv"
+            genus_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{genus}.rmU.csv"
             species_df = pd.read_csv(species_dp,index_col=0)
             genus_df = pd.read_csv(genus_dp,index_col=0)
 
@@ -747,11 +753,11 @@ rule alpha_beta_diversity:
                 species_new_df = np.exp(species_new_df)
                 genus_new_df = np.exp(genus_new_df)
 
-            species_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.species.rmU.{group1}_vs_{group2}.csv"
-            genus_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.genus.rmU.{group1}_vs_{group2}.csv"
+            species_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.{species}.rmU.{group1}_vs_{group2}.csv"
+            genus_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.{genus}.rmU.{group1}_vs_{group2}.csv"
+
             species_new_df.to_csv(species_new_dp,index=True)
             genus_new_df.to_csv(genus_new_dp,index=True)
-
 
             index_file = wkdir + "/index.txt"
             with open(index_file,'w') as w:
@@ -766,12 +772,13 @@ rule alpha_beta_diversity:
                 for new_name in group2_new_name:
                     w.write(f"{new_name},{group2},A\n")
 
-            shell("{Rscript} GEMINI/alpha_beta_diversity.R {genus_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} > {log} 2>&1")
+            shell("{Rscript} GEMINI/alpha_beta_diversity.R {species_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {species} > {log} 2>&1")
+            shell("{Rscript} GEMINI/alpha_beta_diversity.R {genus_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {genus} > {log} 2>&1")
         shell("touch {assembly}/log/alpha_beta_diversity.done")
 
 
 # %% plasmid
-rule plasmid_analysis:
+rule plasmid_alignment:
     input:
         assembly_dir
     output:
@@ -790,7 +797,7 @@ rule plasmid_analysis:
 
 
 # %% virulence
-rule virulence_analysis:
+rule virulence_alignment:
     input:
         assembly_dir
     output:
@@ -810,7 +817,7 @@ rule virulence_analysis:
 
 
 # %% antibiotic
-rule antibiotic_analysis:
+rule antibiotic_alignment:
     input:
         assembly_dir
     output:
@@ -980,10 +987,10 @@ rule taxa_boxplot:
             dp_list = [f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv" for level in taxa_level]
             for dp in dp_list:
                 output = f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{os.path.basename(dp).replace('.csv','')}"
-            try:
-                shell("{Rscript} GEMINI/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
-            except:
-                pass
+                try:
+                    shell("{Rscript} GEMINI/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
+                except:
+                    pass
         shell("touch {assembly}/log/taxa_boxplot.done")
 
 rule rel_abun_utest:
