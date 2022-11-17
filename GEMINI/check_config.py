@@ -29,6 +29,8 @@ import os
 import pandas as pd
 
 def check_config(df_config, rm_batch_effect):
+    if rm_batch_effect == 'None': rm_batch_effect = False
+
     """ check the config.tsv. """
     def rm_nan_from_set(s):
         return {x for x in s if x==x}
@@ -123,8 +125,14 @@ def check_config(df_config, rm_batch_effect):
     batch_list = [x for x in df_config['batch']]
     assert sum(pd.isna(batch_list)) in [0,len(batch_list)],\
         "GEMINI: the batch column should be full or empty. exit."
-    assert bool(rm_batch_effect) is not bool(pd.isna(batch_list[0])),\
-        "GEMINI: conflicts between the parameter 'rm_batch_effect' and actual 'batch' column filling status. exit."
+
+    if sum(pd.isna(batch_list)) == 0:
+        assert bool(rm_batch_effect) is bool(len(set(batch_list)) > 1),\
+         "GEMINI: chose not to 'rm_batch_effect' but detect multiple batches in the 'batch' column. Or chose to 'rm_batch_effect' but detect only 1 batch in the 'batch' column exit."
+    if sum(pd.isna(batch_list)) == len(batch_list):
+        assert bool(rm_batch_effect) is False,\
+         "GEMINI: No batch information in the 'batch' column, so only accept to not to 'rm_batch_effect'. exit."
+
 
     ###================= check others =================###
     # detect files existence

@@ -12,16 +12,16 @@ kaiju = 'kaiju'
 python3 = 'python3'
 Rscript = 'Rscript'
 kaiju_addTaxonNames = 'kaiju-addTaxonNames'
-kaiju_nodes = '/data0/yihang/databases/kaiju/nodes.dmp'
-kaiju_fmi = '/data0/yihang/databases/kaiju/nr_euk/kaiju_db_nr_euk.fmi'
-kaiju_names = '/data0/yihang/databases/kaiju/names.dmp'
+kaiju_nodes = '/home/yihang/softwares/kaiju_databases_older_nr/nodes.dmp'
+kaiju_fmi = '/home/yihang/softwares/kaiju_databases_older_nr/kaiju_db_nr.fmi'
+kaiju_names = '/home/yihang/softwares/kaiju_databases_older_nr/names.dmp'
 samtools = 'samtools'
-humann = '/home/yihang/anaconda3/envs/GEMINI/bin/humann3'
-humann_renorm_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_renorm_table'
-humann_regroup_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_regroup_table'
-humann_join_tables = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_join_tables'
-humann_split_stratified_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_split_stratified_table'
-humann_rename_table = '/home/yihang/anaconda3/envs/GEMINI/bin/humann_rename_table'
+humann = '/home/yihang/miniconda3/envs/GEMINI/bin/humann3'
+humann_renorm_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_renorm_table'
+humann_regroup_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_regroup_table'
+humann_join_tables = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_join_tables'
+humann_split_stratified_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_split_stratified_table'
+humann_rename_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_rename_table'
 lefse_format_input = 'lefse_format_input.py'
 lefse_run = 'lefse_run.py'
 abricate = 'abricate'
@@ -30,17 +30,20 @@ abricate = 'abricate'
 taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
 databases = ['rxn','eggnog','ko','level4ec','pfam']
 paired = False
-top = 30
-cores = 32
-config="GEMINI/GEMINI_config_3_batch_effect.tsv"
-skip_MAG_analysis = True
+top = 20
+cores = 80
+config="GEMINI/GEMINI_config_cat_nr.csv"
+skip_MAG_analysis = False
 skip_humann_init = True
 skip_kaiju = False
-rm_batch_effect = [False,'Combat','Limma'][2]
+rm_batch_effect = ['None','Combat','Limma'][0]
 
 # %% GEMINI prepare
 shell("ulimit -s 65535")
-df_config=pd.read_csv(config,sep='\t')
+try:
+    df_config=pd.read_csv(config,sep='\t')
+except:
+    sys.exit(f"GEMINI: read {config} error. Make sure file exists in tab separated format.")
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config, rm_batch_effect)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
@@ -274,9 +277,9 @@ rule heatmap_taxa:
         # top unequal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.scaled.csv"
+                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top30.fillmin.scaled.index"
+                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -284,13 +287,15 @@ rule heatmap_taxa:
                         w.write(f"{sample}_{group2}\n")
                 try:
                     shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
-                except: pass
+                except:
+                    print(f"=================={Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+
         # top equal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.scaled.csv"
+                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top30.fillmin.scaled.index"
+                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{30}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -466,7 +471,7 @@ rule humann_batch_effect:
     benchmark:
         "{assembly}/benchmark/humann_batch_effect.benchmark"
     run:
-        if rm_batch_effect:
+        if rm_batch_effect != 'None':
             os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
             for group in list(comparison_dict.keys()) + ['allSamples']:
                 for database in databases:
@@ -749,7 +754,7 @@ rule alpha_beta_diversity:
 
             # alpha beta diversity need values be positive
             # inverse transfer of CLR, but doesnot multiply geometric mean back
-            if rm_batch_effect:
+            if rm_batch_effect != "None":
                 species_new_df = np.exp(species_new_df)
                 genus_new_df = np.exp(genus_new_df)
 
@@ -1037,7 +1042,7 @@ rule taxa_batch_effect:
     benchmark:
         "{assembly}/benchmark/taxa_batch_effect.benchmark"
     run:
-        if rm_batch_effect:
+        if rm_batch_effect != 'None':
             os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
             for level in taxa_level:
                 source_rel_abun_table = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
@@ -1238,6 +1243,5 @@ rule idxstats:
         for bam,basename in zip(bam_list,bam_basename):
             shell(f"{samtools} idxstats --threads {threads} {bam} > {assembly}/taxa_analysis/temp/{basename}.idxstats ")
         shell("touch {assembly}/log/idxstats.done")
-
 
 

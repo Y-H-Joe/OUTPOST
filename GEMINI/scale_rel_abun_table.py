@@ -29,14 +29,12 @@ import numpy as np
 import heapq
 import os
 
-def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False, drop_or_fill = 1):
+def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False):
     #basename=os.path.basename(dp)
     #output_name=os.path.join(r"../taxa_abun/figs/",basename)
     #dp=r"C:\CurrentProjects\CPS_micro_ts\sample140_abun_top.20.7.rmU.euk.tsv"
     #dp=r"D:\CurrentProjects\equids_MHC\Prj1\humann3\pvalue_matrix_ec_upper_rxn_down.csv"
 
-    ## drop NA or fill with 0.1*global_minium
-    dropna_or_fillmin=[0,1][drop_or_fill]
 
     ### need to care about the index_col
     df=pd.read_csv(dp,sep=",",index_col=0)
@@ -51,22 +49,16 @@ def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False, drop_or_fill = 1)
 
     ## clean original data
     df.dropna(axis=1, how='all',inplace=True)
-    if dropna_or_fillmin==0:
-        pass
-    else:
-        if not rm_batch_effect:
-            df.replace(0,second_min/10,inplace=True)
+    df.replace(0,second_min/10000000000,inplace=True)
+    
     ## norm
     # df_norm = (df - df.min()) / (df.max() - df.min())
 
     ## log10
-    if not rm_batch_effect:
-        df_log10=df.apply(np.log)
-        df_log10.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df_log10.to_csv(output,index = True,sep = ',')
-    else:
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.to_csv(output,index = True,sep = ',')
+    df_log10=df.apply(np.log)
+    df_log10.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df_log10.to_csv(output,index = True,sep = ',')
+
 
     ## log2
     # df_log2=df.apply(np.log2)
@@ -109,10 +101,14 @@ def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False, drop_or_fill = 1)
     """
 
 if __name__=='__main__':
-    dp_list = sys.argv[1].split(',')
-    output_list = sys.argv[2].split(',')
-    rm_batch_effect = sys.argv[3]
+    # dp_list = sys.argv[1].split(',')
+    dp_list = [r'D:\downloads\cat_all_seqs\taxa_analysis\top_taxa_normal_vs_obese\cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.csv']
 
+    #output_list = sys.argv[2].split(',')
+    output_list = [r'D:\downloads\cat_all_seqs\taxa_analysis\top_taxa_normal_vs_obese\cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.aa.csv']
+    # rm_batch_effect = sys.argv[3]
+    # if rm_batch_effect == "None": rm_batch_effect = False
+    rm_batch_effect = False
     for dp,output in zip(dp_list,output_list):
         #dp=str(r"../taxa_abun/rel_abun/sample12_rel_abun."+str(i)+".rmU.euk.csv.top30.csv")
         #dp=r"../taxa_abun/utest/sample12_rel_abun.{}.rmU.euk.csv_relative_abun_unequal_horse_vs_donkey.csv.top30.csv".format(str(i))
