@@ -105,4 +105,12 @@ Refer to this [answer](https://stackoverflow.com/questions/53545690/how-to-activ
 ## Can't locate File/Slurp.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /home/yzz0191/anaconda3/envs/GEMINI/bin/abricate line 9.
 I occured this when submitting GEMINI to Slurm system. The reason is `~/anaconda3/envs/GEMINI/bin/abricate`, the `abricate` was written in Perl, and the first line of `abricate` is `#!/usr/bin/env perl`. So, comment this line out, add a new head line `#! /path/to/your/anaconda3/bin/perl` (modify /path/to/your !), will solve it.
 ## When use GEMINI.yml create conda environment, occurred Bioconductor related issues.
-`conda env remove GEMINI` to clean the failed GEMINI environment. Then use `GEMINI_without_bioconductor.yml` to create a new GEMINI environment. Then `conda activate GEMINI`, then type `R` to open the R command line, then install the R library in R scripts manually one by one. Then follow the left normal GEMINI install instruction.
+`conda env remove GEMINI` to clean the failed GEMINI environment. Then use `GEMINI_without_bioconductor.yml` to create a new GEMINI environment. Then `conda activate GEMINI`, then type `R` to open the R command line, then install the R library in R scripts manually one by one. Then follow the left normal GEMINI install instruction. The R libraries include `mixOmics`,`gridExtra`,`sva`,`ggplot2`,`limma`,`grid`,`edgeR`,`DESeq2`,`pheatmap`,`wesanderson`,`ggpubr`,`Ipaper`,`reshape2`
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install('mixOmics')
+BiocManager::install("sva")
+BiocManager::install("DESeq2")
+install.packages('remotes')
+
