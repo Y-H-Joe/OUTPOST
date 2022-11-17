@@ -137,8 +137,11 @@ def check_config(df_config, rm_batch_effect):
     ###================= check others =================###
     # detect files existence
     files = bam_list + fq_list + [assembly_dir]
-    assert all([os.path.exists(x) for x in files]),\
-    "GEMINI: detect non-exist files (fq/bam/assembly). exit."
+    for file in files:
+        if not os.path.exists(file):
+            sys.exit(f"GEMINI: detect missing {file}. exit")
+    # assert all([os.path.exists(x) for x in files]),\
+    # "GEMINI: detect missing files (fq/bam/assembly). exit."
 
     # detect unwanted symbols
     assert "," not in "".join(sample_list + fq_list + bam_list) + assembly_dir + assembly,\
