@@ -11,11 +11,11 @@ An multi-group comparative, flexible, light and fast, downstream pipeline for me
 6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
 8. check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
-9. check your humann's misc folder. Located at `/path/to/your/anaconda/envs/GEMINI/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . 
+9. check your humann's misc folder. Located at `/path/to/your/anaconda/envs/GEMINI/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . Or unzip the `misc.zip` in the `utils` folder.
 10. check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
 11. check you're using right kaiju `which kaiju`
-12. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory)
-13. check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
+12. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju servier](https://kaiju.binf.ku.dk/server).
+13. check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
 14. install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
 15. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
 16. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
@@ -104,3 +104,13 @@ Basically, the cause is the wrong installation of humann3.
 Refer to this [answer](https://stackoverflow.com/questions/53545690/how-to-activate-a-specific-python-environment-as-part-of-my-submission-to-slurm). I tried and succeeded. 
 ## Can't locate File/Slurp.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /home/yzz0191/anaconda3/envs/GEMINI/bin/abricate line 9.
 I occured this when submitting GEMINI to Slurm system. The reason is `~/anaconda3/envs/GEMINI/bin/abricate`, the `abricate` was written in Perl, and the first line of `abricate` is `#!/usr/bin/env perl`. So, comment this line out, add a new head line `#! /path/to/your/anaconda3/bin/perl` (modify /path/to/your !), will solve it.
+## When use GEMINI.yml create conda environment, occurred Bioconductor related issues.
+`conda env remove GEMINI` to clean the failed GEMINI environment. Then use `GEMINI_without_bioconductor.yml` to create a new GEMINI environment. Then `conda activate GEMINI`, then type `R` to open the R command line, then install the R library in R scripts manually one by one. Then follow the left normal GEMINI install instruction. The R libraries include `mixOmics`,`gridExtra`,`sva`,`ggplot2`,`limma`,`grid`,`edgeR`,`DESeq2`,`pheatmap`,`wesanderson`,`ggpubr`,`Ipaper`,`reshape2`
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install('mixOmics')
+BiocManager::install("sva")
+BiocManager::install("DESeq2")
+install.packages('remotes')
+
