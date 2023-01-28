@@ -96,15 +96,17 @@ I just list some warnings.
 
 
 # common questions
-## When running humann3, get `No MetaPhlAn BowTie2 database found (--index option)!` error.
+### When running humann3, get `No MetaPhlAn BowTie2 database found (--index option)!` error.
 Basically, the cause is the wrong installation of humann3.
 1. google it. Try `metaphlan —install`. Then re-run snakemake.
 2. if 1. not work. check the error log, try to find this sentence `Expecting location /the/expection/location`; `cd` to the location, examine any file truncation/loss. If there be, remove all files in the `/the/expection/location`, re-run `metaphlan —install`. Then re-run snakemake.
-## How to deploy GEMINI on Slurm/PBS system?
+
+### How to deploy GEMINI on Slurm/PBS system?
 Refer to this [answer](https://stackoverflow.com/questions/53545690/how-to-activate-a-specific-python-environment-as-part-of-my-submission-to-slurm). I tried and succeeded. 
-## Can't locate File/Slurp.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /home/yzz0191/anaconda3/envs/GEMINI/bin/abricate line 9.
+
+### Can't locate File/Slurp.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /home/yzz0191/anaconda3/envs/GEMINI/bin/abricate line 9.
 I occured this when submitting GEMINI to Slurm system. The reason is `~/anaconda3/envs/GEMINI/bin/abricate`, the `abricate` was written in Perl, and the first line of `abricate` is `#!/usr/bin/env perl`. So, comment this line out, add a new head line `#! /path/to/your/anaconda3/bin/perl` (modify /path/to/your !), will solve it.
-## When use GEMINI.yml create conda environment, occurred Bioconductor related issues.
+### When use GEMINI.yml create conda environment, occurred Bioconductor related issues.
 `conda env remove GEMINI` to clean the failed GEMINI environment. Then use `GEMINI_without_bioconductor.yml` to create a new GEMINI environment. Then `conda activate GEMINI`, then type `R` to open the R command line, then install the R library in R scripts manually one by one. Then follow the left normal GEMINI install instruction. The R libraries include `mixOmics`,`gridExtra`,`sva`,`ggplot2`,`limma`,`grid`,`edgeR`,`DESeq2`,`pheatmap`,`wesanderson`,`ggpubr`,`Ipaper`,`reshape2`
 
 if (!require("BiocManager", quietly = TRUE))
@@ -114,3 +116,5 @@ BiocManager::install("sva")
 BiocManager::install("DESeq2")
 install.packages('remotes')
 
+### Humann error, `Please update your version of MetaPhlAn2 to v3.0`
+run `conda install -c biobakery humann=3.1.1`. This is because humann internal error. Need to update to newer version of humann. After the installation, the original chocophlan database will be out of use (you will get `Please install the latest version of the database: v201901_v31` error). So run `humann_databases --download chocophlan full /path/to/your/databases/ --update-config yes` to update your chocophlan database for humann. Then, since you just updated the humann, you need to update the nucleotide and protein database record in humann_config too so that huamann can find the databases. Run `humann_config --update database_folders protein /path/to/your/uniref/database/` and `humann_config --update database_folders protein /path/to/your/utility_mapping/database/`.
