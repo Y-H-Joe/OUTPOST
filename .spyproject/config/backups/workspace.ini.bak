@@ -4,9 +4,9 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['Snakefile', 'Snakefile2.py', 'mwgx_pipeline\\check_config.py', 'mwgx_pipeline\\__init__.py', 'mwgx_pipeline\\decorators.py', 'mwgx_pipeline\\yaml', 'mwgx_pipeline\\functools.py']
+recent_files = ['C:\\Users\\23712\\.spyder-py3\\temp.py', 'Snakefile_v1.1.py', 'GEMINI\\paste_counts_table.py', 'GEMINI\\check_config.py', 'GEMINI\\scale_rel_abun_table.py']
 
 [main]
 version = 0.2.0
-recent_files = ['..\\..\\..\\..\\..\\Documents\\Pytorch\\DeepLearningByMuLi\\5.卷积神经网络.py', '..\\..\\..\\..\\..\\Documents\\Pytorch\\DeepLearningByMuLi\\7.现代循环神经网络.py', '..\\..\\..\\..\\..\\Documents\\Pytorch\\DeepLearningByMuLi\\6.循环神经网络RNN.py']
+recent_files = []
 

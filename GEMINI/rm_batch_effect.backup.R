@@ -162,7 +162,6 @@ Scatter_Density(data = df.pca.before$variates$X, batch = batch,
 dev.off()
 
 if (rm_batch_effect == 'Combat'){
-  # t() function in R Language is used to calculate transpose of a matrix or Data Frame.
   df.after = try( t(ComBat(t(df.clr), batch = batch, par.prior = F, prior.plots = F)))
   if ('try-error' %in% class(df.after)){
     print("GEMINI: rm_batch_effect: cannot use 'Combat', use 'Limma' instead, because")

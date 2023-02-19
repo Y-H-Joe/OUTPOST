@@ -44,7 +44,7 @@ def taxa_count_table_to_sorted_list_dict(df_rmnan,sample_N,taxo_level_N,level):
             else:
                 pass
             try:
-                sample_abun[key]=float(int(sample[key])/int(samples_sum[s]))
+                sample_abun[key]=float(float(sample[key])/float(samples_sum[s]))
             except:
                 print("cannot calculate abundance.")
                 print("in ",s,"th"," sample.")

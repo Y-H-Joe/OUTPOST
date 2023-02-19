@@ -69,9 +69,9 @@ for (alpha in alphas){
 ################################################################################
 # beta_diversity
 ################################################################################
-bray.dist = vegdist(spe,method="bray")
+bray.dist = vegdist(spe,method="bray",na.rm = TRUE)
 bray.mat = as.matrix(bray.dist)
-bray.dist.ln = vegdist(log1p(spe))
+bray.dist.ln = vegdist(log1p(spe),na.rm = TRUE)
 bray.mat.ln=as.matrix(bray.dist.ln)
 spe.jaccard<-vegdist(spe,method="jaccard")
 spe.jaccard.mat=as.matrix(spe.jaccard)

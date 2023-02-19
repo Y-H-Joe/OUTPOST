@@ -94,40 +94,22 @@ percentile_norm = function(data = data, batch = batch, trt = trt){
   return(data.pn.df.reorder)
 }
 
-# library(knitr)
-# library(pheatmap) # heatmap
-# library(xtable) # table
-# library(vegan) # RDA
-# library(AgiMicroRna) # RLE plot
-# library(cluster) # silhouette coefficient
-# library(variancePartition) # variance calculation
-# library(pvca) # PVCA
-# library(ruv) # RUVIII
-# library(lmerTest) # lmer
-# library(bapred) # FAbatch
-
 # settings
 args = commandArgs(T)
-rm_batch_effect = args[1]
-dp = args[2]
-output = args[3]
-config = args[4]
-before_plot = args[5]
-after_plot = args[6]
-# rm_batch_effect = 'Combat'
-# dp = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.has_batch_effect.csv'
-# dp = 'human64_3_batch_effect.taxa_counts.rel_abun.class.rmU.has_batch_effect.csv'
-# output = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.csv'
-# config = 'GEMINI_config_3_batch_effect.tsv'
-# before_plot = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.before_rm_batch_effect.pdf'
-# after_plot = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.after_rm_batch_effect.pdf'
-# setwd(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects}')
-# df = as.matrix(read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\GEMINI\batch_effect\allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.csv}'
-#                      ,row.names = 1))
-# config_df = read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\GEMINI\test_GEMINI\GEMINI_config_3.tsv}'
-#                   ,header=T,sep = '\t')
-df = as.matrix(read.csv(dp, row.names = 1))
+dp = args[1]
+config = args[2]
+plot = args[3]
+
+# dp_bef = "/scratch/mammals/GEMINI/mammals2/taxa_analysis/mammals2.taxa_counts.rel_abun.species.rmU.csv"
+# dp_aft = "/scratch/mammals/GEMINI/mammals_batch_effect3/taxa_analysis/mammals_batch_effect3.taxa_counts.rel_abun.species.rmU.csv"
+# config = r'{/scratch/mammals/GEMINI/GEMINI/GEMINI_config_batch_effect3.tsv}'
+# before_plot = 'before.pdf'
+# after_plot = 'after.pdf'
+
 config_df = read.csv(config,header=T,sep = '\t')
+
+df = as.matrix(read.csv(dp, row.names = 1))
+
 batch = as.factor(config_df$batch)
 names(batch) = as.vector(config_df$samples)
 batch = batch[row.names(df)]
@@ -136,7 +118,7 @@ batch = batch[row.names(df)]
 # 缩放之后的数
 # 我们需要向所有计数数据添 1 的偏移量，以处理 CLR 转换的零
 # 根据尺度不变原理（Aitchison 1986），它通过 CLR 转换对原始计数或 TSS 数据返回相同的结
-df = df + 0.000001
+df = df + 0.00000001
 
 # 1.2.3中心对数比变
 # 微生物组数据是组成的，并且具有不同的库大小。对此类数据使用标准统计方法可能会导致虚假结果，因此必须进一步转换数据。CLR 是选择的转换
@@ -145,56 +127,19 @@ class(df.clr) = 'matrix'
 
 # 2. detect batch-effect
 # 2.1主成分分  (PCA) 与每个成分的密度
-df.pca.before = pca(df.clr, ncomp = 3)
+df.pca = pca(df.clr, ncomp = 3)
 
 # heatmap
-x_min = min(df.pca.before$variates$X[,'PC1']) * 1.2
-x_max = max(df.pca.before$variates$X[,'PC1']) * 1.2
-y_min = min(df.pca.before$variates$X[,'PC2']) * 1.2
-y_max = max(df.pca.before$variates$X[,'PC2']) * 1.2
+x_min = min(df.pca$variates$X[,'PC1']) * 1.2
+x_max = max(df.pca$variates$X[,'PC1']) * 1.2
+y_min = min(df.pca$variates$X[,'PC2']) * 1.2
+y_max = max(df.pca$variates$X[,'PC2']) * 1.2
 
-pdf(before_plot, width = 12, height = 12)
-Scatter_Density(data = df.pca.before$variates$X, batch = batch, 
-                expl.var = df.pca.before$prop_expl_var$X, 
+pdf(plot, width = 12, height = 12)
+Scatter_Density(data = df.pca$variates$X, batch = batch, 
+                expl.var = df.pca$prop_expl_var$X, 
                 xlim = c(x_min,x_max), ylim = c(y_min,y_max), 
                 batch.legend.title = 'batch', 
-                title = 'Before batch effect correction')
+                title = 'Batch effect PCA density plot')
 dev.off()
-
-if (rm_batch_effect == 'Combat'){
-  # t() function in R Language is used to calculate transpose of a matrix or Data Frame.
-  df.after = try( t(ComBat(t(df.clr), batch = batch, par.prior = F, prior.plots = F)))
-  if ('try-error' %in% class(df.after)){
-    print("GEMINI: rm_batch_effect: cannot use 'Combat', use 'Limma' instead, because")
-    print(df.after)
-    df.after = t(removeBatchEffect(t(df.clr), batch = batch))
-    title_ = 'After Limma batch effect correction'
-  }else{
-  title_ = 'After Combat batch effect correction'
-  }
-}else{
-  df.after = t(removeBatchEffect(t(df.clr), batch = batch))
-  title_ = 'After Limma batch effect correction'
-}
-
-df.pca.after <- pca(df.after, ncomp = 3)
-
-pdf(after_plot, width = 12, height = 12)
-x_min = min(df.pca.after$variates$X[,'PC1']) * 1.2
-x_max = max(df.pca.after$variates$X[,'PC1']) * 1.2
-y_min = min(df.pca.after$variates$X[,'PC2']) * 1.2
-y_max = max(df.pca.after$variates$X[,'PC2']) * 1.2
-Scatter_Density(data = df.pca.after$variates$X, batch = batch,
-                expl.var = df.pca.after$prop_expl_var$X,
-                xlim = c(x_min,x_max), ylim = c(y_min,y_max),
-                batch.legend.title = 'batch',
-                title = title_)
-dev.off()
-
-# write tables
-write.csv(df.after, output, row.names = T)
-
-
-
-
 

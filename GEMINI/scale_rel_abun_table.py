@@ -29,7 +29,7 @@ import numpy as np
 import heapq
 import os
 
-def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False):
+def scal_rel_abun(dp,output, rmOthers = False):
     #basename=os.path.basename(dp)
     #output_name=os.path.join(r"../taxa_abun/figs/",basename)
     #dp=r"C:\CurrentProjects\CPS_micro_ts\sample140_abun_top.20.7.rmU.euk.tsv"
@@ -49,7 +49,7 @@ def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False):
 
     ## clean original data
     df.dropna(axis=1, how='all',inplace=True)
-    df.replace(0,second_min/10000000000,inplace=True)
+    df.replace(0,second_min/10,inplace=True)
     
     ## norm
     # df_norm = (df - df.min()) / (df.max() - df.min())
@@ -101,20 +101,18 @@ def scal_rel_abun(dp,output,rm_batch_effect, rmOthers = False):
     """
 
 if __name__=='__main__':
-    # dp_list = sys.argv[1].split(',')
-    dp_list = [r'D:\downloads\cat_all_seqs\taxa_analysis\top_taxa_normal_vs_obese\cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.csv']
+    dp_list = sys.argv[1].split(',')
+    # dp_list = [r'cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.csv']
 
-    #output_list = sys.argv[2].split(',')
-    output_list = [r'D:\downloads\cat_all_seqs\taxa_analysis\top_taxa_normal_vs_obese\cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.aa.csv']
-    # rm_batch_effect = sys.argv[3]
-    # if rm_batch_effect == "None": rm_batch_effect = False
-    rm_batch_effect = False
+    output_list = sys.argv[2].split(',')
+    #output_list = [r'cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.top20.aa.csv']
+
     for dp,output in zip(dp_list,output_list):
         #dp=str(r"../taxa_abun/rel_abun/sample12_rel_abun."+str(i)+".rmU.euk.csv.top30.csv")
         #dp=r"../taxa_abun/utest/sample12_rel_abun.{}.rmU.euk.csv_relative_abun_unequal_horse_vs_donkey.csv.top30.csv".format(str(i))
         assert os.path.exists(dp), f"GEMINI: scale_rel_abun_table: {dp} doesn't exist. exit."
         try:
-            scal_rel_abun(dp, output, rm_batch_effect)
+            scal_rel_abun(dp, output)
         except:
             os.system(f"touch {output}")
 
