@@ -49,7 +49,7 @@ def scal_rel_abun(dp,output, rmOthers = False):
 
     ## clean original data
     df.dropna(axis=1, how='all',inplace=True)
-    df.replace(0,second_min/10,inplace=True)
+    df.replace(0,second_min/100,inplace=True)
     
     ## norm
     # df_norm = (df - df.min()) / (df.max() - df.min())
