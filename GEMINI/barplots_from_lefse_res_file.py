@@ -57,14 +57,15 @@ def res2plot(dp,LDA_cutoff,output):
     # Create barplot
     left = min(round(min(bars1+bars2),1),0) # set 0 to LDA_cutoff to set the base point
 
-    fig = plt.figure(num=1,figsize=(16,int(df3.shape[0]/5)))
+    plt.figure(num=1,figsize=(16,int(df3.shape[0]/5)))
     plt.barh(r1, [x-left for x in bars1], color = 'blue',left =left, label=groups[0])
     plt.barh(r2, [x-left for x in bars2], color = 'yellow',left =left, label=groups[1])
     # Note: the barplot could be created easily. See the barplot section for other examples.
 
     # Create legend
     plt.legend()
-    plt.yticks(r3,labels= df3[0].to_list())
+    labels = df3.loc[df[2] == groups[0],0].to_list() + df3.loc[df[2] == groups[1],0].to_list()
+    plt.yticks(r3,labels = labels)
 
     """
     # Text below each barplot with a rotation at 90°

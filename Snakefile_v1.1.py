@@ -172,7 +172,7 @@ rule lefse_taxa:
                 except:
                     print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
 
-        # equal humann to lefse barplot
+        # equal taxa to lefse barplot
         for group1,group2 in group_pair_list:
             dp_list = [f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.tsv"
                        for level in taxa_level]
