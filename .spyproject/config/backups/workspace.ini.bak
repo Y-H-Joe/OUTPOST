@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['Snakefile_v1.1.py', 'GEMINI\\barplots_from_lefse_res_file.py']
+recent_files = ['Snakefile_v1.1.py', 'GEMINI\\visualize_abricate.py']
 
 [main]
 version = 0.2.0

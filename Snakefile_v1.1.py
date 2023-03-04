@@ -852,7 +852,7 @@ rule alpha_beta_diversity:
 # %% plasmid
 rule plasmid_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/plasmid_analysis.done"
     log:
@@ -863,15 +863,22 @@ rule plasmid_alignment:
         output_dir = f"{assembly}/plasmid_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
-
+        shell("{abricate} {assembly_dir} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.plasmidfinder.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp} True")
+        
         shell("touch {assembly}/log/plasmid_analysis.done")
 
 
 # %% virulence
 rule virulence_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/virulence_analysis.done"
     log:
@@ -882,16 +889,26 @@ rule virulence_alignment:
         output_dir = f"{assembly}/virulence_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
-        shell("{abricate} {input} --db vfdb --quiet > {output_dir}/{assembly}.vfdb.tsv")
-
+        shell("{abricate} {assembly_dir} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
+        shell("{abricate} {assembly_dir} --db vfdb --quiet > {output_dir}/{assembly}.vfdb.tsv")
+        
+        shell("cp {output_dir}/{assembly}.vfdb.tsv {output_dir}/{assembly}.vfdb.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.vfdb.temp.tsv")
+        shell("cat {output_dir}/{assembly}.ecoli_vf.tsv {output_dir}/{assembly}.vfdb.temp.tsv > {output_dir}/{assembly}.virulence.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.virulence.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
         shell("touch {assembly}/log/virulence_analysis.done")
 
 
 # %% antibiotic
 rule antibiotic_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/antibiotic_analysis.done"
     log:
@@ -902,12 +919,33 @@ rule antibiotic_alignment:
         output_dir = f"{assembly}/antibiotic_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
-        shell("{abricate} {input} --db argannot --quiet > {output_dir}/{assembly}.argannot.tsv")
-        shell("{abricate} {input} --db card --quiet > {output_dir}/{assembly}.card.tsv")
-        shell("{abricate} {input} --db ecoh --quiet > {output_dir}/{assembly}.ecoh.tsv")
-        shell("{abricate} {input} --db megares --quiet > {output_dir}/{assembly}.megares.tsv")
-        shell("{abricate} {input} --db ncbi --quiet > {output_dir}/{assembly}.ncbiAMR.tsv")
+        shell("{abricate} {assembly_dir} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
+        shell("{abricate} {assembly_dir} --db argannot --quiet > {output_dir}/{assembly}.argannot.tsv")
+        shell("{abricate} {assembly_dir} --db card --quiet > {output_dir}/{assembly}.card.tsv")
+        shell("{abricate} {assembly_dir} --db ecoh --quiet > {output_dir}/{assembly}.ecoh.tsv")
+        shell("{abricate} {assembly_dir} --db megares --quiet > {output_dir}/{assembly}.megares.tsv")
+        shell("{abricate} {assembly_dir} --db ncbi --quiet > {output_dir}/{assembly}.ncbiAMR.tsv")
+
+        shell("cp {output_dir}/{assembly}.argannot.tsv {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("cp {output_dir}/{assembly}.card.tsv {output_dir}/{assembly}.card.temp.tsv")
+        shell("cp {output_dir}/{assembly}.ecoh.tsv {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("cp {output_dir}/{assembly}.megares.tsv {output_dir}/{assembly}.megares.temp.tsv")
+        shell("cp {output_dir}/{assembly}.ncbiAMR.tsv {output_dir}/{assembly}.ncbiAMR.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.card.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.megares.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.ncbiAMR.temp.tsv")
+        shell("cat {output_dir}/{assembly}.resfinder.tsv {output_dir}/{assembly}.argannot.temp.tsv "
+              " {output_dir}/{assembly}.card.temp.tsv {output_dir}/{assembly}.ecoh.temp.tsv "
+              " {output_dir}/{assembly}.megares.temp.tsv {output_dir}/{assembly}.ncbiAMR.temp.tsv > {output_dir}/{assembly}.antibiotic.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.antibiotic.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
 
         shell("touch {assembly}/log/antibiotic_analysis.done")
 
