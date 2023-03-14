@@ -84,63 +84,34 @@ for sample,fq in zip(sample_list, fq_list):
 
 # %% GEMINI starts
 if skip_assembly_analysis:
-    if rm_batch_effect:
-        rule all:
-            input:
-                f"{assembly}/log/heatmap_humann.done",
-                f"{assembly}/log/heatmap_taxa.done",
-                f"{assembly}/log/alpha_beta_diversity.done",
-                f"{assembly}/log/lefse_humann.done",
-                f"{assembly}/log/lefse_taxa.done",
-                f"{assembly}/log/taxa_barplots.done",
-                f"{assembly}/log/taxa_boxplot.done",
-                f"{assembly}/log/virulence_analysis.done",
-                f"{assembly}/log/plasmid_analysis.done",
-                f"{assembly}/log/antibiotic_analysis.done",
-                f"{assembly}/log/visualize_batch_effect.done"
-    else:
-        rule all:
-            input:
-                f"{assembly}/log/heatmap_humann.done",
-                f"{assembly}/log/heatmap_taxa.done",
-                f"{assembly}/log/alpha_beta_diversity.done",
-                f"{assembly}/log/lefse_humann.done",
-                f"{assembly}/log/lefse_taxa.done",
-                f"{assembly}/log/taxa_barplots.done",
-                f"{assembly}/log/taxa_boxplot.done",
-                f"{assembly}/log/virulence_analysis.done",
-                f"{assembly}/log/plasmid_analysis.done",
-                f"{assembly}/log/antibiotic_analysis.done"
+    rule all:
+        input:
+            f"{assembly}/log/heatmap_humann.done",
+            f"{assembly}/log/heatmap_taxa.done",
+            f"{assembly}/log/alpha_beta_diversity.done",
+            f"{assembly}/log/lefse_humann.done",
+            f"{assembly}/log/lefse_taxa.done",
+            f"{assembly}/log/taxa_barplots.done",
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/virulence_analysis.done",
+            f"{assembly}/log/plasmid_analysis.done",
+            f"{assembly}/log/antibiotic_analysis.done",
+            f"{assembly}/log/visualize_batch_effect.done"
 else:
-    if rm_batch_effect:
-        rule all:
-            input:
-                f"{assembly}/log/heatmap_humann.done",
-                f"{assembly}/log/heatmap_taxa.done",
-                f"{assembly}/log/prepare_contig_table_from_counts_table.done",
-                f"{assembly}/log/alpha_beta_diversity.done",
-                f"{assembly}/log/lefse_humann.done",
-                f"{assembly}/log/lefse_taxa.done",
-                f"{assembly}/log/taxa_barplots.done",
-                f"{assembly}/log/taxa_boxplot.done",
-                f"{assembly}/log/virulence_analysis.done",
-                f"{assembly}/log/plasmid_analysis.done",
-                f"{assembly}/log/antibiotic_analysis.done",
-                f"{assembly}/log/visualize_batch_effect.done"
-    else:
-        rule all:
-            input:
-                f"{assembly}/log/heatmap_humann.done",
-                f"{assembly}/log/heatmap_taxa.done",
-                f"{assembly}/log/prepare_contig_table_from_counts_table.done",
-                f"{assembly}/log/alpha_beta_diversity.done",
-                f"{assembly}/log/lefse_humann.done",
-                f"{assembly}/log/lefse_taxa.done",
-                f"{assembly}/log/taxa_barplots.done",
-                f"{assembly}/log/taxa_boxplot.done",
-                f"{assembly}/log/virulence_analysis.done",
-                f"{assembly}/log/plasmid_analysis.done",
-                f"{assembly}/log/antibiotic_analysis.done"
+    rule all:
+        input:
+            f"{assembly}/log/heatmap_humann.done",
+            f"{assembly}/log/heatmap_taxa.done",
+            f"{assembly}/log/prepare_contig_table_from_counts_table.done",
+            f"{assembly}/log/alpha_beta_diversity.done",
+            f"{assembly}/log/lefse_humann.done",
+            f"{assembly}/log/lefse_taxa.done",
+            f"{assembly}/log/taxa_barplots.done",
+            f"{assembly}/log/taxa_boxplot.done",
+            f"{assembly}/log/virulence_analysis.done",
+            f"{assembly}/log/plasmid_analysis.done",
+            f"{assembly}/log/antibiotic_analysis.done",
+            f"{assembly}/log/visualize_batch_effect.done"
 
 
 # %% lefse
@@ -895,6 +866,7 @@ rule virulence_alignment:
         shell("cp {output_dir}/{assembly}.vfdb.tsv {output_dir}/{assembly}.vfdb.temp.tsv")
         shell("sed -i '1d' {output_dir}/{assembly}.vfdb.temp.tsv")
         shell("cat {output_dir}/{assembly}.ecoli_vf.tsv {output_dir}/{assembly}.vfdb.temp.tsv > {output_dir}/{assembly}.virulence.tsv")
+        shell("rm {output_dir}/{assembly}.vfdb.temp.tsv")
         
         taxa_level_temp = ','.join(taxa_level)
         for group1,group2 in group_pair_list:
@@ -939,6 +911,11 @@ rule antibiotic_alignment:
         shell("cat {output_dir}/{assembly}.resfinder.tsv {output_dir}/{assembly}.argannot.temp.tsv "
               " {output_dir}/{assembly}.card.temp.tsv {output_dir}/{assembly}.ecoh.temp.tsv "
               " {output_dir}/{assembly}.megares.temp.tsv {output_dir}/{assembly}.ncbiAMR.temp.tsv > {output_dir}/{assembly}.antibiotic.tsv")
+        shell("rm {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("rm {output_dir}/{assembly}.card.temp.tsv")
+        shell("rm {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("rm {output_dir}/{assembly}.megares.temp.tsv")
+        shell("rm {output_dir}/{assembly}.ncbiAMR.temp.tsv")
         
         taxa_level_temp = ','.join(taxa_level)
         for group1,group2 in group_pair_list:
@@ -951,26 +928,28 @@ rule antibiotic_alignment:
 
 
 # %% batch_effect
-if rm_batch_effect:
-    rule visualize_batch_effect:
-        # the remove of batch effect was done in paste_counts_table rule
-        # here we simply visualize it
-        input:
-            "{assembly}/log/scale_taxa_rel_abun_table.done"
-        output:
-            "{assembly}/log/visualize_batch_effect.done"
-        log:
-            "{assembly}/log/visualize_batch_effect.log"
-        benchmark:
-            "{assembly}/benchmark/visualize_batch_effect.benchmark"
-        run:
-            # visualize
-            os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
-            for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+rule visualize_batch_effect:
+    # the remove of batch effect was done in paste_counts_table rule
+    # here we simply visualize it
+    input:
+        "{assembly}/log/scale_taxa_rel_abun_table.done"
+    output:
+        "{assembly}/log/visualize_batch_effect.done"
+    log:
+        "{assembly}/log/visualize_batch_effect.log"
+    benchmark:
+        "{assembly}/benchmark/visualize_batch_effect.benchmark"
+    run:
+        # visualize
+        os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
+        for level in taxa_level:
+            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+            if rm_batch_effect:
                 plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.batch_effect_PCA.pdf"
-                shell("{Rscript} GEMINI/visualize_batch_effect.R {dp} {config} {plot}")
-            shell("touch {assembly}/log/visualize_batch_effect.done")
+            else:
+                plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.not_rmU.batch_effect_PCA.pdf"
+            shell("{Rscript} GEMINI/visualize_batch_effect.R {dp} {config} {plot}")
+        shell("touch {assembly}/log/visualize_batch_effect.done")
         
 
 # %% taxonomy
