@@ -191,6 +191,8 @@ utest_male_vs_ill/
 ```
 The boxplot folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
 For example, 
+
+ ![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.png)
  
 `horsedonkey.taxa_counts.rel_abun.phylum.rmU.top30.barplot.pdf`: the barplot of all samples, only top 30 abundant phlyum were labeled.
 ![image](https://user-images.githubusercontent.com/28485220/166333192-718409d2-3fce-47cf-b0ae-682bccdbf086.png)
