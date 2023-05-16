@@ -281,11 +281,13 @@ if  __name__ == '__main__':
         group2 = [int(x) for x in sys.argv[4].split(',')]
         group2_name = sys.argv[5]
         prefix_list = sys.argv[6].split(',')
+        
         try:
             paired = eval(sys.argv[7])
+            only_two_sided = eval(sys.argv[8])
         except:
-            sys.exit("GEMINI: rel_abun_utest: paired parameter wrong. exit.")
-        assert paired in [True, False], "GEMINI: rel_abun_utest: paired parameter wrong. exit."
+            sys.exit("GEMINI: rel_abun_utest: paired/two-sided parameter wrong. exit.")
+        assert paired in [True, False] and only_two_sided in [True,False], "GEMINI: rel_abun_utest: paired/two-sided parameter wrong. exit."
 
         for dp,prefix in zip(dp_list,prefix_list):
             df = pd.read_csv(dp,sep = ",",index_col = 0)
@@ -293,7 +295,7 @@ if  __name__ == '__main__':
             groups = list(df.index)
 
             df.index = range(df.shape[0])
-            only_two_sided = True
+            #only_two_sided = True
             ## subgroup is None, when the samples are not paired
             #subgroup=["305A","396","473B","705E","7108E","711E","778E","782"]
             subgroup = None
@@ -312,7 +314,7 @@ if  __name__ == '__main__':
                     part2(df,target,group1,group1_name,group2,group2_name,subgroup,groups,paired,only_two_sided)
     except Exception as e:
         import traceback
-        error_log = sys.argv[8]
+        error_log = sys.argv[9]
         os.system("touch " + error_log)
         print(f"GEMINI: {e}")
         traceback.print_exc()

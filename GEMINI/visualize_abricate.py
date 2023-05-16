@@ -95,7 +95,7 @@ def visualize_abricate(gene_tb_dp, counts_tb_dp, output_db,
         for gene in genes:
             try:
                 tb_dict[idx] = [gene] + list(contigs_taxa_counts.loc[contig])
-                print(tb_dict[idx])
+                # print(tb_dict[idx])
                 idx += 1
             except: pass
     tb_df = pd.DataFrame(tb_dict).T
@@ -148,7 +148,7 @@ def visualize_abricate(gene_tb_dp, counts_tb_dp, output_db,
         gene_taxa_df = pd.DataFrame.from_dict(gene_taxa_dict, orient = 'index', columns = taxa_list).T
         second_min=heapq.nsmallest(2,set(gene_taxa_df.to_numpy().flatten()))[1]
         gene_taxa_df.replace(0,second_min/100,inplace=True)
-        gene_taxa_df = gene_taxa_df.apply(np.log)
+        gene_taxa_df = gene_taxa_df.apply(np.log10)
         
         try:
             plt.figure(figsize=(gene_taxa_df.shape[1] / 3, gene_taxa_df.shape[0] * 2))
@@ -158,7 +158,7 @@ def visualize_abricate(gene_tb_dp, counts_tb_dp, output_db,
             plt.savefig(path.join(output_db, f'genes_{taxa}_{group1_name}_vs_{group2_name}_heatmap.pdf'))
             plt.close()
         except: plt.close()
-    
+
     
     # genes vs group1/group2 distrution plot
     tb_df_gene = tb_df.groupby(['gene']).agg({'group1':'sum','group2':'sum','total':'sum'})

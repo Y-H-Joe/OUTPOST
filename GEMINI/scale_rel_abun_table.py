@@ -55,7 +55,7 @@ def scal_rel_abun(dp,output, rmOthers = False):
     # df_norm = (df - df.min()) / (df.max() - df.min())
 
     ## log10
-    df_log10=df.apply(np.log)
+    df_log10=df.apply(np.log10)
     df_log10.replace([np.inf, -np.inf], np.nan, inplace=True)
     df_log10.to_csv(output,index = True,sep = ',')
 

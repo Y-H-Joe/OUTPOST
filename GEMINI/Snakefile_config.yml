@@ -1,0 +1,58 @@
+## command parameters
+python3: 'python3'
+Rscript: 'Rscript'
+samtools: 'samtools'
+kaiju: 'kaiju'
+kaiju_addTaxonNames: 'kaiju-addTaxonNames'
+kaiju_nodes: '/home/yh/softwares/databases/kaiju_databases/nodes.dmp'
+kaiju_fmi: '/home/yh/softwares/databases/kaiju_databases/kaiju_db_nr.fmi'
+kaiju_names: '/home/yh/softwares/databases/kaiju_databases/names.dmp'
+humann: '/home/yh/miniconda3/envs/GEMINI/bin/humann3'
+humann_renorm_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_renorm_table'
+humann_regroup_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_regroup_table'
+humann_join_tables: '/home/yh/miniconda3/envs/GEMINI/bin/humann_join_tables'
+humann_split_stratified_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_split_stratified_table'
+humann_rename_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_rename_table'
+lefse_format_input: 'lefse_format_input.py'
+lefse_run: 'lefse_run.py'
+abricate: 'abricate'
+config: "/scratch/mammals/GEMINI/GEMINI/GEMINI_config_batch_effect4.tsv" 
+# number of CPUs to use
+cores: 80 
+
+##   settings
+# True or False, determine the statisctic method to use
+paired: False 
+# True or False, determine the statisctic method to use
+two_sided: True 
+# select one from [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
+qvalue: "Benjamini-Hochberg" 
+# True or False
+skip_assembly_analysis: False 
+# True or False
+skip_humann_init: False
+# True or False
+skip_kaiju: False
+# True or False
+rm_batch_effect: True
+# number of items to show in heatmap
+top: 20
+# LDA score threshold
+LDA_cutoff: 2
+# taxonomy levels. select from ['taxaID','superkingdom','phylum','class','order','family','genus','species']
+taxa_level:
+  - 'taxaID'
+  - 'superkingdom'
+  - 'phylum'
+  - 'class'
+  - 'order'
+  - 'family'
+  - 'genus'
+  - 'species'
+# metabolism independent databases. select from ['rxn','eggnog','ko','level4ec','pfam']
+databases:
+  - 'rxn'
+  - 'eggnog'
+  - 'ko'
+  - 'level4ec'
+  - 'pfam'

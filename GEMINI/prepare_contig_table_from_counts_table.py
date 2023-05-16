@@ -92,6 +92,8 @@ if __name__ == '__main__':
         group2 = [int(x) for x in sys.argv[3].split(',')]
         output = sys.argv[4]
         sample_list = sys.argv[5].split(',')
+        error_log = sys.argv[6]
+        correction_type = sys.argv[7]
 
         sample_size=len(sample_list)
 
@@ -101,6 +103,8 @@ if __name__ == '__main__':
         filter_ = False
 
         ## begin
+        assert correction_type in ["Bonferroni", "Bonferroni-Holm", "Benjamini-Hochberg"],\
+            "GEMINI: unknown q-value correction type. exit."
         df=pd.read_csv(dp,sep='\t',header=None)
 
         group1_col=list_slice(count_col, group1)
@@ -114,7 +118,7 @@ if __name__ == '__main__':
             p_list.append(pvalue(pair, list1, list2))
 
         #adj_p_list=p_adjust_bh(p_list)
-        adj_p_list=correct_pvalues_for_multiple_testing(p_list)
+        adj_p_list=correct_pvalues_for_multiple_testing(p_list, correction_type)
         df.columns = ['contigID','taxaID','superkingdom','phylum','class','order','family','genus','species'] + \
                         sample_list
         df['pvalue']=p_list

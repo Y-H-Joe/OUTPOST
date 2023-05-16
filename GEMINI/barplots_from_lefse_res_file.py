@@ -89,7 +89,7 @@ def res2plot(dp,LDA_cutoff,output):
 if __name__=='__main__':
     dp = sys.argv[1]
     output = sys.argv[2]
-    LDA_cutoff = 2
+    LDA_cutoff = int(sys.argv[3])
 
     try:
         res2plot(dp,LDA_cutoff,output)

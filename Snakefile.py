@@ -1,3 +1,49 @@
+import yaml
+
+with open('GEMINI/Snakefile_config.yml', 'r') as f:
+    config = yaml.safe_load(f)
+
+# %% command parameters
+python3 = config['python3']
+Rscript = config['Rscript']
+samtools = config['samtools']
+kaiju = config['kaiju']
+kaiju_addTaxonNames = config['kaiju_addTaxonNames']
+kaiju_nodes = config['kaiju_nodes']
+kaiju_fmi = config['kaiju_fmi']
+kaiju_names = config['kaiju_names']
+humann = config['humann']
+humann_renorm_table = config['humann_renorm_table']
+humann_regroup_table = config['humann_regroup_table']
+humann_join_tables = config['humann_join_tables']
+humann_split_stratified_table = config['humann_split_stratified_table']
+humann_rename_table = config['humann_rename_table']
+lefse_format_input = config['lefse_format_input']
+lefse_run = config['lefse_run']
+abricate = config['abricate']
+GEMINI_config = config["config"]
+cores = config['cores'] # number of CPUs to use
+
+# %% settings
+paired = config['paired'] # True or False, influence the statisctic method to use
+two_sided = config['two_sided'] # True or False, influence the statisctic method to use
+qvalue = config["qvalue"] # [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
+skip_assembly_analysis = config['skip_assembly_analysis'] # True or False
+skip_humann_init = config['skip_humann_init'] # True or False
+skip_kaiju = config['skip_kaiju'] # True or False
+rm_batch_effect = config['rm_batch_effect']  # True or False
+top = config['top'] # number of items to show in heatmap
+LDA_cutoff = config['LDA_cutoff'] # LDA score threshold
+taxa_level = config['taxa_level'] # sublist from ['taxaID','superkingdom','phylum','class','order','family','genus','species']
+databases = config['databases'] # sublist from ['rxn','eggnog','ko','level4ec','pfam']
+
+
+# %% GEMINI main body
+
+################################################################################
+###!!!DO NOT MODIFY THE FOLLOWING CODES UNLESS YOU KNOW WHAT YOU ARE DOING!!!###
+################################################################################
+
 import pandas as pd
 import numpy as np
 import os
@@ -7,43 +53,12 @@ import itertools
 import time
 import shutil
 
-# %% command parameters
-kaiju = 'kaiju'
-python3 = 'python3'
-Rscript = 'Rscript'
-kaiju_addTaxonNames = 'kaiju-addTaxonNames'
-kaiju_nodes = '/home/yihang/softwares/kaiju_databases_older_nr/nodes.dmp'
-kaiju_fmi = '/home/yihang/softwares/kaiju_databases_older_nr/kaiju_db_nr.fmi'
-kaiju_names = '/home/yihang/softwares/kaiju_databases_older_nr/names.dmp'
-samtools = 'samtools'
-humann = '/home/yihang/miniconda3/envs/GEMINI/bin/humann3'
-humann_renorm_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_renorm_table'
-humann_regroup_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_regroup_table'
-humann_join_tables = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_join_tables'
-humann_split_stratified_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_split_stratified_table'
-humann_rename_table = '/home/yihang/miniconda3/envs/GEMINI/bin/humann_rename_table'
-lefse_format_input = 'lefse_format_input.py'
-lefse_run = 'lefse_run.py'
-abricate = 'abricate'
-
-# %% settings
-taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
-databases = ['rxn','eggnog','ko','level4ec','pfam']
-paired = False
-top = 20
-cores = 80
-config="GEMINI/GEMINI_config_cat_nr.csv"
-skip_MAG_analysis = False
-skip_humann_init = True
-skip_kaiju = False
-rm_batch_effect = ['None','Combat','Limma'][0]
-
 # %% GEMINI prepare
 shell("ulimit -s 65535")
 try:
-    df_config=pd.read_csv(config,sep='\t')
+    df_config=pd.read_csv(GEMINI_config,sep='\t')
 except:
-    sys.exit(f"GEMINI: read {config} error. Make sure file exists in tab separated format.")
+    sys.exit(f"GEMINI: read {GEMINI_config} error. Make sure file exists in tab separated format.")
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config, rm_batch_effect)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
@@ -61,7 +76,7 @@ for sample,fq in zip(sample_list, fq_list):
     fq_humann_list.append(fq_humann)
 
 # %% GEMINI starts
-if skip_MAG_analysis:
+if skip_assembly_analysis:
     rule all:
         input:
             f"{assembly}/log/heatmap_humann.done",
@@ -73,7 +88,8 @@ if skip_MAG_analysis:
             f"{assembly}/log/taxa_boxplot.done",
             f"{assembly}/log/virulence_analysis.done",
             f"{assembly}/log/plasmid_analysis.done",
-            f"{assembly}/log/antibiotic_analysis.done"
+            f"{assembly}/log/antibiotic_analysis.done",
+            f"{assembly}/log/visualize_batch_effect.done"
 else:
     rule all:
         input:
@@ -87,7 +103,8 @@ else:
             f"{assembly}/log/taxa_boxplot.done",
             f"{assembly}/log/virulence_analysis.done",
             f"{assembly}/log/plasmid_analysis.done",
-            f"{assembly}/log/antibiotic_analysis.done"
+            f"{assembly}/log/antibiotic_analysis.done",
+            f"{assembly}/log/visualize_batch_effect.done"
 
 
 # %% lefse
@@ -101,11 +118,11 @@ rule lefse_taxa:
     benchmark:
         "{assembly}/benchmark/lefse_taxa.benchmark"
     run:
-        wkdir = f"{assembly}/lefse_analysis/figs_taxa/"
+        wkdir = f"{assembly}/LDA_analysis/figs_taxa/"
         os.makedirs(wkdir, exist_ok=True)
         # unequal taxa to lefse barplot
         for group1,group2 in group_pair_list:
-            dp_list = [f"{assembly}/lefse_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.lefse.tsv"
+            dp_list = [f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.lefse.tsv"
                        for level in taxa_level]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
             res_list = [dp.replace(".tsv",".res") for dp in dp_list]
@@ -115,13 +132,13 @@ rule lefse_taxa:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
                     print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
 
-        # equal humann to lefse barplot
+        # equal taxa to lefse barplot
         for group1,group2 in group_pair_list:
-            dp_list = [f"{assembly}/lefse_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.tsv"
+            dp_list = [f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.tsv"
                        for level in taxa_level]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
             res_list = [dp.replace(".tsv",".res") for dp in dp_list]
@@ -131,7 +148,7 @@ rule lefse_taxa:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
                     print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
 
@@ -147,11 +164,11 @@ rule lefse_humann:
     benchmark:
         "{assembly}/benchmark/rel_abun2lefse_humann.benchmark"
     run:
-        wkdir = f"{assembly}/lefse_analysis/figs_humann/"
+        wkdir = f"{assembly}/LDA_analysis/figs_humann/"
         os.makedirs(wkdir, exist_ok=True)
         # unequal humann to lefse barplot
         for group1,group2 in group_pair_list:
-            dp_list = [f"{assembly}/lefse_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.lefse.tsv"
+            dp_list = [f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.lefse.tsv"
                        for database in databases]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
             res_list = [dp.replace(".tsv",".res") for dp in dp_list]
@@ -161,13 +178,13 @@ rule lefse_humann:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
                     print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
 
         # equal humann to lefse barplot
         for group1,group2 in group_pair_list:
-            dp_list = [f"{assembly}/lefse_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.lefse.tsv"
+            dp_list = [f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.lefse.tsv"
                        for database in databases]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
             res_list = [dp.replace(".tsv",".res") for dp in dp_list]
@@ -177,7 +194,7 @@ rule lefse_humann:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} > {log} 2>&1 ")
+                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
                     print(f"GEMINI: lefse_humann: cannot process {dp}. skip.")
 
@@ -195,7 +212,7 @@ rule rel_abun2lefse_taxa:
     run:
         # unequal taxa to lefse table
         for group1,group2 in group_pair_list:
-            wkdir = f"{assembly}/lefse_analysis/taxa_{group1}_vs_{group2}/"
+            wkdir = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
             dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
                                 for level in taxa_level])
@@ -205,7 +222,7 @@ rule rel_abun2lefse_taxa:
             shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
         # equal taxa to lefse table
         for group1,group2 in group_pair_list:
-            wkdir = f"{assembly}/lefse_analysis/taxa_{group1}_vs_{group2}/"
+            wkdir = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
             dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
                                 for level in taxa_level])
@@ -228,7 +245,7 @@ rule rel_abun2lefse_humann:
     run:
         # unequal humann to lefse table
         for group1,group2 in group_pair_list:
-            wkdir = f"{assembly}/lefse_analysis/humann_{group1}_vs_{group2}/"
+            wkdir = f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
             dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.csv"
                                 for database in databases])
@@ -238,7 +255,7 @@ rule rel_abun2lefse_humann:
             shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
         # equal humann to lefse table
         for group1,group2 in group_pair_list:
-            wkdir = f"{assembly}/lefse_analysis/humann_{group1}_vs_{group2}/"
+            wkdir = f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
             dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.csv"
                                 for database in databases])
@@ -252,7 +269,7 @@ rule rel_abun2lefse_humann:
 # %% heatmap
 rule heatmap_taxa:
     input:
-        "{assembly}/log/scale_rel_abun_table.done"
+        "{assembly}/log/scale_taxa_rel_abun_table.done"
     output:
         "{assembly}/log/heatmap_taxa.done"
     log:
@@ -308,7 +325,7 @@ rule heatmap_taxa:
 
 rule heatmap_humann:
     input:
-        "{assembly}/log/extract_top_humann.done"
+        "{assembly}/log/scale_humann_rel_abun_table.done"
     output:
         "{assembly}/log/heatmap_humann.done"
     log:
@@ -326,9 +343,9 @@ rule heatmap_humann:
         # top humann heatmap
         data_type = 'humann'
         for database in databases:
-            dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
+            dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
             output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-            index_dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.index"
+            index_dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.index"
             with open(index_dp,'w') as w:
                 for sample in humann_sample_list:
                     w.write(sample + '\n')
@@ -338,9 +355,9 @@ rule heatmap_humann:
         # top unequal humann heatmap
         for group1,group2 in group_pair_list:
             for database in databases:
-                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
+                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.index"
+                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -352,9 +369,9 @@ rule heatmap_humann:
         # top equal humann heatmap
         for group1,group2 in group_pair_list:
             for database in databases:
-                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
+                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.index"
+                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -366,6 +383,52 @@ rule heatmap_humann:
         shell("touch {assembly}/log/heatmap_humann.done")
 
 # %% humann
+rule scale_humann_rel_abun_table:
+    input:
+        "{assembly}/log/extract_top_humann.done"
+    output:
+        "{assembly}/log/scale_humann_rel_abun_table.done"
+    log:
+        "{assembly}/log/scale_humann_rel_abun_table.log"
+    benchmark:
+        "{assembly}/benchmark/scale_humann_rel_abun_table.benchmark"
+    run:
+        dp_list = [f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
+                       for database in databases]
+        output_list = [f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
+                       for database in databases]
+
+        for group1,group2 in group_pair_list:
+            dp_list_equal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
+                             for database in databases]
+            output_list_equal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
+                             for database in databases]
+
+            dp_list_unequal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
+                             for database in databases]
+            output_list_unequal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
+                             for database in databases]
+
+            dp_list += dp_list_equal
+            dp_list += dp_list_unequal
+            output_list += output_list_equal
+            output_list += output_list_unequal
+        dp_list = ','.join(dp_list)
+        output_list = ','.join(output_list)
+        try:
+            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+        except:
+            # in case augment is too long
+            print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
+            dp_list_chunks = [dp_list.split(',')[i:i + 100] for i in range(0, len(dp_list.split(',')), 100)]
+            output_list_chunks = [output_list.split(',')[i:i + 100] for i in range(0, len(output_list.split(',')), 100)]
+            for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
+                dp_list_chunk = ','.join(dp_list_chunk)
+                output_list_chunk = ','.join(output_list_chunk)
+                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
+        shell("touch {assembly}/log/scale_humann_rel_abun_table.done")
+
+
 rule extract_top_humann:
     input:
         "{assembly}/log/humann_utest.done"
@@ -425,7 +488,7 @@ rule extract_top_humann:
 
 rule humann_utest:
     input:
-        "{assembly}/log/humann_batch_effect.done"
+        "{assembly}/log/humann2rel_abun.done"
     output:
         "{assembly}/log/humann_utest.done"
     log:
@@ -455,37 +518,11 @@ rule humann_utest:
             except:
                 pass
             shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
-                  " {group2_index} {group2} {prefix_list} {paired} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
+                  " {group2_index} {group2} {prefix_list} {paired} {two_sided} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
             time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/humann_utest.done")
-
-rule humann_batch_effect:
-    input:
-        "{assembly}/log/humann2rel_abun.done"
-    output:
-        "{assembly}/log/humann_batch_effect.done"
-    log:
-        "{assembly}/log/humann_batch_effect.log"
-    benchmark:
-        "{assembly}/benchmark/humann_batch_effect.benchmark"
-    run:
-        if rm_batch_effect != 'None':
-            os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
-            for group in list(comparison_dict.keys()) + ['allSamples']:
-                for database in databases:
-                    source_rel_abun_table = f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
-                    target_rel_abun_table = f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.has_batch_effect.csv"
-                    before_plot = f"{assembly}/batch_effect/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.before_rm_batch_effect.pdf"
-                    after_plot =  f"{assembly}/batch_effect/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.after_rm_batch_effect.pdf"
-                    try:
-                        shutil.copy(source_rel_abun_table,target_rel_abun_table)
-                    except IOError as e:
-                        print("GEMINI: humann_batch_effect: ", e)
-                        continue
-                    shell("{Rscript} GEMINI/rm_batch_effect.R {rm_batch_effect} {target_rel_abun_table} {source_rel_abun_table} {config} {before_plot} {after_plot} > {log} 2>&1")
-        shell("touch {assembly}/log/humann_batch_effect.done")
 
 rule humann2rel_abun:
     input:
@@ -752,12 +789,6 @@ rule alpha_beta_diversity:
             species_new_df = species_df.reindex(group1_name + group2_name)
             genus_new_df = genus_df.reindex(group1_name + group2_name)
 
-            # alpha beta diversity need values be positive
-            # inverse transfer of CLR, but doesnot multiply geometric mean back
-            if rm_batch_effect != "None":
-                species_new_df = np.exp(species_new_df)
-                genus_new_df = np.exp(genus_new_df)
-
             species_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.{species}.rmU.{group1}_vs_{group2}.csv"
             genus_new_dp = wkdir + f"/{assembly}.taxa_counts.rel_abun.{genus}.rmU.{group1}_vs_{group2}.csv"
 
@@ -785,7 +816,7 @@ rule alpha_beta_diversity:
 # %% plasmid
 rule plasmid_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/plasmid_analysis.done"
     log:
@@ -796,15 +827,22 @@ rule plasmid_alignment:
         output_dir = f"{assembly}/plasmid_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
-
+        shell("{abricate} {assembly_dir} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.plasmidfinder.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp} True")
+        
         shell("touch {assembly}/log/plasmid_analysis.done")
 
 
 # %% virulence
 rule virulence_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/virulence_analysis.done"
     log:
@@ -815,16 +853,27 @@ rule virulence_alignment:
         output_dir = f"{assembly}/virulence_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
-        shell("{abricate} {input} --db vfdb --quiet > {output_dir}/{assembly}.vfdb.tsv")
-
+        shell("{abricate} {assembly_dir} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
+        shell("{abricate} {assembly_dir} --db vfdb --quiet > {output_dir}/{assembly}.vfdb.tsv")
+        
+        shell("cp {output_dir}/{assembly}.vfdb.tsv {output_dir}/{assembly}.vfdb.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.vfdb.temp.tsv")
+        shell("cat {output_dir}/{assembly}.ecoli_vf.tsv {output_dir}/{assembly}.vfdb.temp.tsv > {output_dir}/{assembly}.virulence.tsv")
+        shell("rm {output_dir}/{assembly}.vfdb.temp.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.virulence.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
         shell("touch {assembly}/log/virulence_analysis.done")
 
 
 # %% antibiotic
 rule antibiotic_alignment:
     input:
-        assembly_dir
+        "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
         "{assembly}/log/antibiotic_analysis.done"
     log:
@@ -835,26 +884,77 @@ rule antibiotic_alignment:
         output_dir = f"{assembly}/antibiotic_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
-        shell("{abricate} {input} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
-        shell("{abricate} {input} --db argannot --quiet > {output_dir}/{assembly}.argannot.tsv")
-        shell("{abricate} {input} --db card --quiet > {output_dir}/{assembly}.card.tsv")
-        shell("{abricate} {input} --db ecoh --quiet > {output_dir}/{assembly}.ecoh.tsv")
-        shell("{abricate} {input} --db megares --quiet > {output_dir}/{assembly}.megares.tsv")
-        shell("{abricate} {input} --db ncbi --quiet > {output_dir}/{assembly}.ncbiAMR.tsv")
+        shell("{abricate} {assembly_dir} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
+        shell("{abricate} {assembly_dir} --db argannot --quiet > {output_dir}/{assembly}.argannot.tsv")
+        shell("{abricate} {assembly_dir} --db card --quiet > {output_dir}/{assembly}.card.tsv")
+        shell("{abricate} {assembly_dir} --db ecoh --quiet > {output_dir}/{assembly}.ecoh.tsv")
+        shell("{abricate} {assembly_dir} --db megares --quiet > {output_dir}/{assembly}.megares.tsv")
+        shell("{abricate} {assembly_dir} --db ncbi --quiet > {output_dir}/{assembly}.ncbiAMR.tsv")
+
+        shell("cp {output_dir}/{assembly}.argannot.tsv {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("cp {output_dir}/{assembly}.card.tsv {output_dir}/{assembly}.card.temp.tsv")
+        shell("cp {output_dir}/{assembly}.ecoh.tsv {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("cp {output_dir}/{assembly}.megares.tsv {output_dir}/{assembly}.megares.temp.tsv")
+        shell("cp {output_dir}/{assembly}.ncbiAMR.tsv {output_dir}/{assembly}.ncbiAMR.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.card.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.megares.temp.tsv")
+        shell("sed -i '1d' {output_dir}/{assembly}.ncbiAMR.temp.tsv")
+        shell("cat {output_dir}/{assembly}.resfinder.tsv {output_dir}/{assembly}.argannot.temp.tsv "
+              " {output_dir}/{assembly}.card.temp.tsv {output_dir}/{assembly}.ecoh.temp.tsv "
+              " {output_dir}/{assembly}.megares.temp.tsv {output_dir}/{assembly}.ncbiAMR.temp.tsv > {output_dir}/{assembly}.antibiotic.tsv")
+        shell("rm {output_dir}/{assembly}.argannot.temp.tsv")
+        shell("rm {output_dir}/{assembly}.card.temp.tsv")
+        shell("rm {output_dir}/{assembly}.ecoh.temp.tsv")
+        shell("rm {output_dir}/{assembly}.megares.temp.tsv")
+        shell("rm {output_dir}/{assembly}.ncbiAMR.temp.tsv")
+        
+        taxa_level_temp = ','.join(taxa_level)
+        for group1,group2 in group_pair_list:
+            group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+            group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.antibiotic.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+                  " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
 
         shell("touch {assembly}/log/antibiotic_analysis.done")
 
 
+# %% batch_effect
+rule visualize_batch_effect:
+    # the remove of batch effect was done in paste_counts_table rule
+    # here we simply visualize it
+    input:
+        "{assembly}/log/scale_taxa_rel_abun_table.done"
+    output:
+        "{assembly}/log/visualize_batch_effect.done"
+    log:
+        "{assembly}/log/visualize_batch_effect.log"
+    benchmark:
+        "{assembly}/benchmark/visualize_batch_effect.benchmark"
+    run:
+        # visualize
+        os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
+        for level in taxa_level:
+            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+            if rm_batch_effect:
+                plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.batch_effect_PCA.pdf"
+            else:
+                plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.not_rm_batch_effect_PCA.pdf"
+            shell("{Rscript} GEMINI/visualize_batch_effect.R {dp} {GEMINI_config} {plot}")
+        shell("touch {assembly}/log/visualize_batch_effect.done")
+        
+
 # %% taxonomy
-rule scale_rel_abun_table:
+rule scale_taxa_rel_abun_table:
     input:
         "{assembly}/log/extract_top_taxa.done"
     output:
-        "{assembly}/log/scale_rel_abun_table.done"
+        "{assembly}/log/scale_taxa_rel_abun_table.done"
     log:
-        "{assembly}/log/scale_rel_abun_table.log"
+        "{assembly}/log/scale_taxa_rel_abun_table.log"
     benchmark:
-        "{assembly}/benchmark/scale_rel_abun_table.benchmark"
+        "{assembly}/benchmark/scale_taxa_rel_abun_table.benchmark"
     run:
         dp_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
                        for level in taxa_level]
@@ -879,7 +979,7 @@ rule scale_rel_abun_table:
         dp_list = ','.join(dp_list)
         output_list = ','.join(output_list)
         try:
-            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list} {rm_batch_effect}")
+            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
         except:
             # in case augment is too long
             print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
@@ -888,8 +988,8 @@ rule scale_rel_abun_table:
             for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
                 dp_list_chunk = ','.join(dp_list_chunk)
                 output_list_chunk = ','.join(output_list_chunk)
-                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk} {rm_batch_effect}")
-        shell("touch {assembly}/log/scale_rel_abun_table.done")
+                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
+        shell("touch {assembly}/log/scale_taxa_rel_abun_table.done")
 
 rule taxa_barplots:
     input:
@@ -1000,7 +1100,7 @@ rule taxa_boxplot:
 
 rule rel_abun_utest:
     input:
-        "{assembly}/log/taxa_batch_effect.done"
+        "{assembly}/log/counts_table2rel_abun.done"
     output:
         "{assembly}/log/rel_abun_utest.done"
     log:
@@ -1026,36 +1126,11 @@ rule rel_abun_utest:
             except:
                 pass
             shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
-                  " {group2_index} {group2} {prefix_list} {paired} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
+                  " {group2_index} {group2} {prefix_list} {paired} {two_sided} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
             time.sleep(60)
         result = ge.wait_unti_file_exists(output_list,error_log)
         assert result is True, "GEMINI: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/rel_abun_utest.done")
-
-rule taxa_batch_effect:
-    input:
-        "{assembly}/log/counts_table2rel_abun.done"
-    output:
-        "{assembly}/log/taxa_batch_effect.done"
-    log:
-        "{assembly}/log/taxa_batch_effect.log"
-    benchmark:
-        "{assembly}/benchmark/taxa_batch_effect.benchmark"
-    run:
-        if rm_batch_effect != 'None':
-            os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
-            for level in taxa_level:
-                source_rel_abun_table = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
-                target_rel_abun_table = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.has_batch_effect.csv"
-                before_plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.before_rm_batch_effect.pdf"
-                after_plot =  f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.after_rm_batch_effect.pdf"
-                try:
-                    shutil.copy(source_rel_abun_table,target_rel_abun_table)
-                except IOError as e:
-                    print("GEMINI: taxa_batch_effect: ", e)
-                    continue
-                shell("{Rscript} GEMINI/rm_batch_effect.R {rm_batch_effect} {target_rel_abun_table} {source_rel_abun_table} {config} {before_plot} {after_plot} > {log} 2>&1")
-        shell("touch {assembly}/log/taxa_batch_effect.done")
 
 rule counts_table2rel_abun:
     input:
@@ -1073,7 +1148,7 @@ rule counts_table2rel_abun:
         shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
-if not skip_MAG_analysis:
+if not skip_assembly_analysis:
     rule process_contig_table:
         input:
             "{assembly}/log/prepare_contig_table_from_counts_table.done",
@@ -1116,7 +1191,7 @@ if not skip_MAG_analysis:
                 except:
                     pass
                 shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
-                      " {group1_index} {group2_index} {output} {samples} {error_log} > {log} 2>&1 &")
+                      " {group1_index} {group2_index} {output} {samples} {error_log} {qvalue} > {log} 2>&1 &")
                 time.sleep(300)
             result = ge.wait_unti_file_exists(output_list,error_log)
             assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
@@ -1225,7 +1300,13 @@ rule paste_counts_table:
     run:
         counts_table_list = ','.join(expand("{assembly}/taxa_analysis/temp/{basename}.idxstats",
                                    assembly = assembly, basename = bam_basename))
-        shell("{python3} GEMINI/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure")
+        samples_index = ''
+        for group,samples in comparison_dict.items():
+            # the sample_list order is the same as bam_list
+            sample_index = '_'.join([str(sample_list.index(sample)) for sample in samples])
+            samples_index = samples_index + ',' + sample_index
+        # samples_index is 0_1_2,3_4_5
+        shell("{python3} GEMINI/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure {GEMINI_config} {rm_batch_effect} ")
         shell("touch {assembly}/log/paste_counts_table.done")
 
 rule idxstats:
