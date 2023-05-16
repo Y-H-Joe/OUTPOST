@@ -16,7 +16,7 @@ humann_rename_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_rename_table'
 lefse_format_input: 'lefse_format_input.py'
 lefse_run: 'lefse_run.py'
 abricate: 'abricate'
-config: "/scratch/mammals/GEMINI/GEMINI/GEMINI_config_batch_effect4.tsv" 
+config: "/scratch/mammals/GEMINI/GEMINI/GEMINI_config.tsv" 
 # number of CPUs to use
 cores: 80 
 
