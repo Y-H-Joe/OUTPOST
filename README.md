@@ -68,9 +68,7 @@ The usuage of GEMINI is very easy and light. If you successfully installed GEMIN
 # GEMINI outpus
 Each GEMINI run accepts one assembly, all outputs are categorized in the folder named by the assembly.
 ```
-(base) yh@superServer:human62_batch_effect2$ ll
- ./
- ../
+(base) yh@superServer:human62_batch_effect2$ l
 antibiotic_analysis/
 assembly_analysis/
 batch_effect/
@@ -84,9 +82,12 @@ taxa_analysis/
 virulence_analysis/
 ```
 ## assembly analysis
-1. `horsedonkey.taxa_counts.tsv`: contig_ID  NCBI_taxa_ID  superkingdom  phylum  class order family  genus species number_of_sample1_reads_aligned_to_this_contig  number_of_sample2_reads_aligned_to_this_contig...
-2. `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv`: similar as `horsedonkey.taxa_counts.tsv` besides q value and p value (group horsedonkey v.s. group hinny)
-3. `horsedonkey.horsedonkey_vs_hinny.contig_table.processed.tsv`: similar as `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv` besides relative abundance and counts per million reads for each sample in each contig.
+```
+(base) yh@superServer:human62_batch_effect2$ l assembly_analysis/
+human62_batch_effect2.taxa_counts.tsv
+```
+I set `skip_assembly_analysis` to True, so I only have one table. The MAG analysis table can refer to Table S1 of our paper.
+
 
 ## taxa analysis
 ```
@@ -106,16 +107,7 @@ boxplot_healthy_vs_male/
 boxplot_male_vs_euro/
 boxplot_male_vs_female/
 boxplot_male_vs_ill/
-figs/
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_genus.rel_abun.unequal.Actinomyces.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_genus.rel_abun.unequal.Parvimonas.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Escherichia.coli.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Fusobacterium.nucleatum.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Parvimonas.micra.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Peptostreptococcus.anaerobius.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Peptostreptococcus.sp..MV1.boxplot.pdf
-human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Prevotella.intermedia.boxplot.pdf
+figs/ 
 human62_batch_effect2.taxa_counts.rel_abun.class.csv
 human62_batch_effect2.taxa_counts.rel_abun.class.rmU.csv
 human62_batch_effect2.taxa_counts.rel_abun.class.rmU.top20.addOthers.csv
@@ -197,6 +189,10 @@ utest_male_vs_euro/
 utest_male_vs_female/
 utest_male_vs_ill/
 ```
+The boxplot folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
+For example, 
+![image](figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf)
+
 `horsedonkey.taxa_counts.rel_abun.phylum.rmU.top30.barplot.pdf`: the barplot of all samples, only top 30 abundant phlyum were labeled.
 ![image](https://user-images.githubusercontent.com/28485220/166333192-718409d2-3fce-47cf-b0ae-682bccdbf086.png)
 
