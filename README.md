@@ -3,39 +3,37 @@ An multi-group comparative, flexible, light and fast, downstream pipeline for me
 
 # GEMINI installation
 0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
-1. download `GEMINI.yml`
-2. create the conda environment `conda env create --name GEMINI --file GEMINI.yml `
-3. activate the environment `conda activate GEMINI`
-4. check you're using right humann `which humann`
-5. download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
-6. download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
-7. download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
-8. check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
-9. check your humann's misc folder. Located at `/path/to/your/anaconda/envs/GEMINI/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . Or unzip the `misc.zip` in the `utils` folder.
-10. check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
-11. check you're using right kaiju `which kaiju`
-12. download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju servier](https://kaiju.binf.ku.dk/server).
-13. check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
-14. install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
-15. open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-16. test GEMINI. `cd parent/folder/of/GEMINI`. open and modify the `GEMINI/contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
-17. if you occured any errors. check the printed log to debug. or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
+1. Download `GEMINI.yml`
+2. Create the conda environment `conda env create --name GEMINI --file GEMINI.yml `
+3. Activate the environment `conda activate GEMINI`
+4. Check you're using right humann `which humann`
+5. Download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
+6. Download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
+7. Download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
+8. Check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. Run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
+9. Check your humann's misc folder. Located at `/path/to/your/anaconda/envs/GEMINI/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . Or unzip the `misc.zip` in the `utils` folder.
+10. Check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
+11. Check you're using right kaiju `which kaiju`
+12. Download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju servier](https://kaiju.binf.ku.dk/server).
+13. Check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
+14. Install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
+15. Open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
+16. Test GEMINI. `cd parent/folder/of/GEMINI`. Prepare some example data. Open and modify the `GEMINI/GEMINI_contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
+17. If you occured any errors. check the printed log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
 18. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
-19. In a summary, GEMINI itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. If you feel the installation is difficult, it's their fault, not GEMINI's :-). On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakemake.py` file to skip the above installation procedure.
+19. In a summary, GEMINI itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakemake.py` file to skip the above installation procedure.
 
 # format of GEMINI_config.tsv
-| samples | fq_dir                                                       | bam_dir                                                  | assembly    | assembly_dir                                                 | group               |   |   |
-|---------|--------------------------------------------------------------|----------------------------------------------------------|-------------|--------------------------------------------------------------|---------------------|---|---|
-| donkey1 | /analysis1/yihang_analysis/pipeline/data/reads/donkey1.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey1.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
-| hinny2  | /analysis1/yihang_analysis/pipeline/data/reads/hinny2.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny2.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
-| hinny3  | /analysis1/yihang_analysis/pipeline/data/reads/hinny3.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny3.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
-| horse1  | /analysis1/yihang_analysis/pipeline/data/reads/horse1.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse1.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
-| horse3  | /analysis1/yihang_analysis/pipeline/data/reads/horse3.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse3.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
-| donkey2 | /analysis1/yihang_analysis/pipeline/data/reads/donkey2.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey2.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
-| donkey3 | /analysis1/yihang_analysis/pipeline/data/reads/donkey3.fq.gz | /analysis1/yihang_analysis/pipeline/data/bam/donkey3.bam | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | donkey,horsedonkey  |   |   |
-| horse2  | /analysis1/yihang_analysis/pipeline/data/reads/horse2.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/horse2.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | horse,horsedonkey   |   |   |
-| hinny1  | /analysis1/yihang_analysis/pipeline/data/reads/hinny1.fq.gz  | /analysis1/yihang_analysis/pipeline/data/bam/hinny1.bam  | horsedonkey | /analysis1/yihang_analysis/pipeline/data/assembly/sample1.fa | hinny               |   |   |
-
+| samples                      | fq_dir                                                                      | bam_dir                                                                         | assembly              | assembly_dir                                         | group                | batch |
+|------------------------------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------|-----------------------|------------------------------------------------------|----------------------|-------|
+| old_healthy_male_asian_1     | /home/yh/GEMINI/data/old_healthy_male_asian_1_onlyPE_nonhuman64virus.fq     | /home/yh/GEMINI/bam_sam/old_healthy_male_asian_1_contigs_sorted.human63.bam     | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | asian,healthy,male   | 1     |
+| old_healthy_male_asian_2     | /home/yh/GEMINI/data/old_healthy_male_asian_2_onlyPE_nonhuman64virus.fq     | /home/yh/GEMINI/bam_sam/old_healthy_male_asian_2_contigs_sorted.human63.bam     | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | asian,healthy,male   | 1     |
+| old_healthy_male_asian_3     | /home/yh/GEMINI/data/old_healthy_male_asian_3_onlyPE_nonhuman64virus.fq     | /home/yh/GEMINI/bam_sam/old_healthy_male_asian_3_contigs_sorted.human63.bam     | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | asian,healthy,male   | 1     |
+| old_healthy_male_asian_4     | /home/yh/GEMINI/data/old_healthy_male_asian_4_onlyPE_nonhuman64virus.fq     | /home/yh/GEMINI/bam_sam/old_healthy_male_asian_4_contigs_sorted.human63.bam     | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | asian,healthy,male   | 1     |
+| young_ill_female_euro_1      | /home/yh/GEMINI/data/young_ill_female_euro_1_onlyPE_nonhuman64virus.fq      | /home/yh/GEMINI/bam_sam/young_ill_female_euro_1_contigs_sorted.human63.bam      | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | euro,ill,female      | 5     |
+| young_ill_female_euro_2      | /home/yh/GEMINI/data/young_ill_female_euro_2_onlyPE_nonhuman64virus.fq      | /home/yh/GEMINI/bam_sam/young_ill_female_euro_2_contigs_sorted.human63.bam      | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | euro,ill,female      | 6     |
+| young_ill_female_euro_3      | /home/yh/GEMINI/data/young_ill_female_euro_3_onlyPE_nonhuman64virus.fq      | /home/yh/GEMINI/bam_sam/young_ill_female_euro_3_contigs_sorted.human63.bam      | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | euro,ill,female      | 5     |
+| young_ill_female_euro_4      | /home/yh/GEMINI/data/young_ill_female_euro_4_onlyPE_nonhuman64virus.fq      | /home/yh/GEMINI/bam_sam/young_ill_female_euro_4_contigs_sorted.human63.bam      | human62_batch_effect2 | /home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa | euro,ill,female      | 6     |
 
 The ***samples*** column contains the ids of each sample. Each sample id should be unique. The id can contain special characters like '_', but no ',' allowed.
 
@@ -43,37 +41,158 @@ The ***fq_dir*** column contains the absolute location of each fastq file. If yo
 
 The ***bam_dir*** column contains the absolute directory of each ***bam***. The bam file should be generated by users, via aligning reads (both SE and PE mapping is acceptable) to assembly. 
 
-The ***assembly*** column contains the name of 1st assembly. 
+The ***assembly*** column contains the name of the assembly. 
 
 The ***assembly_dir*** column contains the absolute directory of ***assembly***.
 
 The ***group*** column contains the group name of the each sample. If one sample belong to multiple groups, seperate by ','. Each group should at least have 3 samples for statistical power concern.
 
+The ***batch*** is the batch of the data. If `rm_batch_effect` is True, then you should have multiple batches, otherwise set all to be 1 or blank. 
+
 ***do not change the name of columns***
 
-In the above case. We have one reference, hmdh. For groups, we have 'donkey', 'horse', 'horsedonkey', 'hinny'.
+In the above case. We have one reference, human62_batch_effect2. For groups, we have 'aisan','euro', 'female', 'male', 'healthy','ill'.
 
 The pipeline will pair-wise compare all of them. Which are, 
-['donkey_vs_horse','donkey_vs_horsedonkey','donkey_vs_hinny','horse_vs_horsedonky','horse_vs_hinny','horsedonkey_vs_hinny'].
+['asian_vs_euro','male_vs_female','healthy_vs_ill'...].
 
 # GEMINI usuage
-The usuage of GEMINI is very easy and light. If you successfully installed GEMINI and got all the expected outputs files in `horsedonkey` folder, you just need to replace the sample data with your own data, and modify the `GEMINI/config.tsv`.
+The usuage of GEMINI is very easy and light. If you successfully installed GEMINI and got all the expected outputs files in `human62_batch_effect2` folder (same name as your assembly), you just need to replace the data locations with your own, and modify the `GEMINI/GEMINI_config.tsv`.
 
-I just list some warnings.
-
-1. The working directory must be the parent directory of `GEMINI`, becasue the command line in Snakemake.py contains many sentences like `python3 GEMINI/python_script.py`.
-2. Snakemake (the framework GEMINI relied on) will lock working directory during running. So you should prepare two working directories if you're running two GEMINI pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/GEMINI` and `mkdir folder2/GEMINI`, copy the `Snakemake.py` to `folder1/Snakemake.py` and `folder2/Snakemake.py`. Then `cd folder1`, run GEMINI. Then `cd folder2`, run GEMINI.
-3. One GEMINI process only take one assembly. If you have multi assemblies to analyze, run GEMINI multiple times (fake parallel) on multiple computing nodes (in different working directories)
-4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based GEMINI can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So GEMINI provide `skip_humann_init` option. Set `skip_humann_init = True` in `GEMINI_config.tsv`, then GEMINI will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output *genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, GEMINI will check the outputs existence first. Make sure these humann outptus are from the same fastq you offered to GEMINI.
-5. GEMINI offers `skip_assembly_analysis` in `GEMINI_config.tsv`. 
+1. The working directory must be the parent directory of `GEMINI`, becasue some scripts in Snakemake.py use relative path.
+2. Snakemake (the framework GEMINI relied on) will lock working directory during running. So you should prepare two working directories if you're running two GEMINI pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire GEMINI folder to `folder1/` and `folder2/`. Then `cd folder1`, run GEMINI. Then `cd folder2`, run GEMINI.
+3. One GEMINI process only take one assembly. If you have multi assemblies to analyze, run GEMINI multiple times (in parallel) (in different working directories).
+4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based GEMINI can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So GEMINI provide `skip_humann_init` option. Set `skip_humann_init = True` in `GEMINI_config.tsv`, then GEMINI will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output *genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, GEMINI will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to GEMINI.
+5. GEMINI offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation. 
 
 # GEMINI outpus
+Each GEMINI run accepts one assembly, all outputs are categorized in the folder named by the assembly.
+```
+(base) yh@superServer:human62_batch_effect2$ l
+antibiotic_analysis/
+assembly_analysis/
+batch_effect/
+benchmark/
+diversity_analysis/
+LDA_analysis/
+log/
+metabolism_analysis/
+plasmid_analysis/
+taxa_analysis/
+virulence_analysis/
+```
 ## assembly analysis
-1. `horsedonkey.taxa_counts.tsv`: contig_ID  NCBI_taxa_ID  superkingdom  phylum  class order family  genus species number_of_sample1_reads_aligned_to_this_contig  number_of_sample2_reads_aligned_to_this_contig...
-2. `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv`: similar as `horsedonkey.taxa_counts.tsv` besides q value and p value (group horsedonkey v.s. group hinny)
-3. `horsedonkey.horsedonkey_vs_hinny.contig_table.processed.tsv`: similar as `horsedonkey.horsedonkey_vs_hinny.contig_table.tsv` besides relative abundance and counts per million reads for each sample in each contig.
+```
+(base) yh@superServer:human62_batch_effect2$ l assembly_analysis/
+human62_batch_effect2.taxa_counts.tsv
+```
+I set `skip_assembly_analysis` to True, so I only have one table. The MAG analysis table can refer to Table S1 of our paper.
+
 
 ## taxa analysis
+```
+(base) yh@superServer:human62_batch_effect2$ l taxa_analysis/
+boxplot_asian_vs_euro/
+boxplot_asian_vs_female/
+boxplot_asian_vs_healthy/
+boxplot_asian_vs_ill/
+boxplot_asian_vs_male/
+boxplot_euro_vs_ill/
+boxplot_female_vs_euro/
+boxplot_female_vs_ill/
+boxplot_healthy_vs_euro/
+boxplot_healthy_vs_female/
+boxplot_healthy_vs_ill/
+boxplot_healthy_vs_male/
+boxplot_male_vs_euro/
+boxplot_male_vs_female/
+boxplot_male_vs_ill/
+figs/ 
+human62_batch_effect2.taxa_counts.rel_abun.class.csv
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.family.csv
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.genus.csv
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.order.csv
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.phylum.csv
+human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.species.csv
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.csv
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.top20.fillmin.scaled.index
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.csv
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.csv
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.addOthers.csv
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.csv
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.fillmin.scaled.csv
+human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.fillmin.scaled.index
+kaiju/
+temp/
+top_taxa_asian_vs_euro/
+top_taxa_asian_vs_female/
+top_taxa_asian_vs_healthy/
+top_taxa_asian_vs_ill/
+top_taxa_asian_vs_male/
+top_taxa_euro_vs_ill/
+top_taxa_female_vs_euro/
+top_taxa_female_vs_ill/
+top_taxa_healthy_vs_euro/
+top_taxa_healthy_vs_female/
+top_taxa_healthy_vs_ill/
+top_taxa_healthy_vs_male/
+top_taxa_male_vs_euro/
+top_taxa_male_vs_female/
+top_taxa_male_vs_ill/
+utest_asian_vs_euro/
+utest_asian_vs_female/
+utest_asian_vs_healthy/
+utest_asian_vs_ill/
+utest_asian_vs_male/
+utest_euro_vs_ill/
+utest_female_vs_euro/
+utest_female_vs_ill/
+utest_healthy_vs_euro/
+utest_healthy_vs_female/
+utest_healthy_vs_ill/
+utest_healthy_vs_male/
+utest_male_vs_euro/
+utest_male_vs_female/
+utest_male_vs_ill/
+```
+The boxplot folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
+For example, 
+![image](figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf)
+
 `horsedonkey.taxa_counts.rel_abun.phylum.rmU.top30.barplot.pdf`: the barplot of all samples, only top 30 abundant phlyum were labeled.
 ![image](https://user-images.githubusercontent.com/28485220/166333192-718409d2-3fce-47cf-b0ae-682bccdbf086.png)
 
