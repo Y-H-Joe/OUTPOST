@@ -1,5 +1,5 @@
 # GEMINI
-An multi-group comparative, flexible, light and fast, downstream pipeline for metagenomics whole genome sequencing analysis.
+GEMINI: a comprehensive, reliable, and user-friendly downstream analysis pipeline for whole-metagenome shotgun sequence.
 
 # GEMINI installation
 0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
@@ -304,6 +304,7 @@ genes_family_male_vs_ill_heatmap.pdf        genes_order_healthy_vs_male_heatmap.
 For example,
 ![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/genes_asian_vs_euro_distrplot.pdf)
 ![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/genes_class_healthy_vs_ill_heatmap.pdf)
+
 GEMINI also provide all the annotation information in `utils/abricate.annoatations.txt`, which can assist users to determine the antibiotic genes/plasmids/virulence factors. Also, the intermediate tables are helpful. The `*.antibiotic.tsv` `*.virulence.tsv` `*.plasmidfinder.tsv` are summary tables.
 ```
 (base) yh@superServer:antibiotic_analysis$ head human62_batch_effect2.antibiotic.tsv
@@ -351,9 +352,11 @@ run `conda install -c biobakery humann=3.1.1`. This is because humann internal e
 ### The assembly looks normal, but no plasmids/antibiotic/virus table generated
 Reformat your assembly file.
 from
+
 `>human63_000000000001
 TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAACTGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCGGTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCGATTGCCAAAAGCA`
 to 
+
 `>human63_000000000001
 TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTC
 TCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAAC
