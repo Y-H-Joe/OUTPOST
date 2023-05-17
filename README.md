@@ -18,7 +18,7 @@ An multi-group comparative, flexible, light and fast, downstream pipeline for me
 13. Check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
 14. Install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
 15. Open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-16. Test GEMINI. `cd parent/folder/of/GEMINI`. Prepare some example data. Open and modify the `GEMINI/GEMINI_contig.tsv` to make sure the data_dir is right. then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. The test will last 3 hours.
+16. Test GEMINI. `cd parent/folder/of/GEMINI`. Prepare some example data. Open and modify the `GEMINI/GEMINI_contig.tsv` to make sure the data_dir is right. Then modify the `Snakefile_config.yml` in GEMINI folder for the command path and parameters. Then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
 17. If you occured any errors. check the printed log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
 18. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
 19. In a summary, GEMINI itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakemake.py` file to skip the above installation procedure.
@@ -57,12 +57,13 @@ The pipeline will pair-wise compare all of them. Which are,
 ['asian_vs_euro','male_vs_female','healthy_vs_ill'...].
 
 # GEMINI usuage
-The usuage of GEMINI is very easy and light. If you successfully installed GEMINI and got all the expected outputs files in `human62_batch_effect2` folder (same name as your assembly), you just need to replace the data locations with your own, and modify the `GEMINI/GEMINI_config.tsv`.
+The usuage of GEMINI is very easy and light. The first step is to install GEMINI, the second step is to prepare the `GEMINI/GEMINI_config.tsv` (for experiment information), the third step is to modify the `GEMINI/Snakemake_config.yml` (for software parameters).
 
+Here are some suggestions for beginners:
 1. The working directory must be the parent directory of `GEMINI`, becasue some scripts in Snakemake.py use relative path.
 2. Snakemake (the framework GEMINI relied on) will lock working directory during running. So you should prepare two working directories if you're running two GEMINI pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire GEMINI folder to `folder1/` and `folder2/`. Then `cd folder1`, run GEMINI. Then `cd folder2`, run GEMINI.
 3. One GEMINI process only take one assembly. If you have multi assemblies to analyze, run GEMINI multiple times (in parallel) (in different working directories).
-4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based GEMINI can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So GEMINI provide `skip_humann_init` option. Set `skip_humann_init = True` in `GEMINI_config.tsv`, then GEMINI will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output *genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, GEMINI will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to GEMINI.
+4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based GEMINI can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So GEMINI provide `skip_humann_init` option. Set `skip_humann_init = True` in `GEMINI_config.tsv`, then GEMINI will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, GEMINI will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to GEMINI.
 5. GEMINI offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation. 
 
 # GEMINI outpus
@@ -124,7 +125,7 @@ utest_male_vs_ill/
 The boxplot folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
 For example, boxplot_healthy_vs_ill/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf . We designed all file names to make them easy to understand. From this name, we know it is relative abundance of a significant species Alistipes.finegoldii.CAG.68 comparing between healthy and ill. Also, all plots generated by GEMINI are vector PDF format for the convenience of publication.
 
- ![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.png)
+ ![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf)
  
  The figs fold contains the heatmap and barplots:
  ```
@@ -170,10 +171,159 @@ human62_batch_effect2.rel_abun.asian_vs_euro.at_class.ave_change.equal.csv     h
 human62_batch_effect2.rel_abun.asian_vs_euro.at_order.u-test.two_sided.csv     human62_batch_effect2.rel_abun.asian_vs_euro.at_taxaID.u-test.two_sided.csv
  ```
  
-## metabolism analysis
-## alpha/beta diversity analysis
-## lefse analysis
+## batch effect
+If rm_batch_effect is True, GEMINI will visualize the principal components (PCA) as well as the variance distribution. To check the batch effect, users can compare the plots before and after batch effect removal. 
+For example,
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.family.rmU.batch_effect_PCA.pdf)
+```
+(base) yh@superServer:human62_batch_effect2$ l batch_effect/
+human62_batch_effect2.taxa_counts.rel_abun.class.rmU.batch_effect_PCA.pdf   human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.batch_effect_PCA.pdf
+human62_batch_effect2.taxa_counts.rel_abun.family.rmU.batch_effect_PCA.pdf  human62_batch_effect2.taxa_counts.rel_abun.species.rmU.batch_effect_PCA.pdf
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.batch_effect_PCA.pdf   human62_batch_effect2.taxa_counts.rel_abun.superkingdom.rmU.batch_effect_PCA.pdf
+human62_batch_effect2.taxa_counts.rel_abun.order.rmU.batch_effect_PCA.pdf   human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.batch_effect_PCA.pdf
+```
 
+## benchmark
+This folder contains the log information of each computation module in GEMINI. Users can check the benchmark files for diagnosis.
+For example,
+```
+(base) yh@superServer:human62_batch_effect2$ l benchmark/
+alpha_beta_diversity.benchmark   heatmap_taxa.benchmark     humann_utest.benchmark                 rel_abun2lefse_taxa.benchmark          taxa_boxplot.benchmark
+antibiotic_analysis.benchmark    humann2rel_abun.benchmark  lefse_taxa.benchmark                   rel_abun_utest.benchmark               virulence_analysis.benchmark
+counts_table2rel_abun.benchmark  humann_annotate.benchmark  merge_counts_pure_and_kaiju.benchmark  scale_humann_rel_abun_table.benchmark  visualize_batch_effect.benchmark
+extract_top_humann.benchmark     humann_group.benchmark     paste_counts_table.benchmark           scale_taxa_rel_abun_table.benchmark
+extract_top_taxa.benchmark       humann_init.benchmark      plasmid_analysis.benchmark             skip_kaiju.benchmark
+heatmap_humann.benchmark         humann_output.benchmark    rel_abun2lefse_humann.benchmark        taxa_barplots.benchmark
+(base) yh@superServer:human62_batch_effect2$ cat benchmark/heatmap_taxa.benchmark
+s	h:m:s	max_rss	max_vms	max_uss	max_pss	io_in	io_out	mean_load	cpu_time
+1353.9893	0:22:33	697.34	4668.55	656.18	666.59	25.41	34.90	1.33	10.34
+```
+
+## diversity_analysis
+This folder contains all the alpha and beta diversity analysis crossing every group-pair.
+```
+(base) yh@superServer:human62_batch_effect2$ l diversity_analysis/
+alpha_beta_asian_vs_euro/     alpha_beta_asian_vs_ill/   alpha_beta_female_vs_euro/   alpha_beta_healthy_vs_female/  alpha_beta_male_vs_euro/
+alpha_beta_asian_vs_female/   alpha_beta_asian_vs_male/  alpha_beta_female_vs_ill/    alpha_beta_healthy_vs_ill/     alpha_beta_male_vs_female/
+alpha_beta_asian_vs_healthy/  alpha_beta_euro_vs_ill/    alpha_beta_healthy_vs_euro/  alpha_beta_healthy_vs_male/    alpha_beta_male_vs_ill/
+```
+Each sub-folder contains alpha and beta diversity analysis intermediate tables and graphs.
+```
+(base) yh@superServer:diversity_analysis$ l alpha_beta_healthy_vs_ill
+alpha_diversity.at_genus.csv                                               index.txt                                    PCoA23.bray.at_genus.pdf
+alpha_diversity.at_species.csv                                             Inv_Simpson.alpha_diveristy.at_.genus.pdf    PCoA23.bray.at_species.pdf
+beta_pcoa_P-value.bray.at_genus.csv                                        Inv_Simpson.alpha_diveristy.at_.species.pdf  PCoA23.jaccard.at_genus.pdf
+beta_pcoa_P-value.bray.at_species.csv                                      jaccard.at_genus.csv                         PCoA23.jaccard.at_species.pdf
+beta_pcoa_P-value.jaccard.at_genus.csv                                     jaccard.at_species.csv                       Pielou_evenness.alpha_diveristy.at_.genus.pdf
+beta_pcoa_P-value.jaccard.at_species.csv                                   PCoA12.bray.at_genus.pdf                     Pielou_evenness.alpha_diveristy.at_.species.pdf
+bray.at_genus.csv                                                          PCoA12.bray.at_species.pdf                   Shannon.alpha_diveristy.at_.genus.pdf
+bray.at_species.csv                                                        PCoA12.jaccard.at_genus.pdf                  Shannon.alpha_diveristy.at_.species.pdf
+bray_ln.at_genus.csv                                                       PCoA12.jaccard.at_species.pdf                Simpson.alpha_diveristy.at_.genus.pdf
+bray_ln.at_species.csv                                                     PCoA13.bray.at_genus.pdf                     Simpson.alpha_diveristy.at_.species.pdf
+group.csv                                                                  PCoA13.bray.at_species.pdf                   Simpson_evenness.alpha_diveristy.at_.genus.pdf
+human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.healthy_vs_ill.csv    PCoA13.jaccard.at_genus.pdf                  Simpson_evenness.alpha_diveristy.at_.species.pdf
+human62_batch_effect2.taxa_counts.rel_abun.species.rmU.healthy_vs_ill.csv  PCoA13.jaccard.at_species.pdf
+```
+For example, 
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/PCoA12.bray.at_species.pdf)
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/Shannon.alpha_diveristy.at_.species.pdf)
+
+## LDA analysis
+This folder contains the metabolism and taxonomy LDA results for every group-pair.
+```
+(base) yh@superServer:human62_batch_effect2$ l LDA_analysis/
+figs_humann/              humann_asian_vs_ill/    humann_healthy_vs_euro/    humann_male_vs_female/  taxa_asian_vs_ill/    taxa_healthy_vs_euro/    taxa_male_vs_female/
+figs_taxa/                humann_asian_vs_male/   humann_healthy_vs_female/  humann_male_vs_ill/     taxa_asian_vs_male/   taxa_healthy_vs_female/  taxa_male_vs_ill/
+humann_asian_vs_euro/     humann_euro_vs_ill/     humann_healthy_vs_ill/     taxa_asian_vs_euro/     taxa_euro_vs_ill/     taxa_healthy_vs_ill/
+humann_asian_vs_female/   humann_female_vs_euro/  humann_healthy_vs_male/    taxa_asian_vs_female/   taxa_female_vs_euro/  taxa_healthy_vs_male/
+humann_asian_vs_healthy/  humann_female_vs_ill/   humann_male_vs_euro/       taxa_asian_vs_healthy/  taxa_female_vs_ill/   taxa_male_vs_euro/
+```
+The figs_humann and figs_taxa contain the lefSE results.
+```
+(base) yh@superServer:LDA_analysis$ l figs_humann/
+allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.lefse.pdf
+...
+allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.male_vs_female.rel_abun.unequal.lefse.pdf
+allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.male_vs_ill.rel_abun.unequal.lefse.pdf
+(base) yh@superServer:LDA_analysis$ l figs_taxa/
+human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.pdf
+...
+human62_batch_effect2.rel_abun.female_vs_ill.at_taxaID.rel_abun.unequal.lefse.pdf 
+```
+For example, 
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.lefse.pdf)
+
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.pdf)
+
+Other sub-folders contain the intermediate tables for user's convenience.
+```
+(base) yh@superServer:LDA_analysis$ l taxa_asian_vs_euro
+human62_batch_effect2.rel_abun.asian_vs_euro.at_class.rel_abun.equal.lefse.format     human62_batch_effect2.rel_abun.asian_vs_euro.at_phylum.rel_abun.equal.lefse.format
+...
+human62_batch_effect2.rel_abun.asian_vs_euro.at_order.rel_abun.unequal.lefse.tsv      human62_batch_effect2.rel_abun.asian_vs_euro.at_taxaID.rel_abun.unequal.lefse.tsv
+```
+
+## metabolism analysis
+The folder contains the metabolism analysis results, mainly based on the 5 independent databases (which are selectable in `Snakemake_config.yml` file)
+```
+(base) yh@superServer:human62_batch_effect2$ l metabolism_analysis
+figs/  humann3/
+```
+The `humann3` folder contains all intermediate tables for our humann3 process. If users want to skip the humann_init (as former suggested), they should `mkdir -p path_to_metabolism_analysis/metabolism_analysis/humann3/ori_results` and prepare all the humann3 generated tables with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the `ori_results` folder, then set skip_humann_init to be True.
+```
+(base) yh@superServer:metabolism_analysis$ l humann3/
+allSamples/  male/                         top_humann_asian_vs_ill/     top_humann_healthy_vs_female/  utest_asian_vs_euro/     utest_female_vs_euro/     utest_male_vs_euro/
+asian/       ori_results/                  top_humann_asian_vs_male/    top_humann_healthy_vs_ill/     utest_asian_vs_female/   utest_female_vs_ill/      utest_male_vs_female/
+euro/        output/                       top_humann_euro_vs_ill/      top_humann_healthy_vs_male/    utest_asian_vs_healthy/  utest_healthy_vs_euro/    utest_male_vs_ill/
+female/      top_humann_asian_vs_euro/     top_humann_female_vs_euro/   top_humann_male_vs_euro/       utest_asian_vs_ill/      utest_healthy_vs_female/
+healthy/     top_humann_asian_vs_female/   top_humann_female_vs_ill/    top_humann_male_vs_female/     utest_asian_vs_male/     utest_healthy_vs_ill/
+ill/         top_humann_asian_vs_healthy/  top_humann_healthy_vs_euro/  top_humann_male_vs_ill/        utest_euro_vs_ill/       utest_healthy_vs_male/
+```
+The figs folder contains all the heatmap plots for every independent database crossing every group-pair.
+```
+(base) yh@superServer:metabolism_analysis$ l figs/
+allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.equal.top20.fillmin.scaled.heatmap.pdf
+allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf
+...
+allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.male_vs_ill.rel_abun.equal.top20.fillmin.scaled.heatmap.pdf
+allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.male_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf
+allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.top20.fillmin.scaled.heatmap.pdf
+```
+For example,
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf)
+
+## antibiotic_analysis/plasmid_analysis/virulence_analysis
+These folders contain the dist plot and heatmap plot for all features with responding taxonomy, as well as intermediate tables.
+```
+(base) yh@superServer:human62_batch_effect2$ l antibiotic_analysis
+genes_asian_vs_euro_distrplot.pdf           genes_female_vs_euro_distrplot.pdf         genes_order_male_vs_euro_heatmap.pdf         genes_taxa_counts_asian_vs_ill.tsv
+...
+genes_family_male_vs_female_heatmap.pdf     genes_order_healthy_vs_ill_heatmap.pdf     genes_taxa_counts_asian_vs_female.tsv
+genes_family_male_vs_ill_heatmap.pdf        genes_order_healthy_vs_male_heatmap.pdf    genes_taxa_counts_asian_vs_healthy.tsv
+```
+For example,
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/genes_asian_vs_euro_distrplot.pdf)
+![image](https://github.com/Y-H-Joe/GEMINI/blob/main/figs/genes_class_healthy_vs_ill_heatmap.pdf)
+GEMINI also provide all the annotation information in `utils/abricate.annoatations.txt`, which can assist users to determine the antibiotic genes/plasmids/virulence factors. Also, the intermediate tables are helpful. The `*.antibiotic.tsv` `*.virulence.tsv` `*.plasmidfinder.tsv` are summary tables.
+```
+(base) yh@superServer:antibiotic_analysis$ head human62_batch_effect2.antibiotic.tsv
+#FILE	SEQUENCE	START	END	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION
+/home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa	human63_000000001502	165	274	erm(G)_1	1-110/735	===............	0/0	14.97	100.00	resfinder	M15332
+/home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa	human63_000000002481	1	126	tet(Q)_1	916-1041/1926	.......==......	0/0	6.54	99.21	resfinder	L33696
+/home/yh/GEMINI/assembly/human63.contigs.nonrd.rn.fa	human63_000000002481	115	350	tet(Q)_1	868-1103/1926	......===......	0/0	12.25	96.61	resfinder	L336
+```
+
+## log
+This folder contains the log for all processing modules of GEMINI. Notably, GEMINI use these log files with suffix of `.done` to judge the status of each rule. Users can check the `Snakemake.py`, if the `done` files for certain rule exists, GEMINI will regart it as successfully finished. If users want to re-run certain rules, they should remove the corressponding `done` files in the first place.
+```
+(base) yh@superServer:human62_batch_effect2$ cd log/
+(base) yh@superServer:log$ l
+alpha_beta_diversity.done                         extract_top_taxa.done                           heatmap_taxa.log_taxa               plasmid_analysis.done
+alpha_beta_diversity.log                          extract_top_taxa.log                            humann2rel_abun.done                plasmid_analysis.log
+...
+extract_top_humann.log_male_vs_ill_equal          heatmap_taxa.done                               paste_counts_table.done             visualize_batch_effect.done
+extract_top_humann.log_male_vs_ill_unequal        heatmap_taxa.log                                paste_counts_table.log              visualize_batch_effect.log
+```
 
 # common questions
 ### When running humann3, get `No MetaPhlAn BowTie2 database found (--index option)!` error.
