@@ -5,8 +5,8 @@ GEMINI: a comprehensive, reliable, and user-friendly downstream analysis pipelin
 0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
 1. Download `GEMINI.yml`
 2. Create the conda environment `conda env create --name GEMINI --file GEMINI.yml `
-3. Activate the environment `conda activate GEMINI`
-4. Check you're using right humann `which humann`
+3. Activate the environment `conda activate GEMINI`.
+4. Check you're using right humann `which humann`. Read step 19.
 5. Download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
 6. Download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. Download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
@@ -17,11 +17,11 @@ GEMINI: a comprehensive, reliable, and user-friendly downstream analysis pipelin
 12. Download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju server](https://kaiju.binf.ku.dk/server).
 13. Check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
 14. Install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
-15. Open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-16. Test GEMINI. `cd parent/folder/of/GEMINI`. Prepare some example data. Open and modify the `GEMINI/GEMINI_contig.tsv` to make sure the data_dir is right. Then modify the `Snakefile_config.yml` in GEMINI folder for the command path and parameters. Then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
-17. If you occured any errors. check the printed log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
-18. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
-19. In a summary, GEMINI itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakemake.py` file to skip the above installation procedure.
+15. Open `Snakefileconfig.yml` under `GEMINI` folder, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, you could test the command line one by one in your linux shell.
+16. Test GEMINI. `cd parent/folder/of/GEMINI`. Prepare some example data. Open and modify the `GEMINI/GEMINI_contig.tsv` to make sure the data_dir is right.Then run `nohup snakemake --cores 32 --verbose -s path_to/Snakefile.py --rerun-incomplete &`. This command will run GEMINI in backend with a log file `nohup.out`.
+17. If you occured any errors. check the log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. GEMINI will auto-resume.
+18. You should see all the outputs in `name_of_your_assembly` folder. If no errors occured. then you're good to go.
+19. In a summary, GEMINI itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakefile_config.yml` file to skip the above installation procedure.
 
 # format of GEMINI_config.tsv
 | samples                      | fq_dir                                                                      | bam_dir                                                                         | assembly              | assembly_dir                                         | group                | batch |
@@ -57,7 +57,7 @@ The pipeline will pair-wise compare all of them. Which are,
 ['asian_vs_euro','male_vs_female','healthy_vs_ill'...].
 
 # GEMINI usuage
-The usuage of GEMINI is very easy and light. The first step is to install GEMINI, the second step is to prepare the `GEMINI/GEMINI_config.tsv` (for experiment information), the third step is to modify the `GEMINI/Snakemake_config.yml` (for software parameters).
+The usuage of GEMINI is very easy and light. The first step is to install GEMINI, the second step is to prepare the `GEMINI/GEMINI_config.tsv` (for experiment information), the third step is to modify the `GEMINI/Snakemake_config.yml` (for software parameters). The last step is to run `nohup snakemake --cores 32 --verbose -s path_to/Snakefile.py --rerun-incomplete &`.
 
 Here are some suggestions for beginners:
 1. The working directory must be the parent directory of `GEMINI`, becasue some scripts in Snakemake.py use relative path.
