@@ -3,7 +3,7 @@ GEMINI: a comprehensive, reliable, and user-friendly downstream analysis pipelin
 
 # GEMINI installation
 0. GEMINI only supports Illumina reads, not for Ion Torrent yet.
-1. Download `GEMINI.yml`
+1. Download `GEMINI.yml` in `install` folder.
 2. Create the conda environment `conda env create --name GEMINI --file GEMINI.yml `
 3. Activate the environment `conda activate GEMINI`.
 4. Check you're using right humann `which humann`. Read step 19.
