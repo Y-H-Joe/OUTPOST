@@ -3,10 +3,10 @@ OUTPOST: a comprehensive, reliable, and user-friendly downstream analysis pipeli
 
 # OUTPOST installation
 0. OUTPOST only supports Illumina reads, not for Ion Torrent yet.
-1. Download `OUTPOST.yml`
+1. Download `OUTPOST.yml` in `install` folder.
 2. Create the conda environment `conda env create --name OUTPOST --file OUTPOST.yml `
-3. Activate the environment `conda activate OUTPOST`
-4. Check you're using right humann `which humann`
+3. Activate the environment `conda activate OUTPOST`.
+4. Check you're using right humann `which humann`. Read step 19.
 5. Download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
 6. Download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
 7. Download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
@@ -14,14 +14,14 @@ OUTPOST: a comprehensive, reliable, and user-friendly downstream analysis pipeli
 9. Check your humann's misc folder. Located at `/path/to/your/anaconda/envs/OUTPOST/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the misc folder. To download the files, check https://github.com/biobakery/humann/tree/master/humann/data/misc . Or unzip the `misc.zip` in the `utils` folder.
 10. Check your humann by running `humann -i sample_reads.fastq -o sample_results` (prepare sample_reads.fastq by yourself)
 11. Check you're using right kaiju `which kaiju`
-12. Download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju servier](https://kaiju.binf.ku.dk/server).
+12. Download kaiju databases `mkdir /path/to/kaijudb` then `cd /path/to/kaijudb` then `kaiju-makedb -s nr_euk` (this takes a long time and space and memory). Or you can download and unzip the annotation files from [kaiju server](https://kaiju.binf.ku.dk/server).
 13. Check abricate databases `abricate --list`, you should see 9 databases (argannot,card,ecoh,ecoli_vf,megares,ncbi,plasmidfinder,resfinder,vfdb). If you didn't, go to download abricate [databases](https://github.com/tseemann/abricate/tree/master/db), or use the `db.zip` file in `utils` folder, unzip them under your `db` folder. The location of `db` folder can be seen by running `abricate --help`, see the `--datadir` line. Then `cd` to the `db` folder, run `abricate --setupdb`.
 14. Install `iPaper` R package. type `R` in command line, then in the R concle, type in `install.packages("remotes")`, then type in `remotes::install_github("kongdd/Ipaper")`. When R concle asks you whether to update other packages, choose `none`. After installation, type in `library(Ipaper)`, if no error occurs, then you're good to contine.
-15. Open `Snakefile.py`, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, please test the command line one by one in your linux shell.
-16. Test OUTPOST. `cd parent/folder/of/OUTPOST`. Prepare some example data. Open and modify the `OUTPOST/OUTPOST_contig.tsv` to make sure the data_dir is right. Then modify the `Snakefile_config.yml` in OUTPOST folder for the command path and parameters. Then run `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`.
-17. If you occured any errors. check the printed log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. OUTPOST will auto-resume.
-18. You should see the outputs in `horsedonkey` folder. If no errors occured. then you're good to go.
-19. In a summary, OUTPOST itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakemake.py` file to skip the above installation procedure.
+15. Open `Snakefileconfig.yml` under `OUTPOST` folder, modify the bwa,kaiju,python3,Rscript,...lefse_run parameters to the executable command lines in your environment. To make sure all command line works, you could test the command line one by one in your linux shell.
+16. Test OUTPOST. `cd parent/folder/of/OUTPOST`. Prepare some example data. Open and modify the `OUTPOST/OUTPOST_contig.tsv` to make sure the data_dir is right.Then run `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`. This command will run OUTPOST in backend with a log file `nohup.out`.
+17. If you occured any errors. check the log to debug. Or check the log file in `name_of_your_assembly/log` folder. You can use time stamps to refer which rule is error, or to understand the error information. After debugging, delete the `name_of_your_assembly/log/name_of_the_error_rule.done`. and rerun the `snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete`. OUTPOST will auto-resume.
+18. You should see all the outputs in `name_of_your_assembly` folder. If no errors occured. then you're good to go.
+19. In a summary, OUTPOST itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakefile_config.yml` file to skip the above installation procedure.
 
 # format of OUTPOST_config.tsv
 | samples                      | fq_dir                                                                      | bam_dir                                                                         | assembly              | assembly_dir                                         | group                | batch |
@@ -37,7 +37,7 @@ OUTPOST: a comprehensive, reliable, and user-friendly downstream analysis pipeli
 
 The ***samples*** column contains the ids of each sample. Each sample id should be unique. The id can contain special characters like '_', but no ',' allowed.
 
-The ***fq_dir*** column contains the absolute location of each fastq file. If you use PE end sequencing, `cat` them to one file, because humann3 asked so. 
+The ***fq_dir*** column contains the absolute location of each fastq file. If you use PE end sequencing, `cat` them to one file, because humann3 asked so. For example `cat sample1_seq_r1.fq sample1_seq_r2.fq > sample1_seq.fq`. You should fill the absolute location of sample1_seq.fq in this column, do not fill multiple files.
 
 The ***bam_dir*** column contains the absolute directory of each ***bam***. The bam file should be generated by users, via aligning reads (both SE and PE mapping is acceptable) to assembly. 
 
@@ -57,13 +57,13 @@ The pipeline will pair-wise compare all of them. Which are,
 ['asian_vs_euro','male_vs_female','healthy_vs_ill'...].
 
 # OUTPOST usuage
-The usuage of OUTPOST is very easy and light. The first step is to install OUTPOST, the second step is to prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment information), the third step is to modify the `OUTPOST/Snakemake_config.yml` (for software parameters).
+The usuage of OUTPOST is very easy and light. The first step is to install OUTPOST, the second step is to prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment information), the third step is to modify the `OUTPOST/Snakemake_config.yml` (for software parameters). The last step is to run `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`.
 
 Here are some suggestions for beginners:
-1. The working directory must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path.
+1. The working directory must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path. To be more specific, you have a folder `test`, you have all scripts of OUTPOST in `test` folder, you have `test\Snakefile.py` and `test\OUTPOST`. You `cd test`, then run  `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`, you will get all outputs in `test\name_of_your_assembly` folder.
 2. Snakemake (the framework OUTPOST relied on) will lock working directory during running. So you should prepare two working directories if you're running two OUTPOST pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire OUTPOST folder to `folder1/` and `folder2/`. Then `cd folder1`, run OUTPOST. Then `cd folder2`, run OUTPOST.
 3. One OUTPOST process only take one assembly. If you have multi assemblies to analyze, run OUTPOST multiple times (in parallel) (in different working directories).
-4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `OUTPOST_config.tsv`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
+4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
 5. OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation. 
 
 # OUTPOST outpus
@@ -125,7 +125,8 @@ utest_male_vs_ill/
 The boxplot folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
 For example, boxplot_healthy_vs_ill/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf . We designed all file names to make them easy to understand. From this name, we know it is relative abundance of a significant species Alistipes.finegoldii.CAG.68 comparing between healthy and ill. Also, all plots generated by OUTPOST are vector PDF format for the convenience of publication.
 
- ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf)
+
+ ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf) (If image failed to show, click it to view.)
  
  The figs fold contains the heatmap and barplots:
  ```
@@ -138,11 +139,13 @@ human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.barplot.pdf
 human62_batch_effect2.taxa_counts.rel_abun.taxaID.rmU.top20.fillmin.scaled.heatmap.pdf
 ```
  For example, figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_family.rel_abun.equal.top20.fillmin.scaled.heatmap.pdf . OUTPOST not only draws heatmap for unequal taxa, but also for equal taxa.
+ 
 ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_family.rel_abun.equal.top20.fillmin.scaled.heatmap.pdf)
- 
+ (If image failed to show, click it to view.)
  OUTPOST produces barplot for all taxonomy levels. Here we have top 20 taxa, the 20 here is an adjustable parameter.
- ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.barplot.pdf)
  
+ ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.barplot.pdf)
+ (If image failed to show, click it to view.)
  The csv files here are intermediate tables. OUTPOST include these tables for user's convenience.
  
  The kaiju folder contains the taxonomy annotated contigs table:
@@ -174,7 +177,9 @@ human62_batch_effect2.rel_abun.asian_vs_euro.at_order.u-test.two_sided.csv     h
 ## batch effect
 If rm_batch_effect is True, OUTPOST will visualize the principal components (PCA) as well as the variance distribution. To check the batch effect, users can compare the plots before and after batch effect removal. 
 For example,
+
 ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.family.rmU.batch_effect_PCA.pdf)
+(If image failed to show, click it to view.)
 ```
 (base) yh@superServer:human62_batch_effect2$ l batch_effect/
 human62_batch_effect2.taxa_counts.rel_abun.class.rmU.batch_effect_PCA.pdf   human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.batch_effect_PCA.pdf
@@ -225,9 +230,11 @@ human62_batch_effect2.taxa_counts.rel_abun.genus.rmU.healthy_vs_ill.csv    PCoA1
 human62_batch_effect2.taxa_counts.rel_abun.species.rmU.healthy_vs_ill.csv  PCoA13.jaccard.at_species.pdf
 ```
 For example, 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/PCoA12.bray.at_species.pdf)
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/Shannon.alpha_diveristy.at_.species.pdf)
 
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/PCoA12.bray.at_species.pdf)
+
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/Shannon.alpha_diveristy.at_.species.pdf)
+(If image failed to show, click it to view.)
 ## LDA analysis
 This folder contains the metabolism and taxonomy LDA results for every group-pair.
 ```
@@ -251,10 +258,11 @@ human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.pdf
 human62_batch_effect2.rel_abun.female_vs_ill.at_taxaID.rel_abun.unequal.lefse.pdf 
 ```
 For example, 
+
 ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.lefse.pdf)
 
 ![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.pdf)
-
+(If image failed to show, click it to view.)
 Other sub-folders contain the intermediate tables for user's convenience.
 ```
 (base) yh@superServer:LDA_analysis$ l taxa_asian_vs_euro
@@ -290,8 +298,9 @@ allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_form
 allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.top20.fillmin.scaled.heatmap.pdf
 ```
 For example,
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf)
 
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf)
+(If image failed to show, click it to view.)
 ## antibiotic_analysis/plasmid_analysis/virulence_analysis
 These folders contain the dist plot and heatmap plot for all features with responding taxonomy, as well as intermediate tables.
 ```
@@ -302,9 +311,11 @@ genes_family_male_vs_female_heatmap.pdf     genes_order_healthy_vs_ill_heatmap.p
 genes_family_male_vs_ill_heatmap.pdf        genes_order_healthy_vs_male_heatmap.pdf    genes_taxa_counts_asian_vs_healthy.tsv
 ```
 For example,
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_asian_vs_euro_distrplot.pdf)
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_class_healthy_vs_ill_heatmap.pdf)
 
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_asian_vs_euro_distrplot.pdf)
+
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_class_healthy_vs_ill_heatmap.pdf)
+(If image failed to show, click it to view.)
 OUTPOST also provide all the annotation information in `utils/abricate.annoatations.txt`, which can assist users to determine the antibiotic genes/plasmids/virulence factors. Also, the intermediate tables are helpful. The `*.antibiotic.tsv` `*.virulence.tsv` `*.plasmidfinder.tsv` are summary tables.
 ```
 (base) yh@superServer:antibiotic_analysis$ head human62_batch_effect2.antibiotic.tsv
@@ -353,15 +364,25 @@ run `conda install -c biobakery humann=3.1.1`. This is because humann internal e
 Reformat your assembly file.
 from
 
-`>human63_000000000001
-TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAACTGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCGGTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCGATTGCCAAAAGCA`
-to 
 
 `>human63_000000000001
-TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTC
-TCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAAC
-TGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGT
-TCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCG
-GTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTAT
-AAATATTATTGCCATTGCCGATTGCCAAAAGCA`
+TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAACTGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCGGTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCGATTGCCAAAAGCA`
+
+
+to 
+
+
+```
+>human63_000000000001
+TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCA
+TTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCG
+GAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAAC
+TGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAA
+GAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAG
+AATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCG
+GTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGA
+GCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCG
+ATTGCCAAAAGCA
+```
+
 
