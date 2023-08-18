@@ -1,14 +1,14 @@
-name: GEMINI
+name: OUTPOST
 channels:
   - biobakery
   - conda-forge
   - bioconda
   - defaults
+  - cruizperez
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=1_gnu
   - _r-mutex=1.0.1=anacondar_1
-  - abricate=0.7=ha92aebf_2
   - aioeasywebdav=2.4.0=py39hf3d152e_1001
   - aiohttp=3.8.1=py39hb9d737c_1
   - aiosignal=1.2.0=pyhd8ed1ab_0
@@ -25,6 +25,28 @@ dependencies:
   - bedtools=2.30.0=h7d7f7ad_2
   - binutils_impl_linux-64=2.36.1=h193b22a_2
   - binutils_linux-64=2.36=hf3e587d_9
+  - bioconductor-annotate=1.72.0=r41hdfd78af_0
+  - bioconductor-annotationdbi=1.56.1=r41hdfd78af_0
+  - bioconductor-biobase=2.54.0=r41h5c21468_1
+  - bioconductor-biocgenerics=0.40.0=r41hdfd78af_0
+  - bioconductor-biocparallel=1.28.3=r41h619a076_0
+  - bioconductor-biostrings=2.62.0=r41h5c21468_1
+  - bioconductor-delayedarray=0.20.0=r41h5c21468_1
+  - bioconductor-deseq2=1.34.0=r41h619a076_1
+  - bioconductor-edger=3.36.0=r41h619a076_1
+  - bioconductor-genefilter=1.76.0=r41ha086028_1
+  - bioconductor-geneplotter=1.72.0=r41hdfd78af_0
+  - bioconductor-genomeinfodb=1.30.0=r41hdfd78af_0
+  - bioconductor-genomeinfodbdata=1.2.7=r41hdfd78af_1
+  - bioconductor-genomicranges=1.46.1=r41h5c21468_0
+  - bioconductor-iranges=2.28.0=r41h5c21468_1
+  - bioconductor-keggrest=1.34.0=r41hdfd78af_0
+  - bioconductor-limma=3.50.1=r41h5c21468_0
+  - bioconductor-matrixgenerics=1.6.0=r41hdfd78af_0
+  - bioconductor-s4vectors=0.32.3=r41h5c21468_0
+  - bioconductor-summarizedexperiment=1.24.0=r41hdfd78af_0
+  - bioconductor-xvector=0.34.0=r41h5c21468_1
+  - bioconductor-zlibbioc=1.40.0=r41h5c21468_1
   - biom-format=2.1.10=py39hce5d2b2_1
   - biopython=1.79=py39h3811e60_1
   - blast=2.12.0=hf3cf87c_4
@@ -35,18 +57,17 @@ dependencies:
   - brotli=1.0.9=h166bdaf_7
   - brotli-bin=1.0.9=h166bdaf_7
   - brotlipy=0.7.0=py39hb9d737c_1004
-  - bwa=0.7.17=h7132678_9
   - bwidget=1.9.14=ha770c72_1
   - bx-python=0.8.13=py39h6471ffd_1
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.18.1=h7f98852_0
-  - ca-certificates=2022.6.15=ha878542_0
+  - ca-certificates=2021.10.8=ha878542_0
   - cached-property=1.5.2=hd8ed1ab_1
   - cached_property=1.5.2=pyha770c72_1
   - cachetools=5.0.0=pyhd8ed1ab_0
   - cairo=1.16.0=ha12eb4b_1010
   - capnproto=0.9.1=h780b84a_5
-  - certifi=2022.6.15=py39hf3d152e_0
+  - certifi=2021.10.8=py39hf3d152e_2
   - cffi=1.15.0=py39h4bc2ebd_0
   - charset-normalizer=2.0.12=pyhd8ed1ab_0
   - click=8.1.2=py39hf3d152e_0
@@ -69,7 +90,6 @@ dependencies:
   - diamond=2.0.14=hb97b32f_1
   - docutils=0.18.1=py39hf3d152e_1
   - dropbox=11.29.0=pyhd8ed1ab_0
-  - emboss=6.6.0=h1b6f16a_5
   - entrez-direct=16.2=he881be0_0
   - expat=2.4.8=h27087fc_0
   - fasttree=2.1.11=hec16e2b_1
@@ -154,7 +174,6 @@ dependencies:
   - libedit=3.1.20191231=he28a2e2_2
   - libev=4.33=h516909a_1
   - libffi=3.4.2=h7f98852_5
-  - libgcc=7.2.0=h69d50b8_2
   - libgcc-devel_linux-64=9.4.0=hd854feb_15
   - libgcc-ng=11.2.0=h1d223b6_15
   - libgd=2.3.3=h283352f_2
@@ -204,7 +223,7 @@ dependencies:
   - numpy=1.22.3=py39h18676bf_2
   - oauth2client=4.1.3=py_0
   - openjpeg=2.4.0=hb52868f_1
-  - openssl=1.1.1o=h166bdaf_0
+  - openssl=1.1.1n=h166bdaf_0
   - packaging=21.3=pyhd8ed1ab_0
   - pandas=1.4.2=py39h1832856_1
   - pango=1.48.10=h4dcc4a0_3
@@ -215,34 +234,24 @@ dependencies:
   - peppy=0.31.2=pyhd8ed1ab_2
   - perl=5.32.1=2_h7f98852_perl5
   - perl-archive-tar=2.40=pl5321hdfd78af_0
-  - perl-bioperl=1.6.924=4
   - perl-carp=1.50=pl5321hd8ed1ab_0
   - perl-common-sense=3.75=pl5321hdfd78af_0
   - perl-compress-raw-bzip2=2.103=pl5321h87f3376_0
   - perl-compress-raw-zlib=2.103=pl5321h87f3376_0
   - perl-encode=3.17=pl5321hec16e2b_0
-  - perl-encode-locale=1.05=pl5321hdfd78af_7
   - perl-exporter=5.74=pl5321hd8ed1ab_0
   - perl-exporter-tiny=1.002002=pl5321hdfd78af_0
   - perl-extutils-makemaker=7.64=pl5321hd8ed1ab_0
-  - perl-file-slurp=9999.32=pl5321hdfd78af_0
-  - perl-file-spec=3.48_01=pl5321hdfd78af_2
-  - perl-findbin=1.51=pl5321hdfd78af_3
   - perl-io-compress=2.102=pl5321h87f3376_1
   - perl-io-zlib=1.11=pl5321hdfd78af_0
   - perl-json=4.05=pl5321hdfd78af_0
   - perl-json-xs=2.34=pl5321h9f5acd7_5
   - perl-list-moreutils=0.430=pl5321hdfd78af_0
   - perl-list-moreutils-xs=0.430=pl5321hec16e2b_1
-  - perl-lwp-simple=6.15=3
   - perl-parent=0.238=pl5321hd8ed1ab_0
   - perl-pathtools=3.75=pl5321hec16e2b_3
   - perl-scalar-list-utils=1.62=pl5321hec16e2b_0
-  - perl-test-harness=3.44=pl5321hdfd78af_0
-  - perl-text-csv=2.01=pl5321hdfd78af_0
-  - perl-threaded=5.32.1=hdfd78af_1
   - perl-types-serialiser=1.01=pl5321hdfd78af_0
-  - perl-yaml=1.30=pl5321hdfd78af_0
   - phylophlan=3.0.2=py_0
   - pillow=9.1.0=py39hae2aec6_0
   - pip=22.0.4=pyhd8ed1ab_0
@@ -501,7 +510,6 @@ dependencies:
   - tzlocal=4.2=py39hf3d152e_0
   - ubiquerg=0.6.1=pyh9f0ad1d_0
   - unicodedata2=14.0.0=py39hb9d737c_1
-  - unzip=6.0=h7f98852_3
   - uritemplate=4.1.1=pyhd8ed1ab_0
   - urllib3=1.26.9=pyhd8ed1ab_0
   - veracitools=0.1.3=py_0
@@ -528,4 +536,4 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.11=h166bdaf_1014
   - zstd=1.5.2=ha95c52a_0
-prefix: /home/yihang/anaconda3/envs/GEMINI
+

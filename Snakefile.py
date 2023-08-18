@@ -1,6 +1,6 @@
 import yaml
 
-with open('GEMINI/Snakefile_config.yml', 'r') as f:
+with open('OUTPOST/Snakefile_config.yml', 'r') as f:
     config = yaml.safe_load(f)
 
 # %% command parameters
@@ -21,7 +21,11 @@ humann_rename_table = config['humann_rename_table']
 lefse_format_input = config['lefse_format_input']
 lefse_run = config['lefse_run']
 abricate = config['abricate']
-GEMINI_config = config["config"]
+mgm = config['mgm']
+mod_file = config['mod_file']
+cdhit_cutoff = config['cdhit_cutoff']
+cdhit = config['cdhit']
+OUTPOST_config = config["config"]
 cores = config['cores'] # number of CPUs to use
 
 # %% settings
@@ -31,14 +35,16 @@ qvalue = config["qvalue"] # [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
 skip_assembly_analysis = config['skip_assembly_analysis'] # True or False
 skip_humann_init = config['skip_humann_init'] # True or False
 skip_kaiju = config['skip_kaiju'] # True or False
+skip_metagenemark = config['skip_metagenemark'] # True or False
 rm_batch_effect = config['rm_batch_effect']  # True or False
 top = config['top'] # number of items to show in heatmap
+biomarker_num = config['biomarker_num'] # range of biomarkers candidates
 LDA_cutoff = config['LDA_cutoff'] # LDA score threshold
 taxa_level = config['taxa_level'] # sublist from ['taxaID','superkingdom','phylum','class','order','family','genus','species']
 databases = config['databases'] # sublist from ['rxn','eggnog','ko','level4ec','pfam']
+process_batch_size = config['process_batch_size']
 
-
-# %% GEMINI main body
+# %% OUTPOST main body
 
 ################################################################################
 ###!!!DO NOT MODIFY THE FOLLOWING CODES UNLESS YOU KNOW WHAT YOU ARE DOING!!!###
@@ -48,17 +54,17 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-import GEMINI as ge
+import OUTPOST as ge
 import itertools
 import time
 import shutil
 
-# %% GEMINI prepare
+# %% OUTPOST prepare
 shell("ulimit -s 65535")
 try:
-    df_config=pd.read_csv(GEMINI_config,sep='\t')
+    df_config=pd.read_csv(OUTPOST_config,sep='\t')
 except:
-    sys.exit(f"GEMINI: read {GEMINI_config} error. Make sure file exists in tab separated format.")
+    sys.exit(f"OUTPOST: read {OUTPOST_config} error. Make sure file exists in tab separated format.")
 sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict = ge.check_config(df_config, rm_batch_effect)
 bam_basename=[os.path.basename(x) for x in bam_list]
 group_pair_list = list(itertools.combinations(comparison_dict.keys(),2))
@@ -75,39 +81,222 @@ for sample,fq in zip(sample_list, fq_list):
         fq_humann='.'.join(fq_humann.split('.')[:-1])
     fq_humann_list.append(fq_humann)
 
-# %% GEMINI starts
-if skip_assembly_analysis:
-    rule all:
-        input:
-            f"{assembly}/log/heatmap_humann.done",
-            f"{assembly}/log/heatmap_taxa.done",
-            f"{assembly}/log/alpha_beta_diversity.done",
-            f"{assembly}/log/lefse_humann.done",
-            f"{assembly}/log/lefse_taxa.done",
-            f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done",
-            f"{assembly}/log/virulence_analysis.done",
-            f"{assembly}/log/plasmid_analysis.done",
-            f"{assembly}/log/antibiotic_analysis.done",
-            f"{assembly}/log/visualize_batch_effect.done"
-else:
-    rule all:
-        input:
-            f"{assembly}/log/heatmap_humann.done",
-            f"{assembly}/log/heatmap_taxa.done",
-            f"{assembly}/log/prepare_contig_table_from_counts_table.done",
-            f"{assembly}/log/alpha_beta_diversity.done",
-            f"{assembly}/log/lefse_humann.done",
-            f"{assembly}/log/lefse_taxa.done",
-            f"{assembly}/log/taxa_barplots.done",
-            f"{assembly}/log/taxa_boxplot.done",
-            f"{assembly}/log/virulence_analysis.done",
-            f"{assembly}/log/plasmid_analysis.done",
-            f"{assembly}/log/antibiotic_analysis.done",
-            f"{assembly}/log/visualize_batch_effect.done"
+# %% OUTPOST starts
+rule all:
+    input:
+        f"{assembly}/log/heatmap_humann.done",
+        f"{assembly}/log/heatmap_taxa.done",
+        f"{assembly}/log/process_contig_table.done",
+        f"{assembly}/log/alpha_beta_diversity.done",
+        f"{assembly}/log/lefse_humann.done",
+        f"{assembly}/log/lefse_taxa.done",
+        f"{assembly}/log/taxa_barplots.done",
+        f"{assembly}/log/taxa_boxplot.done",
+        f"{assembly}/log/virulence_analysis.done",
+        f"{assembly}/log/plasmid_analysis.done",
+        f"{assembly}/log/antibiotic_analysis.done",
+        f"{assembly}/log/visualize_batch_effect.done",
+        f"{assembly}/log/metagenemark.done",
+        f"{assembly}/log/OUTPOST_report.done"
 
+# %% report
+rule OUTPOST_report:
+    input:
+        "{assembly}/log/biomarker_summary.done"
+    output:
+        "{assembly}/log/OUTPOST_report.done"
+    log:
+        "{assembly}/log/OUTPOST_report.log"
+    benchmark:
+        "{assembly}/benchmark/OUTPOST_report.benchmark"
+    run:
+        wkdir = f"{assembly}/report/"
+        os.makedirs(wkdir, exist_ok=True)
+        os.makedirs(f"{assembly}/taxa_analysis/counts_tables/", exist_ok=True)
+        
+        # clean taxa_analysis tables
+        shell("mv {assembly}/taxa_analysis/*index {assembly}/taxa_analysis/counts_tables/")
+        shell("mv {assembly}/taxa_analysis/*csv {assembly}/taxa_analysis/counts_tables/")
+        
 
-# %% lefse
+        
+        shell("touch {assembly}/log/OUTPOST_report.done")
+
+# %% biomarker
+rule biomarker_summary:
+    input:
+        "{assembly}/log/ancom_identification.done",
+        "{assembly}/log/rel_abun_utest.done",
+        "{assembly}/log/virulence_analysis.done",
+        "{assembly}/log/plasmid_analysis.done",
+        "{assembly}/log/antibiotic_analysis.done",
+        "{assembly}/log/lefse_taxa.done"
+    output:
+        "{assembly}/log/biomarker_summary.done"
+    log:
+        "{assembly}/log/biomarker_summary.log"
+    benchmark:
+        "{assembly}/benchmark/biomarker_summary.benchmark"
+    run:
+        wkdir = f"{assembly}/biomarker_analysis/"
+        os.makedirs(wkdir, exist_ok=True)
+        
+        # init table
+        init_tb = pd.read_csv(f'{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv', sep = '\t', header=None)
+
+        for level in taxa_level:
+            for group1,group2 in group_pair_list:
+                biomarker_score = [f'taxa_abun_top_{biomarker_num}',
+                                   f'taxa_abun_signicant',
+                                   f'LDA_larger_than_{LDA_cutoff}',
+                                   f'virulence_top_{biomarker_num}',
+                                   f'plasmid_top_{biomarker_num}',
+                                   f'antibiotic_top_{biomarker_num}',
+                                   f'ANCOM_identified']
+                taxa_list = list(set(init_tb[taxa_level.index(level)+1]))
+                biomarker_tb = pd.DataFrame(index = taxa_list, columns = biomarker_score)
+                biomarker_tb = biomarker_tb.fillna(0)
+                
+                # taxa_abun_top
+                try:
+                    dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                    tmp = pd.read_csv(dp, index_col=0)
+                    row_sums = tmp.sum(axis=0)
+                    sorted_row_sums =  sorted_row_sums = row_sums.sort_values(ascending=False)
+                    biomarker_list = sorted_row_sums.index[:biomarker_num]
+                    for index in biomarker_list: 
+                        try:
+                            biomarker_tb.loc[index, f'taxa_abun_top_{biomarker_num}'] = 1
+                        except:
+                            pass
+                except:
+                    pass
+                # taxa_abun_signicant
+                dp = f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.u-test." +"paired."*paired + "two_sided."*two_sided + "csv"
+                tmp = pd.read_csv(dp, index_col=0)
+                for index in biomarker_tb.index: 
+                    try:
+                        if tmp.loc['Wilcoxon',index] == 'unequal':
+                            biomarker_tb.loc[index, 'taxa_abun_signicant'] = 1
+                    except:
+                        pass
+                    
+                # LDA_larger_than
+                dp1 = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.lefse.res"
+                dp2 = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.res"
+                dp1_exists = os.path.exists(dp1)
+                dp2_exists = os.path.exists(dp2)
+                dp1 = dp1 * dp1_exists
+                dp2 = dp2 * dp2_exists
+                dp = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.lefse.res"
+                try:
+                    shell("cat {dp1} {dp2} > {dp}")
+                    tmp = pd.read_csv(dp, sep = '\t', index_col=0, header = None)
+                    tmp1 = tmp.loc[tmp[2].notnull()]
+                    tmp2 = tmp1.loc[tmp1[3] > LDA_cutoff]
+                    if tmp2.shape[0] > 0:
+                        for index in tmp2.index:
+                            hit = 0
+                            # index = index.strip().split('_')[-1]
+                            for real_index in biomarker_tb.index:
+                                if type(real_index) is str:
+                                    try:
+                                        if real_index.replace('.','').replace('-','').replace(' ','').replace(':','').replace('[','').replace(']','').lower() == index.replace('_','').lower():
+                                            biomarker_tb.loc[real_index, f'LDA_larger_than_{LDA_cutoff}'] = 1
+                                            hit = 1
+                                            break
+                                    except:
+                                        pass
+                            if hit == 0:
+                                biomarker_tb.loc[index, f'LDA_larger_than_{LDA_cutoff}'] = 1
+                except:
+                    pass
+                
+                # virulence_top
+                dp = f"{assembly}/virulence_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                tmp = pd.read_csv(dp, sep = '\t')
+                level_index = taxa_level.index(level)
+                tmp1 = tmp[[level,'total']]
+                tmp2 = tmp1.groupby(level, as_index=False).sum()
+                tmp3 = tmp2.sort_values(by='total', ascending=False)
+                tmp3.index = range(tmp3.shape[0])
+                for index in tmp3.loc[:biomarker_num-1, level]:
+                    try:
+                        biomarker_tb.loc[index, f'virulence_top_{biomarker_num}'] = 1
+                    except:
+                        pass
+
+                # plasmid_top
+                dp = f"{assembly}/plasmid_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                tmp = pd.read_csv(dp, sep = '\t')
+                level_index = taxa_level.index(level)
+                tmp1 = tmp[[level,'total']]
+                tmp2 = tmp1.groupby(level, as_index=False).sum()
+                tmp3 = tmp2.sort_values(by='total', ascending=False)
+                tmp3.index = range(tmp3.shape[0])
+                for index in tmp3.loc[:biomarker_num-1, level]:
+                    try:
+                        biomarker_tb.loc[index, f'plasmid_top_{biomarker_num}'] = 1
+                    except:
+                        pass
+
+                # antibiotic_top
+                dp = f"{assembly}/antibiotic_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                tmp = pd.read_csv(dp, sep = '\t')
+                level_index = taxa_level.index(level)
+                tmp1 = tmp[[level,'total']]
+                tmp2 = tmp1.groupby(level, as_index=False).sum()
+                tmp3 = tmp2.sort_values(by='total', ascending=False)
+                tmp3.index = range(tmp3.shape[0])
+                for index in tmp3.loc[:biomarker_num-1, level]:
+                    try:
+                        biomarker_tb.loc[index, f'antibiotic_top_{biomarker_num}'] = 1
+                    except:
+                        pass
+                
+                # ANCOM_identified
+                dp = f"{assembly}/biomarker_analysis/ANCOM_identification/ancom_biomarker.{group1}_vs_{group2}.at_{level}.tsv"
+                tmp = pd.read_csv(dp, sep = '\t',index_col=0)
+                for index in tmp.index:
+                    if tmp.loc[index,'REJECT']:
+                        try:
+                            if level == 'taxaID':
+                                index = index.strip("X")
+                            biomarker_tb.loc[index,'ANCOM_identified'] = 1
+                        except:
+                            pass
+                
+                # OUTPOST_biomarker_score
+                biomarker_tb['OUTPOST_biomarker_score'] = biomarker_tb.sum(axis = 1)
+                biomarker_tb = biomarker_tb.sort_values(by = 'OUTPOST_biomarker_score', ascending = False)
+                biomarker_tb.to_csv(f"{assembly}/biomarker_analysis/OUTPOST_biomarker_scores.{group1}_vs_{group2}.{level}.tsv",
+                                    sep = '\t',header=True, index=True)
+                
+        shell("touch {assembly}/log/biomarker_summary.done")
+        
+        
+rule ancom_identification:
+    input:
+        "{assembly}/log/counts_table2rel_abun.done"
+    output:
+        "{assembly}/log/ancom_identification.done"
+    log:
+        "{assembly}/log/ancom_identification.log"
+    benchmark:
+        "{assembly}/benchmark/ancom_identification.benchmark"
+    run:
+        wkdir = f"{assembly}/biomarker_analysis/ANCOM_identification/"
+        os.makedirs(wkdir, exist_ok=True)
+        for level in taxa_level:
+            for group1,group2 in group_pair_list:
+                dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
+                group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
+                shell("{Rscript} OUTPOST/fastANCOM.R {dp} {wkdir} {group1} {group2} {group1_index} {group2_index} {level}")
+
+        shell("touch {assembly}/log/ancom_identification.done")
+
+# %% LDA
 rule lefse_taxa:
     input:
         "{assembly}/log/rel_abun2lefse_taxa.done"
@@ -117,6 +306,7 @@ rule lefse_taxa:
         "{assembly}/log/lefse_taxa.log"
     benchmark:
         "{assembly}/benchmark/lefse_taxa.benchmark"
+    threads: cores
     run:
         wkdir = f"{assembly}/LDA_analysis/figs_taxa/"
         os.makedirs(wkdir, exist_ok=True)
@@ -130,14 +320,30 @@ rule lefse_taxa:
 
             for dp,format_,res,output in zip(dp_list,format_list,res_list,output_list):
                 try:
-                    shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
-                    shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
+                    shell("nohup {lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ; "
+                          "{lefse_run} {format_}  {res} > {log} 2>&1 ; "
+                          "{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 & ")
                 except:
-                    print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
+                    print(f"OUTPOST: lefse_taxa: cannot process {dp}. skip.")
 
         # equal taxa to lefse barplot
-        for group1,group2 in group_pair_list:
+        for group1,group2 in group_pair_list[:-2]:
+            dp_list = [f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.tsv"
+                       for level in taxa_level]
+            format_list = [dp.replace(".tsv",".format") for dp in dp_list]
+            res_list = [dp.replace(".tsv",".res") for dp in dp_list]
+            output_list = [wkdir + os.path.basename(dp).replace(".tsv",".pdf") for dp in dp_list]
+
+            for dp,format_,res,output in zip(dp_list,format_list,res_list,output_list):
+                try:
+                    shell("nohup {lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ; "
+                          "{lefse_run} {format_}  {res} > {log} 2>&1 ; "
+                          "{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 & ")
+                except:
+                    print(f"OUTPOST: lefse_taxa: cannot process {dp}. skip.")
+
+        # create time for calculation
+        for group1,group2 in group_pair_list[-2:]:
             dp_list = [f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.lefse.tsv"
                        for level in taxa_level]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
@@ -148,9 +354,9 @@ rule lefse_taxa:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
+                    shell("{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
-                    print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
+                    print(f"OUTPOST: lefse_taxa: cannot process {dp}. skip.")
 
         shell("touch {assembly}/log/lefse_taxa.done")
 
@@ -163,6 +369,7 @@ rule lefse_humann:
         "{assembly}/log/lefse_humann.log"
     benchmark:
         "{assembly}/benchmark/rel_abun2lefse_humann.benchmark"
+    threads: cores
     run:
         wkdir = f"{assembly}/LDA_analysis/figs_humann/"
         os.makedirs(wkdir, exist_ok=True)
@@ -176,14 +383,30 @@ rule lefse_humann:
 
             for dp,format_,res,output in zip(dp_list,format_list,res_list,output_list):
                 try:
-                    shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
-                    shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
+                    shell("nohup {lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ; "
+                          "{lefse_run} {format_}  {res} > {log} 2>&1 ; "
+                          "{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 & ")
                 except:
-                    print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
+                    print(f"OUTPOST: lefse_humann: cannot process {dp}. skip.")
 
         # equal humann to lefse barplot
-        for group1,group2 in group_pair_list:
+        for group1,group2 in group_pair_list[:-2]:
+            dp_list = [f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.lefse.tsv"
+                       for database in databases]
+            format_list = [dp.replace(".tsv",".format") for dp in dp_list]
+            res_list = [dp.replace(".tsv",".res") for dp in dp_list]
+            output_list = [wkdir + os.path.basename(dp).replace(".tsv",".pdf") for dp in dp_list]
+
+            for dp,format_,res,output in zip(dp_list,format_list,res_list,output_list):
+                try:
+                    shell("nohup {lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ; "
+                          "{lefse_run} {format_}  {res} > {log} 2>&1 ; "
+                          "{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 & ")
+                except:
+                    print(f"OUTPOST: lefse_humann: cannot process {dp}. skip.")
+
+        # equal humann to lefse barplot
+        for group1,group2 in group_pair_list[-2:]:
             dp_list = [f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.lefse.tsv"
                        for database in databases]
             format_list = [dp.replace(".tsv",".format") for dp in dp_list]
@@ -194,9 +417,9 @@ rule lefse_humann:
                 try:
                     shell("{lefse_format_input} {dp} {format_} -c 1 -s 2 -u 3 -o 1000000 > {log} 2>&1 ")
                     shell("{lefse_run} {format_}  {res} > {log} 2>&1 ")
-                    shell("{python3} GEMINI/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
+                    shell("{python3} OUTPOST/barplots_from_lefse_res_file.py  {res} {output} {LDA_cutoff} > {log} 2>&1 ")
                 except:
-                    print(f"GEMINI: lefse_humann: cannot process {dp}. skip.")
+                    print(f"OUTPOST: lefse_humann: cannot process {dp}. skip.")
 
         shell("touch {assembly}/log/lefse_humann.done")
 
@@ -209,6 +432,7 @@ rule rel_abun2lefse_taxa:
         "{assembly}/log/rel_abun2lefse_taxa.log"
     benchmark:
         "{assembly}/benchmark/rel_abun2lefse_taxa.benchmark"
+    threads: cores
     run:
         # unequal taxa to lefse table
         for group1,group2 in group_pair_list:
@@ -219,7 +443,7 @@ rule rel_abun2lefse_taxa:
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
             class_ = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
-            shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
+            shell("{python3} OUTPOST/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
         # equal taxa to lefse table
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/"
@@ -229,7 +453,7 @@ rule rel_abun2lefse_taxa:
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
             class_ = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
-            shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
+            shell("{python3} OUTPOST/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
 
         shell("touch {assembly}/log/rel_abun2lefse_taxa.done")
 
@@ -252,7 +476,7 @@ rule rel_abun2lefse_humann:
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
             class_ = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
-            shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
+            shell("{python3} OUTPOST/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
         # equal humann to lefse table
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/"
@@ -262,7 +486,7 @@ rule rel_abun2lefse_humann:
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
             class_ = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
-            shell("{python3} GEMINI/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
+            shell("{python3} OUTPOST/rel_abun2lefse.py {dp_list} {output_list} {class_} > {log} 2>&1 ")
 
         shell("touch {assembly}/log/rel_abun2lefse_humann.done")
 
@@ -289,7 +513,7 @@ rule heatmap_taxa:
                 for sample in sample_list:
                     w.write(sample + '\n')
             try:
-                shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
             except: pass
         # top unequal taxa heatmap
         for group1,group2 in group_pair_list:
@@ -303,9 +527,9 @@ rule heatmap_taxa:
                     for sample in comparison_dict[group2]:
                         w.write(f"{sample}_{group2}\n")
                 try:
-                    shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                    shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
                 except:
-                    print(f"=================={Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                    print(f"=================={Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
 
         # top equal taxa heatmap
         for group1,group2 in group_pair_list:
@@ -319,7 +543,7 @@ rule heatmap_taxa:
                     for sample in comparison_dict[group2]:
                         w.write(f"{sample}_{group2}\n")
                 try:
-                    shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                    shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
                 except: pass
         shell("touch {assembly}/log/heatmap_taxa.done")
 
@@ -350,7 +574,7 @@ rule heatmap_humann:
                 for sample in humann_sample_list:
                     w.write(sample + '\n')
             try:
-                shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
             except: pass
         # top unequal humann heatmap
         for group1,group2 in group_pair_list:
@@ -364,7 +588,7 @@ rule heatmap_humann:
                     for sample in comparison_dict[group2]:
                         w.write(f"{sample}_{group2}\n")
                 try:
-                    shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                    shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
                 except: pass
         # top equal humann heatmap
         for group1,group2 in group_pair_list:
@@ -378,7 +602,7 @@ rule heatmap_humann:
                     for sample in comparison_dict[group2]:
                         w.write(f"{sample}_{group2}\n")
                 try:
-                    shell("{Rscript} GEMINI/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
+                    shell("{Rscript} OUTPOST/heatmap.R {dp} {wkdir} {index_dp} {data_type} {output} > {log}_taxa 2>&1")
                 except: pass
         shell("touch {assembly}/log/heatmap_humann.done")
 
@@ -416,16 +640,16 @@ rule scale_humann_rel_abun_table:
         dp_list = ','.join(dp_list)
         output_list = ','.join(output_list)
         try:
-            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+            shell("{python3} OUTPOST/scale_rel_abun_table.py {dp_list} {output_list}")
         except:
             # in case augment is too long
-            print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
+            print("OUTPOST: rule scale_rel_abun_table Argument list too long. use chunks.")
             dp_list_chunks = [dp_list.split(',')[i:i + 100] for i in range(0, len(dp_list.split(',')), 100)]
             output_list_chunks = [output_list.split(',')[i:i + 100] for i in range(0, len(output_list.split(',')), 100)]
             for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
                 dp_list_chunk = ','.join(dp_list_chunk)
                 output_list_chunk = ','.join(output_list_chunk)
-                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
+                shell("{python3} OUTPOST/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
         shell("touch {assembly}/log/scale_humann_rel_abun_table.done")
 
 
@@ -446,10 +670,10 @@ rule extract_top_humann:
         output_name_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
                        for database in databases])
         error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann.error"
-        shell("{python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+        shell("{python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log} 2>&1 ")
         result = ge.wait_unti_file_exists(output_name_list.split(','),error_log)
-        assert result is True, "GEMINI: extract_top_humann has errors. exit."
+        assert result is True, "OUTPOST: extract_top_humann has errors. exit."
 
         # top unequal abundant
         output_list = []
@@ -461,11 +685,11 @@ rule extract_top_humann:
                     for database in databases])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann_top_unequal_abundant.error"
             output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv")
-            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+            shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: extract_top_humann_top_unequal_abundant has errors. exit."
+        assert result is True, "OUTPOST: extract_top_humann_top_unequal_abundant has errors. exit."
 
        # top equal abundant
         output_list = []
@@ -477,11 +701,11 @@ rule extract_top_humann:
                     for database in databases])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann_top_equal_abundant.error"
             output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv")
-            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+            shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: extract_top_humann_top_equal_abundant has errors. exit."
+        assert result is True, "OUTPOST: extract_top_humann_top_equal_abundant has errors. exit."
 
         shell("touch {assembly}/log/extract_top_humann.done")
 
@@ -517,11 +741,11 @@ rule humann_utest:
                 os.remove(error_log) # clean former residual error log
             except:
                 pass
-            shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
+            shell("nohup {python3} OUTPOST/rel_abun_utest.py {dp_list} {group1_index} {group1} "
                   " {group2_index} {group2} {prefix_list} {paired} {two_sided} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: rel_abun_utest has errors. exit."
+        assert result is True, "OUTPOST: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/humann_utest.done")
 
 rule humann2rel_abun:
@@ -539,7 +763,7 @@ rule humann2rel_abun:
                        for database in databases])
             output_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
                        for database in databases])
-            shell("{python3} GEMINI/humann2rel_abun.py {dp_list} {output_list} > {log} 2>&1 ")
+            shell("{python3} OUTPOST/humann2rel_abun.py {dp_list} {output_list} > {log} 2>&1 ")
         shell("touch {assembly}/log/humann2rel_abun.done")
 
 rule humann_output:
@@ -726,10 +950,22 @@ if not skip_humann_init:
         threads: cores
         run:
             os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
-            for fq in fq_list:
-                shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
-                " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
-                " --threads {threads} --memory-use maximum > {log} 2>&1 ")
+            fq_list_batch = [fq_list[i:i+int(process_batch_size)] for i in range(0, len(fq_list), int(process_batch_size))]
+            for fq_batch in fq_list_batch:
+                if len(fq_batch) == 1:
+                    fq = fq_batch[0]
+                    shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                    " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
+                    " --threads {threads} --memory-use maximum > {log} 2>&1 ")
+                elif len(fq_batch) > 1:
+                    for fq in fq_batch[:-1]:
+                        shell("nohup {humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                        " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
+                        " --threads {threads} --memory-use maximum > {log} 2>&1 &")
+                    fq = fq_batch[-1]
+                    shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                    " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
+                    " --threads {threads} --memory-use maximum > {log} 2>&1")
             shell("touch {assembly}/log/humann_init.done")
 else:
     rule skip_humann_init:
@@ -747,7 +983,7 @@ else:
             humann_pathcoverage = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
             missing_humann = [file for file in humann_genefamilies + humann_pathabundance + humann_pathcoverage if not os.path.exists(file)]
             assert len(missing_humann) == 0,\
-            f"GEMINI: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit. expecting {missing_humann}"
+            f"OUTPOST: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit. expecting {missing_humann}"
             try:
                 shell("mkdir -p {assembly}/log/")
             except:
@@ -780,7 +1016,7 @@ rule alpha_beta_diversity:
             else:
                 species = taxa_level[-1]
                 genus = taxa_level[-2]
-                print(f"GEMINI: rule alpha_beta_diversity species and genus not in {taxa_level}. use the last two {taxa_level[-1]} {taxa_level[-2]} instead.")
+                print(f"OUTPOST: rule alpha_beta_diversity species and genus not in {taxa_level}. use the last two {taxa_level[-1]} {taxa_level[-2]} instead.")
             species_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{species}.rmU.csv"
             genus_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{genus}.rmU.csv"
             species_df = pd.read_csv(species_dp,index_col=0)
@@ -808,10 +1044,45 @@ rule alpha_beta_diversity:
                 for new_name in group2_new_name:
                     w.write(f"{new_name},{group2},A\n")
 
-            shell("{Rscript} GEMINI/alpha_beta_diversity.R {species_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {species} > {log} 2>&1")
-            shell("{Rscript} GEMINI/alpha_beta_diversity.R {genus_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {genus} > {log} 2>&1")
+            shell("{Rscript} OUTPOST/alpha_beta_diversity.R {species_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {species} > {log} 2>&1")
+            shell("{Rscript} OUTPOST/alpha_beta_diversity.R {genus_new_dp} {wkdir} {index_file} {group_file} {group1},{group2} {genus} > {log} 2>&1")
         shell("touch {assembly}/log/alpha_beta_diversity.done")
 
+# %% metagenemark
+if not skip_metagenemark:
+    rule metagenemark:
+        input:
+            assembly_dir
+        output:
+            "{assembly}/log/metagenemark.done"
+        log:
+            "{assembly}/log/metagenemark.log"
+        benchmark:
+            "{assembly}/benchmark/metagenemark.benchmark"
+        threads: cores
+        run:
+            output_dir = f"{assembly}/assembly_analysis/metagenemark"
+            os.makedirs(output_dir, exist_ok=True)
+            # predict genes
+            shell("{mgm} -r -p 1 -m {mod_file} -k -K {output_dir}/{assembly}.rbs -f G -o {output_dir}/{assembly}.gtf -a -A {output_dir}/{assembly}.prot.fa -d -D {output_dir}/{assembly}.nucl.fa {assembly_dir}")
+            # remove redundancy
+            shell("{cdhit} -i {output_dir}/{assembly}.nucl.fa -o {output_dir}/{assembly}.nucl.nonrd.fa -c {cdhit_cutoff} -n 10 -M 0 -T {cores}")
+            
+            shell("touch {assembly}/log/metagenemark.done")
+else:
+    rule skip_metagenemark:
+        input:
+            assembly_dir
+        output:
+            "{assembly}/log/metagenemark.done"
+        log:
+            "{assembly}/log/metagenemark.log"
+        benchmark:
+            "{assembly}/benchmark/metagenemark.benchmark"
+        run:
+            output_dir = f"{assembly}/assembly_analysis/metagenemark"
+            os.makedirs(output_dir, exist_ok=True)
+            shell("touch {assembly}/log/metagenemark.done")
 
 # %% plasmid
 rule plasmid_alignment:
@@ -833,7 +1104,7 @@ rule plasmid_alignment:
         for group1,group2 in group_pair_list:
             group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
-            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.plasmidfinder.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+            shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.plasmidfinder.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp} True")
         
         shell("touch {assembly}/log/plasmid_analysis.done")
@@ -865,7 +1136,7 @@ rule virulence_alignment:
         for group1,group2 in group_pair_list:
             group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
-            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.virulence.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+            shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.virulence.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
         shell("touch {assembly}/log/virulence_analysis.done")
 
@@ -914,7 +1185,7 @@ rule antibiotic_alignment:
         for group1,group2 in group_pair_list:
             group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
-            shell("{python3} GEMINI/visualize_abricate.py {output_dir}/{assembly}.antibiotic.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
+            shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.antibiotic.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
 
         shell("touch {assembly}/log/antibiotic_analysis.done")
@@ -941,7 +1212,7 @@ rule visualize_batch_effect:
                 plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.batch_effect_PCA.pdf"
             else:
                 plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.not_rm_batch_effect_PCA.pdf"
-            shell("{Rscript} GEMINI/visualize_batch_effect.R {dp} {GEMINI_config} {plot}")
+            shell("{Rscript} OUTPOST/visualize_batch_effect.R {dp} {OUTPOST_config} {plot}")
         shell("touch {assembly}/log/visualize_batch_effect.done")
         
 
@@ -979,16 +1250,16 @@ rule scale_taxa_rel_abun_table:
         dp_list = ','.join(dp_list)
         output_list = ','.join(output_list)
         try:
-            shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list} {output_list}")
+            shell("{python3} OUTPOST/scale_rel_abun_table.py {dp_list} {output_list}")
         except:
             # in case augment is too long
-            print("GEMINI: rule scale_rel_abun_table Argument list too long. use chunks.")
+            print("OUTPOST: rule scale_rel_abun_table Argument list too long. use chunks.")
             dp_list_chunks = [dp_list.split(',')[i:i + 100] for i in range(0, len(dp_list.split(',')), 100)]
             output_list_chunks = [output_list.split(',')[i:i + 100] for i in range(0, len(output_list.split(',')), 100)]
             for dp_list_chunk,output_list_chunk in zip(dp_list_chunks, output_list_chunks):
                 dp_list_chunk = ','.join(dp_list_chunk)
                 output_list_chunk = ','.join(output_list_chunk)
-                shell("{python3} GEMINI/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
+                shell("{python3} OUTPOST/scale_rel_abun_table.py {dp_list_chunk} {output_list_chunk}")
         shell("touch {assembly}/log/scale_taxa_rel_abun_table.done")
 
 rule taxa_barplots:
@@ -1010,7 +1281,7 @@ rule taxa_barplots:
             df['Others'] = 1 - df.sum(axis = 1)
             df.to_csv(new_dp)
             try:
-                shell("{Rscript} GEMINI/barplots.R {new_dp} {output} > {log} 2>&1")
+                shell("{Rscript} OUTPOST/barplots.R {new_dp} {output} > {log} 2>&1")
             except:
                 pass
         shell("touch {assembly}/log/taxa_barplots.done")
@@ -1032,10 +1303,10 @@ rule extract_top_taxa:
         output_name_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
                             for level in taxa_level])
         error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_abundant.error"
-        shell("{python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+        shell("{python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log}")
         result = ge.wait_unti_file_exists(output_name_list.split(','),error_log)
-        assert result is True, "GEMINI: extract_top_taxa_top_abundant has errors. exit."
+        assert result is True, "OUTPOST: extract_top_taxa_top_abundant has errors. exit."
 
         # top unequal abundant
         output_list = []
@@ -1048,11 +1319,11 @@ rule extract_top_taxa:
                     for level in taxa_level])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_unequal_abundant.error"
             output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.unequal.top{top}.csv")
-            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+            shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: extract_top_taxa_top_unequal_abundant has errors. exit."
+        assert result is True, "OUTPOST: extract_top_taxa_top_unequal_abundant has errors. exit."
 
        # top equal abundant
         output_list = []
@@ -1065,11 +1336,11 @@ rule extract_top_taxa:
                     for level in taxa_level])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_equal_abundant.error"
             output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.equal.top{top}.csv")
-            shell("nohup {python3} GEMINI/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
+            shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: extract_top_taxa_top_equal_abundant has errors. exit."
+        assert result is True, "OUTPOST: extract_top_taxa_top_equal_abundant has errors. exit."
 
         shell("touch {assembly}/log/extract_top_taxa.done")
 
@@ -1093,7 +1364,14 @@ rule taxa_boxplot:
             for dp in dp_list:
                 output = f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{os.path.basename(dp).replace('.csv','')}"
                 try:
-                    shell("{Rscript} GEMINI/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
+                    shell("{Rscript} OUTPOST/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
+                except:
+                    pass
+            # categorize boxplots
+            for level in taxa_level:
+                os.makedirs(f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{level}/", exist_ok=True)
+                try:
+                    shell("mv {assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/*{level}.*pdf {assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{level}/")
                 except:
                     pass
         shell("touch {assembly}/log/taxa_boxplot.done")
@@ -1125,11 +1403,11 @@ rule rel_abun_utest:
                 os.remove(error_log) # clean former residual error log
             except:
                 pass
-            shell("nohup {python3} GEMINI/rel_abun_utest.py {dp_list} {group1_index} {group1} "
+            shell("nohup {python3} OUTPOST/rel_abun_utest.py {dp_list} {group1_index} {group1} "
                   " {group2_index} {group2} {prefix_list} {paired} {two_sided} {error_log} > {log}_{group1}_vs_{group2} 2>&1 &")
-            time.sleep(60)
+            time.sleep(3)
         result = ge.wait_unti_file_exists(output_list,error_log)
-        assert result is True, "GEMINI: rel_abun_utest has errors. exit."
+        assert result is True, "OUTPOST: rel_abun_utest has errors. exit."
         shell("touch {assembly}/log/rel_abun_utest.done")
 
 rule counts_table2rel_abun:
@@ -1145,7 +1423,8 @@ rule counts_table2rel_abun:
     run:
         prefix = f"{assembly}/taxa_analysis/{assembly}.taxa_counts"
         samples = ','.join(sample_list)
-        shell("{python3} GEMINI/counts_table2rel_abun.py {input.real} {prefix} {samples} > {log} 2>&1 ")
+        taxa_levels = ','.join(taxa_level)
+        shell("{python3} OUTPOST/counts_table2rel_abun.py {input.real} {prefix} {samples} {taxa_levels} > {log} 2>&1 ")
         shell("touch {assembly}/log/counts_table2rel_abun.done")
 
 if not skip_assembly_analysis:
@@ -1163,13 +1442,12 @@ if not skip_assembly_analysis:
                 dp = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.tsv"
                 samples = ','.join(sample_list)
                 output = f"{assembly}/assembly_analysis/{assembly}.{group1}_vs_{group2}.contig_table.processed.tsv"
-                shell("{python3} GEMINI/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
+                shell("{python3} OUTPOST/process_contig_table.py {dp} {samples} {output} > {log} 2>&1 ")
             shell("touch {assembly}/log/process_contig_table.done")
 
     rule prepare_contig_table_from_counts_table:
         input:
-            "{assembly}/log/merge_counts_pure_and_kaiju.done",
-            real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+            "{assembly}/log/summarize_assembly_table.done"
         output:
             "{assembly}/log/prepare_contig_table_from_counts_table.done"
         log:
@@ -1190,12 +1468,49 @@ if not skip_assembly_analysis:
                     os.remove(error_log) # clean former residual error log
                 except:
                     pass
-                shell("nohup {python3} GEMINI/prepare_contig_table_from_counts_table.py {input.real} "
+                shell("nohup {python3} OUTPOST/prepare_contig_table_from_counts_table.py {input.real} "
                       " {group1_index} {group2_index} {output} {samples} {error_log} {qvalue} > {log} 2>&1 &")
-                time.sleep(300)
+                time.sleep(60)
             result = ge.wait_unti_file_exists(output_list,error_log)
-            assert result is True, "GEMINI: prepare_contig_table_from_counts_table has errors. exit."
+            assert result is True, "OUTPOST: prepare_contig_table_from_counts_table has errors. exit."
             shell("touch {assembly}/log/prepare_contig_table_from_counts_table.done")
+else:
+    rule skip_assembly_analysis:
+        input:
+            "{assembly}/log/summarize_assembly_table.done"
+        output:
+            "{assembly}/log/process_contig_table.done"
+        log:
+            "{assembly}/log/process_contig_table.log"
+        benchmark:
+            "{assembly}/benchmark/process_contig_table.benchmark"
+        run:
+            shell("touch {assembly}/log/process_contig_table.done")
+
+rule summarize_assembly_table:
+    input:
+        "{assembly}/log/merge_counts_pure_and_kaiju.done",
+        real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+    output:
+        "{assembly}/log/summarize_assembly_table.done"
+    log:
+        "{assembly}/log/summarize_assembly_table.log"
+    benchmark:
+        "{assembly}/benchmark/summarize_assembly_table.benchmark"
+    run:
+        os.makedirs(f"{assembly}/assembly_analysis/", exist_ok=True)
+        dp = f"{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
+        df = pd.read_csv(dp, sep = '\t', header = None, index_col=0)
+        df.columns = taxa_level + sample_list
+        summarized_df_columns = taxa_level + ['CPM_sum']
+        summarized_df = pd.DataFrame(columns = summarized_df_columns)
+        for sample in sample_list:
+            for level in taxa_level:
+                summarized_df.loc[sample,level] = len([x for x in list(set(df[level].dropna())) if x != 'NA'])
+            summarized_df.loc[sample,'CPM_sum'] = df[sample].sum()
+        summarized_df.to_csv(f"{assembly}/assembly_analysis/{assembly}.taxa_counts.summarized.tsv",
+                             sep = '\t',header=True, index=True)
+        shell("touch {assembly}/log/summarize_assembly_table.done")
 
 rule merge_counts_pure_and_kaiju:
     input:
@@ -1212,7 +1527,8 @@ rule merge_counts_pure_and_kaiju:
         "{assembly}/benchmark/merge_counts_pure_and_kaiju.benchmark"
     run:
         os.makedirs(f"{assembly}/assembly_analysis/", exist_ok=True)
-        shell("{Rscript} GEMINI/merge_counts_and_kaiju.R {input.counts_dp} {input.kaiju_dp} {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv")
+        taxa_len = len(taxa_level)
+        shell("{Rscript} OUTPOST/merge_counts_and_kaiju.R {input.counts_dp} {input.kaiju_dp} {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv {taxa_len}")
         shell("touch {assembly}/log/merge_counts_pure_and_kaiju.done")
 
 if not skip_kaiju:
@@ -1228,7 +1544,7 @@ if not skip_kaiju:
         benchmark:
             "{assembly}/benchmark/format_kaiju_output.benchmark"
         run:
-            shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {input.real}")
+            shell("{python3} OUTPOST/format_kaiju_output_to_tab_seperated.py {input.real}")
             shell("touch {assembly}/log/format_kaiju_output.done")
 
     rule kaiju_addTaxonNames:
@@ -1274,12 +1590,12 @@ else:
         benchmark:
             "{assembly}/benchmark/skip_kaiju.benchmark"
         run:
-            shell("{python3} GEMINI/format_kaiju_output_to_tab_seperated.py {assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm")
+            shell("{python3} OUTPOST/format_kaiju_output_to_tab_seperated.py {assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm")
             files = [f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref",\
                      f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm",\
                      f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"]
             assert all([os.path.exists(x) for x in files]),\
-            f"GEMINI: detected missing kaiju files under {assembly}/taxa_analysis/kaiju/. cannot skip kaiju. exit."
+            f"OUTPOST: detected missing kaiju files under {assembly}/taxa_analysis/kaiju/. cannot skip kaiju. exit."
             try:
                 shell("mkdir -p {assembly}/log/")
             except:
@@ -1306,7 +1622,7 @@ rule paste_counts_table:
             sample_index = '_'.join([str(sample_list.index(sample)) for sample in samples])
             samples_index = samples_index + ',' + sample_index
         # samples_index is 0_1_2,3_4_5
-        shell("{python3} GEMINI/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure {GEMINI_config} {rm_batch_effect} ")
+        shell("{python3} OUTPOST/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure {OUTPOST_config} {rm_batch_effect} ")
         shell("touch {assembly}/log/paste_counts_table.done")
 
 rule idxstats:

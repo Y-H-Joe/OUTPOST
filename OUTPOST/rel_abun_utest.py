@@ -138,7 +138,7 @@ def part2(df,target,group1,group1_name,group2,group2_name,subgroup,groups,paired
     targ_taxo_list = []
     targ_abun_list = []
 
-    assert len(abun_list) == len(Wilcoxon_list),"GEMINI: rel_abun_utest: length mismatch. exit."
+    assert len(abun_list) == len(Wilcoxon_list),"OUTPOST: rel_abun_utest: length mismatch. exit."
 
     # print(f"Wilcoxon_list:{Wilcoxon_list}")
     # print(f"group1_name:{group1_name}")
@@ -155,7 +155,7 @@ def part2(df,target,group1,group1_name,group2,group2_name,subgroup,groups,paired
     file3_name = str(prefix+".ave_change."+target+".csv")
 
     if len(targ_abun_list) == 0:
-        print("GEMINI: rel_abun_utest: no ",target," taxa.")
+        print("OUTPOST: rel_abun_utest: no ",target," taxa.")
         os.system("touch {}".format(file1_name))
         os.system("touch {}".format(file2_name))
         os.system("touch {}".format(file3_name))
@@ -186,7 +186,7 @@ def part2(df,target,group1,group1_name,group2,group2_name,subgroup,groups,paired
     # taxo_abun_change:
     # [('Bacteroides ilei', [[0.0, 0.003861003861003865, 0.002976190476190477, 0.0, 0.0, 0.0027752081406105405, 0.005994005994006001, 0.002450980392156865], [0.0, 0.010261194029850769, 0.00911577028258888, 0.00944206008583692, 0.012158054711246176, 0.010563380281690168, 0.0016260162601626016, 0.005016722408026762]], 2.2221268810078496)]
     assert len(targ_taxo_list) == len(targ_abun_list) == len(change_list),\
-    "GEMINI: rel_abun_utest: length mismatch. exit."
+    "OUTPOST: rel_abun_utest: length mismatch. exit."
 
     taxo_abun_change = list(zip(targ_taxo_list,targ_abun_list,change_list))
     taxo_abun_change_l2s = taxo_abun_change.copy()
@@ -286,8 +286,8 @@ if  __name__ == '__main__':
             paired = eval(sys.argv[7])
             only_two_sided = eval(sys.argv[8])
         except:
-            sys.exit("GEMINI: rel_abun_utest: paired/two-sided parameter wrong. exit.")
-        assert paired in [True, False] and only_two_sided in [True,False], "GEMINI: rel_abun_utest: paired/two-sided parameter wrong. exit."
+            sys.exit("OUTPOST: rel_abun_utest: paired/two-sided parameter wrong. exit.")
+        assert paired in [True, False] and only_two_sided in [True,False], "OUTPOST: rel_abun_utest: paired/two-sided parameter wrong. exit."
 
         for dp,prefix in zip(dp_list,prefix_list):
             df = pd.read_csv(dp,sep = ",",index_col = 0)
@@ -316,5 +316,5 @@ if  __name__ == '__main__':
         import traceback
         error_log = sys.argv[9]
         os.system("touch " + error_log)
-        print(f"GEMINI: {e}")
+        print(f"OUTPOST: {e}")
         traceback.print_exc()

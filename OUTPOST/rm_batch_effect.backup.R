@@ -118,13 +118,13 @@ after_plot = args[6]
 # dp = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.has_batch_effect.csv'
 # dp = 'human64_3_batch_effect.taxa_counts.rel_abun.class.rmU.has_batch_effect.csv'
 # output = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.csv'
-# config = 'GEMINI_config_3_batch_effect.tsv'
+# config = 'OUTPOST_config_3_batch_effect.tsv'
 # before_plot = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.before_rm_batch_effect.pdf'
 # after_plot = 'asian_old_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.after_rm_batch_effect.pdf'
 # setwd(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects}')
-# df = as.matrix(read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\GEMINI\batch_effect\allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.csv}'
+# df = as.matrix(read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\OUTPOST\batch_effect\allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.csv}'
 #                      ,row.names = 1))
-# config_df = read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\GEMINI\test_GEMINI\GEMINI_config_3.tsv}'
+# config_df = read.csv(r'{C:\Users\Hui\Nutstore\.nutstore_eWloYW5nam9lQGZveG1haWwuY29t\CurrentProjects\OUTPOST\test_OUTPOST\OUTPOST_config_3.tsv}'
 #                   ,header=T,sep = '\t')
 df = as.matrix(read.csv(dp, row.names = 1))
 config_df = read.csv(config,header=T,sep = '\t')
@@ -162,10 +162,9 @@ Scatter_Density(data = df.pca.before$variates$X, batch = batch,
 dev.off()
 
 if (rm_batch_effect == 'Combat'){
-  # t() function in R Language is used to calculate transpose of a matrix or Data Frame.
   df.after = try( t(ComBat(t(df.clr), batch = batch, par.prior = F, prior.plots = F)))
   if ('try-error' %in% class(df.after)){
-    print("GEMINI: rm_batch_effect: cannot use 'Combat', use 'Limma' instead, because")
+    print("OUTPOST: rm_batch_effect: cannot use 'Combat', use 'Limma' instead, because")
     print(df.after)
     df.after = t(removeBatchEffect(t(df.clr), batch = batch))
     title_ = 'After Limma batch effect correction'

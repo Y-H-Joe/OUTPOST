@@ -94,7 +94,7 @@ if __name__=='__main__':
     try:
         res2plot(dp,LDA_cutoff,output)
     except:
-        print("GEMINI: barplots_from_lefse_res_file: ",dp," has no features.skip.")
+        print("OUTPOST: barplots_from_lefse_res_file: ",dp," has no features.skip.")
 
 
 

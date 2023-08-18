@@ -7,18 +7,23 @@ kaiju_addTaxonNames: 'kaiju-addTaxonNames'
 kaiju_nodes: '/home/yh/softwares/databases/kaiju_databases/nodes.dmp'
 kaiju_fmi: '/home/yh/softwares/databases/kaiju_databases/kaiju_db_nr.fmi'
 kaiju_names: '/home/yh/softwares/databases/kaiju_databases/names.dmp'
-humann: '/home/yh/miniconda3/envs/GEMINI/bin/humann3'
-humann_renorm_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_renorm_table'
-humann_regroup_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_regroup_table'
-humann_join_tables: '/home/yh/miniconda3/envs/GEMINI/bin/humann_join_tables'
-humann_split_stratified_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_split_stratified_table'
-humann_rename_table: '/home/yh/miniconda3/envs/GEMINI/bin/humann_rename_table'
+humann: '/home/yh/miniconda3/envs/OUTPOST/bin/humann3'
+humann_renorm_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_renorm_table'
+humann_regroup_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_regroup_table'
+humann_join_tables: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_join_tables'
+humann_split_stratified_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_split_stratified_table'
+humann_rename_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_rename_table'
 lefse_format_input: 'lefse_format_input.py'
 lefse_run: 'lefse_run.py'
 abricate: 'abricate'
-config: "/scratch/mammals/GEMINI/GEMINI/GEMINI_config.tsv" 
+config: "/scratch/mammals/OUTPOST/OUTPOST/OUTPOST_config.tsv" 
+mgm: "/scratch/mammals/MetaGeneMark_linux_64/mgm/gmhmmp "
+mod_file: "/scratch/mammals/MetaGeneMark_linux_64/mgm/MetaGeneMark_v1.mod"
+cdhit : "cd-hit-est"
 # number of CPUs to use
 cores: 80 
+# batch size of samples run LDA and humann in parallel
+process_batch_size : 80
 
 ##   settings
 # True or False, determine the statisctic method to use
@@ -28,15 +33,21 @@ two_sided: True
 # select one from [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
 qvalue: "Benjamini-Hochberg" 
 # True or False
-skip_assembly_analysis: False 
+skip_assembly_analysis: True 
 # True or False
-skip_humann_init: False
+skip_humann_init: True
 # True or False
-skip_kaiju: False
+skip_kaiju: True
 # True or False
 rm_batch_effect: True
+# threshould for cd-hit
+cdhit_cutoff: 0.97
+# True or False
+skip_metagenemark: False
 # number of items to show in heatmap
 top: 20
+# range of biomarkers candidates
+biomarker_num : 100
 # LDA score threshold
 LDA_cutoff: 2
 # taxonomy levels. select from ['taxaID','superkingdom','phylum','class','order','family','genus','species']

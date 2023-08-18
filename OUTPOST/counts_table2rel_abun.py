@@ -131,11 +131,11 @@ if __name__ == '__main__':
     dp = sys.argv[1]
     prefix = sys.argv[2]
     samples = sys.argv[3].split(',')
-    taxo_level_N = 8 ## total levels of taxonomy
+    taxa_level = sys.argv[4].split(',')
+    taxo_level_N = len(taxa_level) ## total levels of taxonomy
 
     sample_N = len(samples)
     df_rmnan = df_rmnan(dp)
-    taxa_level = ['taxaID','superkingdom','phylum','class','order','family','genus','species']
     for level in range(1,taxo_level_N+1):
         samples_abun_sort = taxa_count_table_to_sorted_list_dict(df_rmnan,sample_N,taxo_level_N,level)
 

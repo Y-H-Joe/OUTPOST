@@ -14,17 +14,17 @@ group_dir = args[4]
 groups = args[5]
 level = args[6]
 
-# dp = r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\horsedonkey.taxa_counts.rel_abun.genus.rmU.horsedonkey_vs_hinny.csv}"
-# wkdir=r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny}"
-# index_dir=r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\index.txt}"
-# group_dir=r"{D:\CurrentProjects\GEMINI\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\group.csv}"
+# dp = r"{D:\CurrentProjects\OUTPOST\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\horsedonkey.taxa_counts.rel_abun.genus.rmU.horsedonkey_vs_hinny.csv}"
+# wkdir=r"{D:\CurrentProjects\OUTPOST\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny}"
+# index_dir=r"{D:\CurrentProjects\OUTPOST\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\index.txt}"
+# group_dir=r"{D:\CurrentProjects\OUTPOST\horsedonkey\alpha_beta_analysis\alpha_beta_horsedonkey_vs_hinny\group.csv}"
 # groups = "horsedonkey,hinny"
 
 
 my_comparisons = strsplit(groups,",")
 index=read.csv(index_dir,header = FALSE)
 group=read.csv(group_dir,row.names = 1,sep=",")
-spe = read.csv(dp,sep=",")
+spe = read.csv(dp,sep=",",check.names=FALSE)
 spe = spe[ , !(names(spe) %in% c("X"))]
 rownames(spe)=index$V1
 

@@ -110,7 +110,7 @@ if __name__=='__main__':
     for dp,output in zip(dp_list,output_list):
         #dp=str(r"../taxa_abun/rel_abun/sample12_rel_abun."+str(i)+".rmU.euk.csv.top30.csv")
         #dp=r"../taxa_abun/utest/sample12_rel_abun.{}.rmU.euk.csv_relative_abun_unequal_horse_vs_donkey.csv.top30.csv".format(str(i))
-        assert os.path.exists(dp), f"GEMINI: scale_rel_abun_table: {dp} doesn't exist. exit."
+        assert os.path.exists(dp), f"OUTPOST: scale_rel_abun_table: {dp} doesn't exist. exit."
         try:
             scal_rel_abun(dp, output)
         except:

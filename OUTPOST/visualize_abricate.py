@@ -204,13 +204,13 @@ if __name__=='__main__':
     except:
         plasmid = False
     """
-    #gene_tb_dp = r"D:\Projects\GEMINI\cat\antibiotic_analysis\cat.antibiotic.tsv"
-    gene_tb_dp = r"D:\Projects\GEMINI\cat\plasmid_analysis\cat.plasmidfinder.tsv"
-    #gene_tb_dp = r"D:\Projects\GEMINI\cat\virulence_analysis\cat.virulence.tsv"
-    counts_tb_dp = r"D:\Projects\GEMINI\cat\assembly_analysis\cat.taxa_counts.tsv"
-    #output_db = r"D:\Projects\GEMINI\cat\antibiotic_analysis"
-    output_db = r"D:\Projects\GEMINI\cat\plasmid_analysis"
-    #output_db = r"D:\Projects\GEMINI\cat\virulence_analysis"
+    #gene_tb_dp = r"D:\Projects\OUTPOST\cat\antibiotic_analysis\cat.antibiotic.tsv"
+    gene_tb_dp = r"D:\Projects\OUTPOST\cat\plasmid_analysis\cat.plasmidfinder.tsv"
+    #gene_tb_dp = r"D:\Projects\OUTPOST\cat\virulence_analysis\cat.virulence.tsv"
+    counts_tb_dp = r"D:\Projects\OUTPOST\cat\assembly_analysis\cat.taxa_counts.tsv"
+    #output_db = r"D:\Projects\OUTPOST\cat\antibiotic_analysis"
+    output_db = r"D:\Projects\OUTPOST\cat\plasmid_analysis"
+    #output_db = r"D:\Projects\OUTPOST\cat\virulence_analysis"
     group1_index = [0,1,2,3,4,13,14,15]
     group1_name = 'normal'
     group2_index = [5,6,7,8,9,10,11,12]
@@ -225,4 +225,4 @@ if __name__=='__main__':
                            taxa_level, plasmid)
     except Exception as e:
         print(e)
-        print("GEMINI: Error. visualize_abricate: ",gene_tb_dp," has problem.skip.")
+        print("OUTPOST: Error. visualize_abricate: ",gene_tb_dp," has problem.skip.")

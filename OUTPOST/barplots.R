@@ -6,7 +6,7 @@ args = commandArgs(T)
 dp = args[1]
 output = args[2]
 
-abun_df = read.table(dp,header = TRUE,sep=",",row.names = 1)
+abun_df = read.table(dp,header = TRUE,sep=",",row.names = 1,check.names=FALSE)
 
 sample_v = as.character(rownames(abun_df))
 abun_df$sample=sample_v

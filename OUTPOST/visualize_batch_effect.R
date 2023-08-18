@@ -100,9 +100,9 @@ dp = args[1]
 config = args[2]
 plot = args[3]
 
-# dp_bef = "/scratch/mammals/GEMINI/mammals2/taxa_analysis/mammals2.taxa_counts.rel_abun.species.rmU.csv"
-# dp_aft = "/scratch/mammals/GEMINI/mammals_batch_effect3/taxa_analysis/mammals_batch_effect3.taxa_counts.rel_abun.species.rmU.csv"
-# config = r'{/scratch/mammals/GEMINI/GEMINI/GEMINI_config_batch_effect3.tsv}'
+# dp_bef = "/scratch/mammals/OUTPOST/mammals2/taxa_analysis/mammals2.taxa_counts.rel_abun.species.rmU.csv"
+# dp_aft = "/scratch/mammals/OUTPOST/mammals_batch_effect3/taxa_analysis/mammals_batch_effect3.taxa_counts.rel_abun.species.rmU.csv"
+# config = r'{/scratch/mammals/OUTPOST/OUTPOST/OUTPOST_config_batch_effect3.tsv}'
 # before_plot = 'before.pdf'
 # after_plot = 'after.pdf'
 

@@ -12,13 +12,13 @@ index_dir = args[3]
 data_type = args[4] # data_type = taxa or humann or function or species or pvalue
 output = args[5]
 
-# dp=r"{C:\CurrentProjects\GEMINI\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.csv}"
-# wkdir=r"{C:\CurrentProjects\GEMINI}"
-# index_dir=r"{C:\CurrentProjects\GEMINI\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.index}"
+# dp=r"{C:\CurrentProjects\OUTPOST\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.csv}"
+# wkdir=r"{C:\CurrentProjects\OUTPOST}"
+# index_dir=r"{C:\CurrentProjects\OUTPOST\horsedonkey.taxa_counts.rel_abun.taxaID.rmU.top30.fillmin.log10.index}"
 # data_type='taxa'
 # output = 'heatmap.pdf'
 
-data = read.csv(dp,sep = ',')
+data = read.csv(dp,sep = ',',check.names=FALSE)
 data = as.matrix(data[, 2:ncol(data)])
 row_index=read.csv(index_dir,sep=',',header = FALSE)
 rownames(data)=c(as.vector(as.matrix(row_index)))
@@ -55,7 +55,7 @@ if(data_type=='species'){
   height= max(dim(data)[1]/2, 8)
 }else if(data_type=='humann'){
   width= max(dim(data)[2]/3, 8)
-  height= max(dim(data)[1]*2, 8)
+  height= max(dim(data)[1]*0.7, 8)
 }else if(data_type=='function'){
   width= max(dim(data)[2]/8, 8)
   height= max(dim(data)[1]*0.7, 8)

@@ -55,7 +55,7 @@ with open(output_tmp,'r') as r,open(output_tmp2,'w') as w:
     for line in r.readlines():
         items = line.strip().split('\t')
         if len(items)-1 != name_num:
-            sys.exit("GEMINI: the bam files were not mapped to the same assembly, or truncated.")
+            sys.exit("OUTPOST: the bam files were not mapped to the same assembly, or truncated.")
         if items[0] != '*':
             w.write(line)
 
