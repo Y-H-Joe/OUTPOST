@@ -84,6 +84,11 @@ for sample,fq in zip(sample_list, fq_list):
 # %% OUTPOST starts
 rule all:
     input:
+        f"{assembly}/log/OUTPOST_report.done"
+
+# %% report
+rule OUTPOST_report:
+    input:
         f"{assembly}/log/heatmap_humann.done",
         f"{assembly}/log/heatmap_taxa.done",
         f"{assembly}/log/process_contig_table.done",
@@ -92,17 +97,12 @@ rule all:
         f"{assembly}/log/lefse_taxa.done",
         f"{assembly}/log/taxa_barplots.done",
         f"{assembly}/log/taxa_boxplot.done",
-        f"{assembly}/log/virulence_analysis.done",
-        f"{assembly}/log/plasmid_analysis.done",
-        f"{assembly}/log/antibiotic_analysis.done",
+        f"{assembly}/log/virulence_factors_analysis.done",
+        f"{assembly}/log/plasmids_analysis.done",
+        f"{assembly}/log/antibiotic_genes_analysis.done",
         f"{assembly}/log/visualize_batch_effect.done",
         f"{assembly}/log/metagenemark.done",
-        f"{assembly}/log/OUTPOST_report.done"
-
-# %% report
-rule OUTPOST_report:
-    input:
-        "{assembly}/log/biomarker_summary.done"
+        f"{assembly}/log/biomarker_summary.done"
     output:
         "{assembly}/log/OUTPOST_report.done"
     log:
@@ -112,14 +112,24 @@ rule OUTPOST_report:
     run:
         wkdir = f"{assembly}/report/"
         os.makedirs(wkdir, exist_ok=True)
-        os.makedirs(f"{assembly}/taxa_analysis/counts_tables/", exist_ok=True)
+        os.makedirs(f"{assembly}/taxonomy_analysis/counts_tables/", exist_ok=True)
         
-        # clean taxa_analysis tables
-        shell("mv {assembly}/taxa_analysis/*index {assembly}/taxa_analysis/counts_tables/")
-        shell("mv {assembly}/taxa_analysis/*csv {assembly}/taxa_analysis/counts_tables/")
+        # clean taxonomy_analysis tables
+        try:
+            shell("mv {assembly}/taxonomy_analysis/*index {assembly}/taxonomy_analysis/counts_tables/")
+            shell("mv {assembly}/taxonomy_analysis/*csv {assembly}/taxonomy_analysis/counts_tables/")
+        except:
+            pass
         
+        # generate reports
+        for group1,group2 in group_pair_list:
+            output_filename = f"{assembly}/report/OUTPOST_report_{group1}_vs_{group2}.pdf"
+            explanation_ori = f"OUTPOST/content_original.csv"
+            visualization_ori = f"OUTPOST/visualization_example_path_original.csv"
+            resultspath = f"{assembly}"
+            group1VSgroup2 = f"{group1}_vs_{group2}"
+            shell("{python3} OUTPOST/OUTPOST_report.py  {output_filename} {assembly} {explanation_ori} {visualization_ori} {resultspath} {group1VSgroup2} > {log} 2>&1 ")
 
-        
         shell("touch {assembly}/log/OUTPOST_report.done")
 
 # %% biomarker
@@ -127,9 +137,9 @@ rule biomarker_summary:
     input:
         "{assembly}/log/ancom_identification.done",
         "{assembly}/log/rel_abun_utest.done",
-        "{assembly}/log/virulence_analysis.done",
-        "{assembly}/log/plasmid_analysis.done",
-        "{assembly}/log/antibiotic_analysis.done",
+        "{assembly}/log/virulence_factors_analysis.done",
+        "{assembly}/log/plasmids_analysis.done",
+        "{assembly}/log/antibiotic_genes_analysis.done",
         "{assembly}/log/lefse_taxa.done"
     output:
         "{assembly}/log/biomarker_summary.done"
@@ -138,7 +148,7 @@ rule biomarker_summary:
     benchmark:
         "{assembly}/benchmark/biomarker_summary.benchmark"
     run:
-        wkdir = f"{assembly}/biomarker_analysis/"
+        wkdir = f"{assembly}/biomarkers_analysis/"
         os.makedirs(wkdir, exist_ok=True)
         
         # init table
@@ -159,7 +169,7 @@ rule biomarker_summary:
                 
                 # taxa_abun_top
                 try:
-                    dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                    dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
                     tmp = pd.read_csv(dp, index_col=0)
                     row_sums = tmp.sum(axis=0)
                     sorted_row_sums =  sorted_row_sums = row_sums.sort_values(ascending=False)
@@ -172,7 +182,7 @@ rule biomarker_summary:
                 except:
                     pass
                 # taxa_abun_signicant
-                dp = f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.u-test." +"paired."*paired + "two_sided."*two_sided + "csv"
+                dp = f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.u-test." +"paired."*paired + "two_sided."*two_sided + "csv"
                 tmp = pd.read_csv(dp, index_col=0)
                 for index in biomarker_tb.index: 
                     try:
@@ -213,7 +223,7 @@ rule biomarker_summary:
                     pass
                 
                 # virulence_top
-                dp = f"{assembly}/virulence_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                dp = f"{assembly}/virulence_factors_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
                 tmp = pd.read_csv(dp, sep = '\t')
                 level_index = taxa_level.index(level)
                 tmp1 = tmp[[level,'total']]
@@ -227,7 +237,7 @@ rule biomarker_summary:
                         pass
 
                 # plasmid_top
-                dp = f"{assembly}/plasmid_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                dp = f"{assembly}/plasmids_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
                 tmp = pd.read_csv(dp, sep = '\t')
                 level_index = taxa_level.index(level)
                 tmp1 = tmp[[level,'total']]
@@ -241,7 +251,7 @@ rule biomarker_summary:
                         pass
 
                 # antibiotic_top
-                dp = f"{assembly}/antibiotic_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
+                dp = f"{assembly}/antibiotic_genes_analysis/genes_taxa_counts_{group1}_vs_{group2}.tsv"
                 tmp = pd.read_csv(dp, sep = '\t')
                 level_index = taxa_level.index(level)
                 tmp1 = tmp[[level,'total']]
@@ -255,7 +265,7 @@ rule biomarker_summary:
                         pass
                 
                 # ANCOM_identified
-                dp = f"{assembly}/biomarker_analysis/ANCOM_identification/ancom_biomarker.{group1}_vs_{group2}.at_{level}.tsv"
+                dp = f"{assembly}/biomarkers_analysis/ANCOM_identification/ancom_biomarker.{group1}_vs_{group2}.at_{level}.tsv"
                 tmp = pd.read_csv(dp, sep = '\t',index_col=0)
                 for index in tmp.index:
                     if tmp.loc[index,'REJECT']:
@@ -269,7 +279,7 @@ rule biomarker_summary:
                 # OUTPOST_biomarker_score
                 biomarker_tb['OUTPOST_biomarker_score'] = biomarker_tb.sum(axis = 1)
                 biomarker_tb = biomarker_tb.sort_values(by = 'OUTPOST_biomarker_score', ascending = False)
-                biomarker_tb.to_csv(f"{assembly}/biomarker_analysis/OUTPOST_biomarker_scores.{group1}_vs_{group2}.{level}.tsv",
+                biomarker_tb.to_csv(f"{assembly}/biomarkers_analysis/OUTPOST_biomarker_scores.{group1}_vs_{group2}.{level}.tsv",
                                     sep = '\t',header=True, index=True)
                 
         shell("touch {assembly}/log/biomarker_summary.done")
@@ -285,11 +295,11 @@ rule ancom_identification:
     benchmark:
         "{assembly}/benchmark/ancom_identification.benchmark"
     run:
-        wkdir = f"{assembly}/biomarker_analysis/ANCOM_identification/"
+        wkdir = f"{assembly}/biomarkers_analysis/ANCOM_identification/"
         os.makedirs(wkdir, exist_ok=True)
         for level in taxa_level:
             for group1,group2 in group_pair_list:
-                dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+                dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
                 group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
                 group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
                 shell("{Rscript} OUTPOST/fastANCOM.R {dp} {wkdir} {group1} {group2} {group1_index} {group2_index} {level}")
@@ -438,7 +448,7 @@ rule rel_abun2lefse_taxa:
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
-            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
+            dp_list = ','.join([f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
                                 for level in taxa_level])
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
@@ -448,7 +458,7 @@ rule rel_abun2lefse_taxa:
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/taxa_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
-            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
+            dp_list = ','.join([f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
                                 for level in taxa_level])
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
@@ -471,7 +481,7 @@ rule rel_abun2lefse_humann:
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.csv"
+            dp_list = ','.join([f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.csv"
                                 for database in databases])
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
@@ -481,7 +491,7 @@ rule rel_abun2lefse_humann:
         for group1,group2 in group_pair_list:
             wkdir = f"{assembly}/LDA_analysis/humann_{group1}_vs_{group2}/"
             os.makedirs(wkdir, exist_ok=True)
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.csv"
+            dp_list = ','.join([f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.csv"
                                 for database in databases])
             output_list = ','.join([wkdir + os.path.basename(dp).replace(".csv",".lefse.tsv")
                                 for dp in dp_list.split(',')])
@@ -501,14 +511,14 @@ rule heatmap_taxa:
     benchmark:
         "{assembly}/benchmark/heatmap_taxa.benchmark"
     run:
-        wkdir = f"{assembly}/taxa_analysis/figs/"
+        wkdir = f"{assembly}/taxonomy_analysis/figs/"
         os.makedirs(wkdir, exist_ok=True)
         # top taxa heatmap
         data_type = 'taxa'
         for level in taxa_level:
-            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
+            dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
             output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-            index_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.index"
+            index_dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.index"
             with open(index_dp,'w') as w:
                 for sample in sample_list:
                     w.write(sample + '\n')
@@ -518,9 +528,9 @@ rule heatmap_taxa:
         # top unequal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
+                dp = f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.index"
+                index_dp = f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -534,9 +544,9 @@ rule heatmap_taxa:
         # top equal taxa heatmap
         for group1,group2 in group_pair_list:
             for level in taxa_level:
-                dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
+                dp = f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{30}.fillmin.scaled.index"
+                index_dp = f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{30}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -557,19 +567,19 @@ rule heatmap_humann:
     benchmark:
         "{assembly}/benchmark/heatmap_humann.benchmark"
     run:
-        wkdir = f"{assembly}/metabolism_analysis/figs/"
+        wkdir = f"{assembly}/function_analysis/figs/"
         os.makedirs(wkdir, exist_ok=True)
 
-        with open(f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
+        with open(f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
             line = r.readline()
             humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
 
         # top humann heatmap
         data_type = 'humann'
         for database in databases:
-            dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
+            dp = f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
             output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-            index_dp = f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.index"
+            index_dp = f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.index"
             with open(index_dp,'w') as w:
                 for sample in humann_sample_list:
                     w.write(sample + '\n')
@@ -579,9 +589,9 @@ rule heatmap_humann:
         # top unequal humann heatmap
         for group1,group2 in group_pair_list:
             for database in databases:
-                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
+                dp = f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.index"
+                index_dp = f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -593,9 +603,9 @@ rule heatmap_humann:
         # top equal humann heatmap
         for group1,group2 in group_pair_list:
             for database in databases:
-                dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
+                dp = f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                 output = os.path.basename(dp).replace(".csv",".heatmap.pdf")
-                index_dp = f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.index"
+                index_dp = f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.index"
                 with open(index_dp,'w') as w:
                     for sample in comparison_dict[group1]:
                         w.write(f"{sample}_{group1}\n")
@@ -617,20 +627,20 @@ rule scale_humann_rel_abun_table:
     benchmark:
         "{assembly}/benchmark/scale_humann_rel_abun_table.benchmark"
     run:
-        dp_list = [f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
+        dp_list = [f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
                        for database in databases]
-        output_list = [f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
+        output_list = [f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.fillmin.scaled.csv"
                        for database in databases]
 
         for group1,group2 in group_pair_list:
-            dp_list_equal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
+            dp_list_equal = [f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
                              for database in databases]
-            output_list_equal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
+            output_list_equal = [f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                              for database in databases]
 
-            dp_list_unequal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
+            dp_list_unequal = [f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
                              for database in databases]
-            output_list_unequal = [f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
+            output_list_unequal = [f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                              for database in databases]
 
             dp_list += dp_list_equal
@@ -665,9 +675,9 @@ rule extract_top_humann:
     threads: cores
     run:
         # top abundant
-        dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+        dp_list = ','.join([f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
                        for database in databases])
-        output_name_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
+        output_name_list = ','.join([f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{top}.csv"
                        for database in databases])
         error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann.error"
         shell("{python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
@@ -678,13 +688,13 @@ rule extract_top_humann:
         # top unequal abundant
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}", exist_ok=True)
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.csv"
+            os.makedirs(f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.csv"
                        for database in databases])
-            output_name_list = ','.join([f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
+            output_name_list = ','.join([f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv"
                     for database in databases])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann_top_unequal_abundant.error"
-            output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv")
+            output_list.append(f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.unequal.top{top}.csv")
             shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
             time.sleep(3)
@@ -694,13 +704,13 @@ rule extract_top_humann:
        # top equal abundant
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}", exist_ok=True)
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.csv"
+            os.makedirs(f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.csv"
                        for database in databases])
-            output_name_list = ','.join([f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
+            output_name_list = ','.join([f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv"
                     for database in databases])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_humann_top_equal_abundant.error"
-            output_list.append(f"{assembly}/metabolism_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv")
+            output_list.append(f"{assembly}/function_analysis/humann3/top_humann_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.equal.top{top}.csv")
             shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
             time.sleep(3)
@@ -722,19 +732,19 @@ rule humann_utest:
     threads: cores
     run:
         output_list = []
-        dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+        dp_list = ','.join([f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
                    for database in databases])
-        with open(f"{assembly}/metabolism_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
+        with open(f"{assembly}/function_analysis/humann3/output/allSamples_genefamilies_uniref90names_cpm_{databases[0]}_unstratified.named.tsv",'r') as r:
             line = r.readline()
             humann_sample_list = [x.replace('_Abundance-RPKs','') for x in line.strip().split('\t')[1:]]
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}", exist_ok=True)
+            os.makedirs(f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}", exist_ok=True)
 
             group1_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(humann_sample_list.index(sample)) for sample in comparison_dict[group2]])
-            prefix_list = ','.join([f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}"
+            prefix_list = ','.join([f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}"
                        for database in databases])
-            output = f"{assembly}/metabolism_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{databases[-1]}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
+            output = f"{assembly}/function_analysis/humann3/utest_{group1}_vs_{group2}/allSamples_genefamilies_uniref90names_relab_{databases[-1]}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.ave_change.unequal.csv"
             output_list.append(output)
             error_log = os.getcwd() + f"/{assembly}/log/humann_utest.error"
             try:
@@ -759,9 +769,9 @@ rule humann2rel_abun:
         "{assembly}/benchmark/humann2rel_abun.benchmark"
     run:
         for group in list(comparison_dict.keys()) + ['allSamples']:
-            dp_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.tsv"
+            dp_list = ','.join([f"{assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.tsv"
                        for database in databases])
-            output_list = ','.join([f"{assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
+            output_list = ','.join([f"{assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.csv"
                        for database in databases])
             shell("{python3} OUTPOST/humann2rel_abun.py {dp_list} {output_list} > {log} 2>&1 ")
         shell("touch {assembly}/log/humann2rel_abun.done")
@@ -776,63 +786,63 @@ rule humann_output:
     benchmark:
         "{assembly}/benchmark/humann_output.benchmark"
     run:
-        os.makedirs(f"{assembly}/metabolism_analysis/humann3/output/", exist_ok=True)
+        os.makedirs(f"{assembly}/function_analysis/humann3/output/", exist_ok=True)
         for group in list(comparison_dict.keys()) + ['allSamples']:
             # join tables for each group
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
                   "--file_name _genefamilies_relab.tsv  > {log} 2>&1 ")
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
                   "--file_name _genefamilies_cpm.tsv  > {log} 2>&1 ")
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_pathabundance_relab.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_pathabundance_relab.tsv "
                   "--file_name _pathabundance_relab.tsv  > {log} 2>&1 ")
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_pathabundance_cpm.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_pathabundance_cpm.tsv "
                   "--file_name _pathabundance_cpm.tsv  > {log} 2>&1 ")
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_pathcoverage_relab.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_pathcoverage_relab.tsv "
                   "--file_name _pathcoverage_relab.tsv  > {log} 2>&1 ")
-            shell("{humann_join_tables} -i {assembly}/metabolism_analysis/humann3/{group}/ "
-                  " -o {assembly}/metabolism_analysis/humann3/output/{group}_pathcoverage_cpm.tsv "
+            shell("{humann_join_tables} -i {assembly}/function_analysis/humann3/{group}/ "
+                  " -o {assembly}/function_analysis/humann3/output/{group}_pathcoverage_cpm.tsv "
                   "--file_name _pathcoverage_cpm.tsv  > {log} 2>&1 ")
 
             # regroup tables for each group
             for database in databases:
-                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
-                      " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
-                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
-                      " --output {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
+                shell("{humann_regroup_table} --input {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm.tsv "
+                      " --output {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
+                shell("{humann_regroup_table} --input {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab.tsv "
+                      " --output {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
 
             # stratify tables for each group
             for database in databases:
-                shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv "
-                      "-o {assembly}/metabolism_analysis/humann3/output/ > {log} 2>&1 ")
-                shell("{humann_split_stratified_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv "
-                      "-o {assembly}/metabolism_analysis/humann3/output/ > {log} 2>&1 ")
+                shell("{humann_split_stratified_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_{database}.tsv "
+                      "-o {assembly}/function_analysis/humann3/output/ > {log} 2>&1 ")
+                shell("{humann_split_stratified_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_{database}.tsv "
+                      "-o {assembly}/function_analysis/humann3/output/ > {log} 2>&1 ")
 
             # rename tables for each group
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.tsv "
-                  " --names kegg-orthology -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog_unstratified.tsv "
-                  " --names eggnog -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec_unstratified.tsv "
-                  " --names ec -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam_unstratified.tsv "
-                  " --names pfam -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn_unstratified.tsv "
-                  " --names metacyc-rxn -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko_unstratified.tsv "
-                  " --names kegg-orthology -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog_unstratified.tsv "
-                  " --names eggnog -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec_unstratified.tsv "
-                  " --names ec -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam_unstratified.tsv "
-                  " --names pfam -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam_unstratified.named.tsv > {log} 2>&1 ")
-            shell("{humann_rename_table} -i {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.tsv "
-                  " --names metacyc-rxn -o {assembly}/metabolism_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.tsv "
+                  " --names kegg-orthology -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_ko_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog_unstratified.tsv "
+                  " --names eggnog -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_eggnog_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec_unstratified.tsv "
+                  " --names ec -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_level4ec_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam_unstratified.tsv "
+                  " --names pfam -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_pfam_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn_unstratified.tsv "
+                  " --names metacyc-rxn -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_cpm_rxn_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko_unstratified.tsv "
+                  " --names kegg-orthology -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_ko_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog_unstratified.tsv "
+                  " --names eggnog -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_eggnog_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec_unstratified.tsv "
+                  " --names ec -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_level4ec_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam_unstratified.tsv "
+                  " --names pfam -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_pfam_unstratified.named.tsv > {log} 2>&1 ")
+            shell("{humann_rename_table} -i {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.tsv "
+                  " --names metacyc-rxn -o {assembly}/function_analysis/humann3/output/{group}_genefamilies_uniref90names_relab_rxn_unstratified.named.tsv > {log} 2>&1 ")
         shell("touch {assembly}/log/humann_output.done")
 
 rule humann_group:
@@ -846,13 +856,13 @@ rule humann_group:
         "{assembly}/benchmark/humann_group.benchmark"
     run:
         for group,samples in comparison_dict.items():
-            os.makedirs(f"{assembly}/metabolism_analysis/humann3/{group}", exist_ok=True)
+            os.makedirs(f"{assembly}/function_analysis/humann3/{group}", exist_ok=True)
             for sample in samples:
-                os.system(f"cp {assembly}/metabolism_analysis/humann3/ori_results/{sample}*tsv  {assembly}/metabolism_analysis/humann3/{group} ")
+                os.system(f"cp {assembly}/function_analysis/humann3/ori_results/{sample}*tsv  {assembly}/function_analysis/humann3/{group} ")
         # allSamples
-        os.makedirs(f"{assembly}/metabolism_analysis/humann3/allSamples", exist_ok=True)
+        os.makedirs(f"{assembly}/function_analysis/humann3/allSamples", exist_ok=True)
         for sample in sample_list:
-            os.system(f"cp {assembly}/metabolism_analysis/humann3/ori_results/{sample}*tsv  {assembly}/metabolism_analysis/humann3/allSamples ")
+            os.system(f"cp {assembly}/function_analysis/humann3/ori_results/{sample}*tsv  {assembly}/function_analysis/humann3/allSamples ")
         shell("touch {assembly}/log/humann_group.done")
 
 rule humann_annotate:
@@ -867,30 +877,30 @@ rule humann_annotate:
     run:
         for sample in sample_list:
             # normalize
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
                   " --units relab > {log} 2>&1 ")
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
                   " --units cpm > {log} 2>&1 ")
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance_relab.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance_relab.tsv "
                   " --units relab > {log} 2>&1 ")
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance_cpm.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance_cpm.tsv "
                   " --units cpm > {log} 2>&1 ")
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage_relab.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage_relab.tsv "
                   " --units relab > {log} 2>&1 ")
-            shell("{humann_renorm_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv "
-                  " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage_cpm.tsv "
+            shell("{humann_renorm_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage.tsv "
+                  " --output {assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage_cpm.tsv "
                   " --units cpm > {log} 2>&1 ")
             # regroup
             for database in databases:
-                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
-                      " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_cpm_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
-                shell("{humann_regroup_table} --input {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
-                      " --output {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies_relab_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
+                shell("{humann_regroup_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_cpm.tsv "
+                      " --output {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_cpm_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
+                shell("{humann_regroup_table} --input {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_relab.tsv "
+                      " --output {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies_relab_{database}.tsv --groups uniref90_{database} > {log} 2>&1 ")
 
         shell("touch {assembly}/log/humann_annotate.done")
 
@@ -905,31 +915,31 @@ rule rename_humann_ori_output:
         "{assembly}/benchmark/humann_init.benchmark"
     run:
         for sample, fq_humann in zip(sample_list, fq_humann_list):
-            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
-                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv")
-            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
-                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv")
-            shell("cp {assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv "
-                  " {assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv")
+            shell("cp {assembly}/function_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv "
+                  " {assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies.tsv")
+            shell("cp {assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv "
+                  " {assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance.tsv")
+            shell("cp {assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv "
+                  " {assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage.tsv")
 
-            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv"
-            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_genefamilies.tsv"
+            file1 = f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv"
+            file2 = f"{assembly}/function_analysis/humann3/ori_results/{sample}_genefamilies.tsv"
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Gene Family\t" + sample + "_Abundance-RPKs\n"
                 for line in lines:
                     w.write(line)
 
-            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv"
-            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathabundance.tsv"
+            file1 = f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv"
+            file2 = f"{assembly}/function_analysis/humann3/ori_results/{sample}_pathabundance.tsv"
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Pathway\t" + sample + "_Abundance\n"
                 for line in lines:
                     w.write(line)
 
-            file1 = f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv"
-            file2 = f"{assembly}/metabolism_analysis/humann3/ori_results/{sample}_pathcoverage.tsv"
+            file1 = f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv"
+            file2 = f"{assembly}/function_analysis/humann3/ori_results/{sample}_pathcoverage.tsv"
             with open(file1,'r') as r, open(file2,'w') as w:
                 lines = r.readlines()
                 lines[0] = "# Pathway\t" + sample + "_Coverage\n"
@@ -949,21 +959,21 @@ if not skip_humann_init:
             "{assembly}/benchmark/humann_init.benchmark"
         threads: cores
         run:
-            os.makedirs(f"{assembly}/metabolism_analysis/humann3/ori_results/", exist_ok=True)
+            os.makedirs(f"{assembly}/function_analysis/humann3/ori_results/", exist_ok=True)
             fq_list_batch = [fq_list[i:i+int(process_batch_size)] for i in range(0, len(fq_list), int(process_batch_size))]
             for fq_batch in fq_list_batch:
                 if len(fq_batch) == 1:
                     fq = fq_batch[0]
-                    shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                    shell("{humann} --resume --input {fq}  --output {assembly}/function_analysis/humann3/ori_results/ "
                     " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
                     " --threads {threads} --memory-use maximum > {log} 2>&1 ")
                 elif len(fq_batch) > 1:
                     for fq in fq_batch[:-1]:
-                        shell("nohup {humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                        shell("nohup {humann} --resume --input {fq}  --output {assembly}/function_analysis/humann3/ori_results/ "
                         " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
                         " --threads {threads} --memory-use maximum > {log} 2>&1 &")
                     fq = fq_batch[-1]
-                    shell("{humann} --resume --input {fq}  --output {assembly}/metabolism_analysis/humann3/ori_results/ "
+                    shell("{humann} --resume --input {fq}  --output {assembly}/function_analysis/humann3/ori_results/ "
                     " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
                     " --threads {threads} --memory-use maximum > {log} 2>&1")
             shell("touch {assembly}/log/humann_init.done")
@@ -978,12 +988,12 @@ else:
         benchmark:
             "{assembly}/benchmark/humann_init.benchmark"
         run:
-            humann_genefamilies = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv" for fq_humann in fq_humann_list]
-            humann_pathabundance = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv" for fq_humann in fq_humann_list]
-            humann_pathcoverage = [f"{assembly}/metabolism_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
+            humann_genefamilies = [f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_genefamilies.tsv" for fq_humann in fq_humann_list]
+            humann_pathabundance = [f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathabundance.tsv" for fq_humann in fq_humann_list]
+            humann_pathcoverage = [f"{assembly}/function_analysis/humann3/ori_results/{fq_humann}_pathcoverage.tsv" for fq_humann in fq_humann_list]
             missing_humann = [file for file in humann_genefamilies + humann_pathabundance + humann_pathcoverage if not os.path.exists(file)]
             assert len(missing_humann) == 0,\
-            f"OUTPOST: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/metabolism_analysis/humann3/ori_results/. cannot skip humann_init. exit. expecting {missing_humann}"
+            f"OUTPOST: detected missing genefamilies/pathabundance/pathcoverage humann files under {assembly}/function_analysis/humann3/ori_results/. cannot skip humann_init. exit. expecting {missing_humann}"
             try:
                 shell("mkdir -p {assembly}/log/")
             except:
@@ -1017,8 +1027,8 @@ rule alpha_beta_diversity:
                 species = taxa_level[-1]
                 genus = taxa_level[-2]
                 print(f"OUTPOST: rule alpha_beta_diversity species and genus not in {taxa_level}. use the last two {taxa_level[-1]} {taxa_level[-2]} instead.")
-            species_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{species}.rmU.csv"
-            genus_dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{genus}.rmU.csv"
+            species_dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{species}.rmU.csv"
+            genus_dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{genus}.rmU.csv"
             species_df = pd.read_csv(species_dp,index_col=0)
             genus_df = pd.read_csv(genus_dp,index_col=0)
 
@@ -1089,13 +1099,13 @@ rule plasmid_alignment:
     input:
         "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
-        "{assembly}/log/plasmid_analysis.done"
+        "{assembly}/log/plasmids_analysis.done"
     log:
-        "{assembly}/log/plasmid_analysis.log"
+        "{assembly}/log/plasmids_analysis.log"
     benchmark:
-        "{assembly}/benchmark/plasmid_analysis.benchmark"
+        "{assembly}/benchmark/plasmids_analysis.benchmark"
     run:
-        output_dir = f"{assembly}/plasmid_analysis"
+        output_dir = f"{assembly}/plasmids_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
         shell("{abricate} {assembly_dir} --db plasmidfinder --quiet > {output_dir}/{assembly}.plasmidfinder.tsv")
@@ -1107,7 +1117,7 @@ rule plasmid_alignment:
             shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.plasmidfinder.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp} True")
         
-        shell("touch {assembly}/log/plasmid_analysis.done")
+        shell("touch {assembly}/log/plasmids_analysis.done")
 
 
 # %% virulence
@@ -1115,13 +1125,13 @@ rule virulence_alignment:
     input:
         "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
-        "{assembly}/log/virulence_analysis.done"
+        "{assembly}/log/virulence_factors_analysis.done"
     log:
-        "{assembly}/log/virulence_analysis.log"
+        "{assembly}/log/virulence_factors_analysis.log"
     benchmark:
-        "{assembly}/benchmark/virulence_analysis.benchmark"
+        "{assembly}/benchmark/virulence_factors_analysis.benchmark"
     run:
-        output_dir = f"{assembly}/virulence_analysis"
+        output_dir = f"{assembly}/virulence_factors_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
         shell("{abricate} {assembly_dir} --db ecoli_vf --quiet > {output_dir}/{assembly}.ecoli_vf.tsv")
@@ -1138,7 +1148,7 @@ rule virulence_alignment:
             group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
             shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.virulence.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
-        shell("touch {assembly}/log/virulence_analysis.done")
+        shell("touch {assembly}/log/virulence_factors_analysis.done")
 
 
 # %% antibiotic
@@ -1146,13 +1156,13 @@ rule antibiotic_alignment:
     input:
         "{assembly}/log/merge_counts_pure_and_kaiju.done"
     output:
-        "{assembly}/log/antibiotic_analysis.done"
+        "{assembly}/log/antibiotic_genes_analysis.done"
     log:
-        "{assembly}/log/antibiotic_analysis.log"
+        "{assembly}/log/antibiotic_genes_analysis.log"
     benchmark:
-        "{assembly}/benchmark/antibiotic_analysis.benchmark"
+        "{assembly}/benchmark/antibiotic_genes_analysis.benchmark"
     run:
-        output_dir = f"{assembly}/antibiotic_analysis"
+        output_dir = f"{assembly}/antibiotic_genes_analysis"
         os.makedirs(output_dir, exist_ok=True)
 
         shell("{abricate} {assembly_dir} --db resfinder --quiet > {output_dir}/{assembly}.resfinder.tsv")
@@ -1188,7 +1198,7 @@ rule antibiotic_alignment:
             shell("{python3} OUTPOST/visualize_abricate.py {output_dir}/{assembly}.antibiotic.tsv {assembly}/assembly_analysis/{assembly}.taxa_counts.tsv "
                   " {output_dir} {group1_index} {group1} {group2_index} {group2} {taxa_level_temp}")
 
-        shell("touch {assembly}/log/antibiotic_analysis.done")
+        shell("touch {assembly}/log/antibiotic_genes_analysis.done")
 
 
 # %% batch_effect
@@ -1207,7 +1217,7 @@ rule visualize_batch_effect:
         # visualize
         os.makedirs(f"{assembly}/batch_effect", exist_ok=True)
         for level in taxa_level:
-            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+            dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
             if rm_batch_effect:
                 plot = f"{assembly}/batch_effect/{assembly}.taxa_counts.rel_abun.{level}.rmU.batch_effect_PCA.pdf"
             else:
@@ -1227,20 +1237,20 @@ rule scale_taxa_rel_abun_table:
     benchmark:
         "{assembly}/benchmark/scale_taxa_rel_abun_table.benchmark"
     run:
-        dp_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
+        dp_list = [f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
                        for level in taxa_level]
-        output_list = [f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
+        output_list = [f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.fillmin.scaled.csv"
                        for level in taxa_level]
 
         for group1,group2 in group_pair_list:
-            dp_list_equal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
+            dp_list_equal = [f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
                                       for level in taxa_level]
-            output_list_equal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
+            output_list_equal = [f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.fillmin.scaled.csv"
                                           for level in taxa_level]
 
-            dp_list_unequal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
+            dp_list_unequal = [f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
                                         for level in taxa_level]
-            output_list_unequal = [f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
+            output_list_unequal = [f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.fillmin.scaled.csv"
                                             for level in taxa_level]
 
             dp_list += dp_list_equal
@@ -1272,11 +1282,11 @@ rule taxa_barplots:
     benchmark:
         "{assembly}/benchmark/taxa_barplots.benchmark"
     run:
-        os.makedirs(f"{assembly}/taxa_analysis/figs/", exist_ok=True)
+        os.makedirs(f"{assembly}/taxonomy_analysis/figs/", exist_ok=True)
         for level in taxa_level:
-            dp = f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
+            dp = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
             new_dp = dp.replace(".csv",".addOthers.csv")
-            output = f"{assembly}/taxa_analysis/figs/" + os.path.basename(dp).replace(".csv",".barplot.pdf")
+            output = f"{assembly}/taxonomy_analysis/figs/" + os.path.basename(dp).replace(".csv",".barplot.pdf")
             df = pd.read_csv(dp, index_col = 0)
             df['Others'] = 1 - df.sum(axis = 1)
             df.to_csv(new_dp)
@@ -1298,9 +1308,9 @@ rule extract_top_taxa:
     threads: cores
     run:
         # top abundant
-        dp_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
+        dp_list = ','.join([f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv"
                             for level in taxa_level])
-        output_name_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
+        output_name_list = ','.join([f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.top{top}.csv"
                             for level in taxa_level])
         error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_abundant.error"
         shell("{python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
@@ -1311,14 +1321,14 @@ rule extract_top_taxa:
         # top unequal abundant
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
-            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
+            os.makedirs(f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv"
                                 for level in taxa_level])
             output_name_list = ','.join([
-                    f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
+                    f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.top{top}.csv"
                     for level in taxa_level])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_unequal_abundant.error"
-            output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.unequal.top{top}.csv")
+            output_list.append(f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.unequal.top{top}.csv")
             shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_unequal 2>&1 &")
             time.sleep(3)
@@ -1328,14 +1338,14 @@ rule extract_top_taxa:
        # top equal abundant
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
-            dp_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
+            os.makedirs(f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}", exist_ok=True)
+            dp_list = ','.join([f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.csv"
                                 for level in taxa_level])
             output_name_list = ','.join([
-                    f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
+                    f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.equal.top{top}.csv"
                     for level in taxa_level])
             error_log = os.getcwd() + f"/{assembly}/log/extract_top_taxa_top_equal_abundant.error"
-            output_list.append(f"{assembly}/taxa_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.equal.top{top}.csv")
+            output_list.append(f"{assembly}/taxonomy_analysis/top_taxa_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.rel_abun.equal.top{top}.csv")
             shell("nohup {python3} OUTPOST/extract_top_taxa_by_rel_abun_from_rel_abun_table.py {dp_list} {output_name_list} "
               " {top} {error_log} > {log}_{group1}_vs_{group2}_equal 2>&1 &")
             time.sleep(3)
@@ -1357,21 +1367,21 @@ rule taxa_boxplot:
     run:
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}", exist_ok=True)
+            os.makedirs(f"{assembly}/taxonomy_analysis/boxplot_{group1}_vs_{group2}", exist_ok=True)
             group_pair = ','.join([group1,group2])
             groups = ','.join([group1] * len(comparison_dict[group1]) + [group2] * len(comparison_dict[group2]))
-            dp_list = [f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv" for level in taxa_level]
+            dp_list = [f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}.rel_abun.unequal.csv" for level in taxa_level]
             for dp in dp_list:
-                output = f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{os.path.basename(dp).replace('.csv','')}"
+                output = f"{assembly}/taxonomy_analysis/boxplot_{group1}_vs_{group2}/{os.path.basename(dp).replace('.csv','')}"
                 try:
                     shell("{Rscript} OUTPOST/boxplot.R {dp} {output} {groups} {group_pair} > {log} 2>&1")
                 except:
                     pass
             # categorize boxplots
             for level in taxa_level:
-                os.makedirs(f"{assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{level}/", exist_ok=True)
+                os.makedirs(f"{assembly}/taxonomy_analysis/boxplot_{group1}_vs_{group2}/{level}/", exist_ok=True)
                 try:
-                    shell("mv {assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/*{level}.*pdf {assembly}/taxa_analysis/boxplot_{group1}_vs_{group2}/{level}/")
+                    shell("mv {assembly}/taxonomy_analysis/boxplot_{group1}_vs_{group2}/*{level}.*pdf {assembly}/taxonomy_analysis/boxplot_{group1}_vs_{group2}/{level}/")
                 except:
                     pass
         shell("touch {assembly}/log/taxa_boxplot.done")
@@ -1389,14 +1399,14 @@ rule rel_abun_utest:
     run:
         output_list = []
         for group1,group2 in group_pair_list:
-            os.makedirs(f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}", exist_ok=True)
+            os.makedirs(f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}", exist_ok=True)
 
-            dp_list = ','.join([f"{assembly}/taxa_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv" for level in taxa_level])
+            dp_list = ','.join([f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts.rel_abun.{level}.rmU.csv" for level in taxa_level])
             group1_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group1]])
             group2_index = ','.join([str(sample_list.index(sample)) for sample in comparison_dict[group2]])
-            prefix_list = ','.join([f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}"
+            prefix_list = ','.join([f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_{level}"
                                     for level in taxa_level])
-            output = f"{assembly}/taxa_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.ave_change.unequal.csv"
+            output = f"{assembly}/taxonomy_analysis/utest_{group1}_vs_{group2}/{assembly}.rel_abun.{group1}_vs_{group2}.at_species.ave_change.unequal.csv"
             output_list.append(output)
             error_log = os.getcwd() + f"/{assembly}/log/rel_abun_utest.error"
             try:
@@ -1421,7 +1431,7 @@ rule counts_table2rel_abun:
     benchmark:
         "{assembly}/benchmark/counts_table2rel_abun.benchmark"
     run:
-        prefix = f"{assembly}/taxa_analysis/{assembly}.taxa_counts"
+        prefix = f"{assembly}/taxonomy_analysis/{assembly}.taxa_counts"
         samples = ','.join(sample_list)
         taxa_levels = ','.join(taxa_level)
         shell("{python3} OUTPOST/counts_table2rel_abun.py {input.real} {prefix} {samples} {taxa_levels} > {log} 2>&1 ")
@@ -1447,7 +1457,8 @@ if not skip_assembly_analysis:
 
     rule prepare_contig_table_from_counts_table:
         input:
-            "{assembly}/log/summarize_assembly_table.done"
+            "{assembly}/log/summarize_assembly_table.done",
+            real = "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
         output:
             "{assembly}/log/prepare_contig_table_from_counts_table.done"
         log:
@@ -1516,8 +1527,8 @@ rule merge_counts_pure_and_kaiju:
     input:
         "{assembly}/log/format_kaiju_output.done",
         "{assembly}/log/paste_counts_table.done",
-        counts_dp = "{assembly}/taxa_analysis/temp/{assembly}.counts.pure",
-        kaiju_dp = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+        counts_dp = "{assembly}/taxonomy_analysis/temp/{assembly}.counts.pure",
+        kaiju_dp = "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
     output:
         "{assembly}/log/merge_counts_pure_and_kaiju.done",
         "{assembly}/assembly_analysis/{assembly}.taxa_counts.tsv"
@@ -1535,10 +1546,10 @@ if not skip_kaiju:
     rule format_kaiju_output:
         input:
             "{assembly}/log/kaiju_addTaxonNames.done",
-            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+            real = "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm"
         output:
             "{assembly}/log/format_kaiju_output.done",
-            "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+            "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
         log:
             "{assembly}/log/format_kaiju_output.log"
         benchmark:
@@ -1550,10 +1561,10 @@ if not skip_kaiju:
     rule kaiju_addTaxonNames:
         input:
             "{assembly}/log/kaiju_annotate.done",
-            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+            real = "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref"
         output:
             "{assembly}/log/kaiju_addTaxonNames.done",
-            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm"
+            real = "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm"
         log:
             "{assembly}/log/kaiju_addTaxonNames.log"
         benchmark:
@@ -1569,7 +1580,7 @@ if not skip_kaiju:
             assembly_dir
         output:
             "{assembly}/log/kaiju_annotate.done",
-            real = "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref"
+            real = "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref"
         threads: cores
         log:
             "{assembly}/log/kaiju_annotate.log"
@@ -1584,18 +1595,18 @@ else:
             assembly_dir
         output:
             "{assembly}/log/format_kaiju_output.done",
-            "{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
+            "{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"
         log:
             "{assembly}/log/skip_kaiju.log"
         benchmark:
             "{assembly}/benchmark/skip_kaiju.benchmark"
         run:
-            shell("{python3} OUTPOST/format_kaiju_output_to_tab_seperated.py {assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm")
-            files = [f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref",\
-                     f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm",\
-                     f"{assembly}/taxa_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"]
+            shell("{python3} OUTPOST/format_kaiju_output_to_tab_seperated.py {assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm")
+            files = [f"{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref",\
+                     f"{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm",\
+                     f"{assembly}/taxonomy_analysis/kaiju/{assembly}_kaiju.ref.nm.tsv"]
             assert all([os.path.exists(x) for x in files]),\
-            f"OUTPOST: detected missing kaiju files under {assembly}/taxa_analysis/kaiju/. cannot skip kaiju. exit."
+            f"OUTPOST: detected missing kaiju files under {assembly}/taxonomy_analysis/kaiju/. cannot skip kaiju. exit."
             try:
                 shell("mkdir -p {assembly}/log/")
             except:
@@ -1608,13 +1619,13 @@ rule paste_counts_table:
         "{assembly}/log/idxstats.done"
     output:
         "{assembly}/log/paste_counts_table.done",
-        "{assembly}/taxa_analysis/temp/{assembly}.counts.pure"
+        "{assembly}/taxonomy_analysis/temp/{assembly}.counts.pure"
     log:
         "{assembly}/log/paste_counts_table.log"
     benchmark:
         "{assembly}/benchmark/paste_counts_table.benchmark"
     run:
-        counts_table_list = ','.join(expand("{assembly}/taxa_analysis/temp/{basename}.idxstats",
+        counts_table_list = ','.join(expand("{assembly}/taxonomy_analysis/temp/{basename}.idxstats",
                                    assembly = assembly, basename = bam_basename))
         samples_index = ''
         for group,samples in comparison_dict.items():
@@ -1622,7 +1633,7 @@ rule paste_counts_table:
             sample_index = '_'.join([str(sample_list.index(sample)) for sample in samples])
             samples_index = samples_index + ',' + sample_index
         # samples_index is 0_1_2,3_4_5
-        shell("{python3} OUTPOST/paste_counts_table.py 3 {counts_table_list} {assembly}/taxa_analysis/temp/{assembly}.counts.pure {OUTPOST_config} {rm_batch_effect} ")
+        shell("{python3} OUTPOST/paste_counts_table.py 3 {counts_table_list} {assembly}/taxonomy_analysis/temp/{assembly}.counts.pure {OUTPOST_config} {rm_batch_effect} ")
         shell("touch {assembly}/log/paste_counts_table.done")
 
 rule idxstats:
@@ -1636,9 +1647,9 @@ rule idxstats:
         "{assembly}/benchmark/idxstats.benchmark"
     threads: cores
     run:
-        os.makedirs(f"{assembly}/taxa_analysis/temp/", exist_ok=True)
+        os.makedirs(f"{assembly}/taxonomy_analysis/temp/", exist_ok=True)
         for bam,basename in zip(bam_list,bam_basename):
-            shell(f"{samtools} idxstats --threads {threads} {bam} > {assembly}/taxa_analysis/temp/{basename}.idxstats ")
+            shell(f"{samtools} idxstats --threads {threads} {bam} > {assembly}/taxonomy_analysis/temp/{basename}.idxstats ")
         shell("touch {assembly}/log/idxstats.done")
 
 

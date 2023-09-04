@@ -151,7 +151,7 @@ def visualize_abricate(gene_tb_dp, counts_tb_dp, output_db,
         gene_taxa_df = gene_taxa_df.apply(np.log10)
         
         try:
-            plt.figure(figsize=(gene_taxa_df.shape[1] / 3, gene_taxa_df.shape[0] * 2))
+            plt.figure(figsize=(gene_taxa_df.shape[1] / 1.5, gene_taxa_df.shape[0] * 3))
             sns.clustermap(data=gene_taxa_df, xticklabels=True, yticklabels=True)
             plt.tight_layout()
             plt.ioff()

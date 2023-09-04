@@ -25,7 +25,7 @@ my_comparisons = strsplit(groups,",")
 index=read.csv(index_dir,header = FALSE)
 group=read.csv(group_dir,row.names = 1,sep=",")
 spe = read.csv(dp,sep=",",check.names=FALSE)
-spe = spe[ , !(names(spe) %in% c("X"))]
+spe = spe[ , !(names(spe) %in% c("X",""))]
 rownames(spe)=index$V1
 
 # must read files first then set working dir
@@ -56,7 +56,7 @@ alphas = colnames(alpha_diversity)
 alphas = alphas[alphas!="Group"]
 
 for (alpha in alphas){
-  pdf(file=paste(alpha,"alpha_diveristy.at_",level,"pdf",sep="."))
+  pdf(file=paste(alpha,"alpha_diveristy.at_",level,".pdf",sep=""))
   #draw scatter-plots and mark outliers
   p <- ggboxplot(alpha_diversity,x="Group",y=alpha,add="dotplot",color = "Group", palette = "jco") +
       theme(legend.position="right") +
