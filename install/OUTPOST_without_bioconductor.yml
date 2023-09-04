@@ -1,6 +1,6 @@
 name: OUTPOST
 channels:
-  - biobakery
+  - bioconda/label/cf201901
   - conda-forge
   - bioconda
   - defaults
@@ -20,6 +20,7 @@ dependencies:
   - attrs=21.4.0=pyhd8ed1ab_0
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
+  - bamtools=2.5.2=hd03093a_0
   - bcbio-gff=0.6.9=pyh5e36f6f_0
   - bcrypt=3.2.0=py39hb9d737c_3
   - bedtools=2.30.0=h7d7f7ad_2
@@ -40,13 +41,14 @@ dependencies:
   - bx-python=0.8.13=py39h6471ffd_1
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.18.1=h7f98852_0
-  - ca-certificates=2022.6.15=ha878542_0
+  - ca-certificates=2023.7.22=hbcca054_0
   - cached-property=1.5.2=hd8ed1ab_1
   - cached_property=1.5.2=pyha770c72_1
   - cachetools=5.0.0=pyhd8ed1ab_0
   - cairo=1.16.0=ha12eb4b_1010
   - capnproto=0.9.1=h780b84a_5
-  - certifi=2022.6.15=py39hf3d152e_0
+  - cd-hit=4.6.8=hfc679d8_2
+  - certifi=2023.7.22=pyhd8ed1ab_0
   - cffi=1.15.0=py39h4bc2ebd_0
   - charset-normalizer=2.0.12=pyhd8ed1ab_0
   - click=8.1.2=py39hf3d152e_0
@@ -57,17 +59,20 @@ dependencies:
   - coin-or-osi=0.108.6=h3b589db_2
   - coin-or-utils=2.11.6=h573740c_0
   - coincbc=2.10.7=0_metapackage
+  - commonmark=0.9.1=py_0
   - configargparse=1.5.3=pyhd8ed1ab_0
   - connection_pool=0.0.3=pyhd3deb0d_0
   - cryptography=36.0.2=py39hd97740a_1
   - curl=7.82.0=h7bff187_0
   - cycler=0.11.0=pyhd8ed1ab_0
+  - dataclasses=0.8=pyhc8e2a94_3
   - datrie=0.8.2=py39h3811e60_3
   - decorator=5.1.1=pyhd8ed1ab_0
   - defusedxml=0.7.1=pyhd8ed1ab_0
   - dendropy=4.5.2=pyh3252c3a_0
   - diamond=2.0.14=hb97b32f_1
   - docutils=0.18.1=py39hf3d152e_1
+  - dpath=2.0.6=py39hf3d152e_1
   - dropbox=11.29.0=pyhd8ed1ab_0
   - emboss=6.6.0=h1b6f16a_5
   - entrez-direct=16.2=he881be0_0
@@ -121,7 +126,6 @@ dependencies:
   - hdf5=1.12.1=nompi_h2386368_104
   - htslib=1.15.1=h9753748_0
   - httplib2=0.20.4=pyhd8ed1ab_0
-  - humann=3.0.1=py_0
   - icu=69.1=h9c3ff4c_0
   - idna=3.3=pyhd8ed1ab_0
   - importlib-metadata=4.11.3=py39hf3d152e_1
@@ -203,6 +207,7 @@ dependencies:
   - nlopt=2.7.1=py39h3e08f04_0
   - numpy=1.22.3=py39h18676bf_2
   - oauth2client=4.1.3=py_0
+  - openjdk=11.0.1=h516909a_1016
   - openjpeg=2.4.0=hb52868f_1
   - openssl=1.1.1o=h166bdaf_0
   - packaging=21.3=pyhd8ed1ab_0
@@ -212,6 +217,7 @@ dependencies:
   - patsy=0.5.2=pyhd8ed1ab_0
   - pcre=8.45=h9c3ff4c_0
   - pcre2=10.37=h032f7d1_0
+  - pear=0.9.6=h67092d7_8
   - peppy=0.31.2=pyhd8ed1ab_2
   - perl=5.32.1=2_h7f98852_perl5
   - perl-archive-tar=2.40=pl5321hdfd78af_0
@@ -247,6 +253,7 @@ dependencies:
   - pillow=9.1.0=py39hae2aec6_0
   - pip=22.0.4=pyhd8ed1ab_0
   - pixman=0.40.0=h36c2ea0_0
+  - pkgutil-resolve-name=1.3.10=pyhd8ed1ab_0
   - plac=1.3.5=pyhd8ed1ab_0
   - pluggy=1.0.0=py39hf3d152e_3
   - ply=3.11=py_1
@@ -464,7 +471,9 @@ dependencies:
   - raxml=8.2.12=hec16e2b_4
   - readline=8.1=h46c0cb4_0
   - requests=2.27.1=pyhd8ed1ab_0
+  - reretry=0.11.1=pyhd8ed1ab_0
   - retry=0.9.2=py_0
+  - rich=12.6.0=pyhd8ed1ab_0
   - rpy2=3.5.1=py39r41hd257fcd_0
   - rsa=4.8=pyhd8ed1ab_0
   - s3transfer=0.5.2=pyhd8ed1ab_0
@@ -495,6 +504,7 @@ dependencies:
   - toposort=1.7=pyhd8ed1ab_0
   - traitlets=5.1.1=pyhd8ed1ab_0
   - trimal=1.4.1=h9f5acd7_6
+  - trimmomatic=0.39=hdfd78af_2
   - typing-extensions=4.1.1=hd8ed1ab_0
   - typing_extensions=4.1.1=pyha770c72_0
   - tzdata=2022a=h191b570_0
@@ -509,6 +519,8 @@ dependencies:
   - wget=1.20.3=ha56f1ee_1
   - wheel=0.37.1=pyhd8ed1ab_0
   - wrapt=1.14.0=py39hb9d737c_1
+  - xorg-fixesproto=5.0=h7f98852_1002
+  - xorg-inputproto=2.3.2=h7f98852_1002
   - xorg-kbproto=1.0.7=h7f98852_1002
   - xorg-libice=1.0.10=h7f98852_0
   - xorg-libsm=1.2.3=hd9c2040_1000
@@ -516,8 +528,12 @@ dependencies:
   - xorg-libxau=1.0.9=h7f98852_0
   - xorg-libxdmcp=1.1.3=h7f98852_0
   - xorg-libxext=1.3.4=h7f98852_1
+  - xorg-libxfixes=5.0.3=h7f98852_1004
+  - xorg-libxi=1.7.10=h7f98852_0
   - xorg-libxrender=0.9.10=h7f98852_1003
   - xorg-libxt=1.2.1=h7f98852_2
+  - xorg-libxtst=1.2.3=h7f98852_1002
+  - xorg-recordproto=1.14.2=h7f98852_1002
   - xorg-renderproto=0.11.1=h7f98852_1002
   - xorg-xextproto=7.3.0=h7f98852_1002
   - xorg-xproto=7.0.31=h7f98852_1007
@@ -528,4 +544,8 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.11=h166bdaf_1014
   - zstd=1.5.2=ha95c52a_0
-prefix: /home/yihang/anaconda3/envs/GEMINI
+  - pip:
+    - humann==3.1.1
+    - pdf2image==1.16.3
+    - reportlab==4.0.4
+
