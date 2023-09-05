@@ -24,7 +24,18 @@ OUTPOST: a comprehensive and useful downstream analysis pipeline for whole-metag
 19. You should see all the outputs in `name_of_your_assembly` folder. If no errors occured. then you're good to go.
 20. In a summary, OUTPOST itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakefile_config.yml` file to skip the above installation procedure.
 
-# format of OUTPOST_config.tsv
+
+# OUTPOST usuage
+The usuage of OUTPOST is very easy and light. The first step is to install OUTPOST, the second step is to prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment information), the third step is to modify the `OUTPOST/Snakemake_config.yml` (for software parameters). The last step is to run `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`.
+
+Here are some suggestions for beginners:
+1. The working directory must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path. To be more specific, you have a folder `test`, you have all scripts of OUTPOST in `test` folder, you have `test\Snakefile.py` and `test\OUTPOST`. You `cd test`, then run  `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`, you will get all outputs in `test\name_of_your_assembly` folder.
+2. Snakemake (the framework OUTPOST relied on) will lock working directory during running. So you should prepare two working directories if you're running two OUTPOST pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire OUTPOST folder to `folder1/` and `folder2/`. Then `cd folder1`, run OUTPOST. Then `cd folder2`, run OUTPOST.
+3. One OUTPOST process only take one assembly. If you have multi assemblies to analyze, run OUTPOST multiple times (in parallel) (in different working directories).
+4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
+5. OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation. 
+
+## format of OUTPOST_config.tsv
 | samples                      | fq_dir                                                                      | bam_dir                                                                         | assembly              | assembly_dir                                         | group                | batch |
 |------------------------------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------|-----------------------|------------------------------------------------------|----------------------|-------|
 | old_healthy_male_asian_1     | /home/yh/OUTPOST/data/old_healthy_male_asian_1_onlyPE_nonhuman64virus.fq     | /home/yh/OUTPOST/bam_sam/old_healthy_male_asian_1_contigs_sorted.human63.bam     | human62_batch_effect2 | /home/yh/OUTPOST/assembly/human63.contigs.nonrd.rn.fa | asian,healthy,male   | 1     |
@@ -57,18 +68,8 @@ In the above case. We have one reference, human62_batch_effect2. For groups, we 
 The pipeline will pair-wise compare all of them. Which are, 
 ['asian_vs_euro','male_vs_female','healthy_vs_ill'...].
 
-# OUTPOST usuage
-The usuage of OUTPOST is very easy and light. The first step is to install OUTPOST, the second step is to prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment information), the third step is to modify the `OUTPOST/Snakemake_config.yml` (for software parameters). The last step is to run `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`.
-
-Here are some suggestions for beginners:
-1. The working directory must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path. To be more specific, you have a folder `test`, you have all scripts of OUTPOST in `test` folder, you have `test\Snakefile.py` and `test\OUTPOST`. You `cd test`, then run  `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`, you will get all outputs in `test\name_of_your_assembly` folder.
-2. Snakemake (the framework OUTPOST relied on) will lock working directory during running. So you should prepare two working directories if you're running two OUTPOST pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire OUTPOST folder to `folder1/` and `folder2/`. Then `cd folder1`, run OUTPOST. Then `cd folder2`, run OUTPOST.
-3. One OUTPOST process only take one assembly. If you have multi assemblies to analyze, run OUTPOST multiple times (in parallel) (in different working directories).
-4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
-5. OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation. 
-
 # OUTPOST outputs
-We prepared the OUTPOST results of cat microbiome dataset (described in our article) in [public](), which can be an example for users to testify their OUTPOST installation or usage. 
+We prepared the OUTPOST results of cat microbiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542), which can be an example for users to testify their OUTPOST installation or usage. 
 
 
 Each OUTPOST run accepts one assembly, all outputs are categorized in the folder named by the assembly.
