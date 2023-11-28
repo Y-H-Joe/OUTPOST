@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['Snakefile.py', 'OUTPOST\\fastANCOM.R', 'OUTPOST\\visualize_batch_effect.R']
+recent_files = ['Snakefile.py', 'OUTPOST\\OUTPOST_report.py', 'OUTPOST\\counts_table2rel_abun.py', 'OUTPOST\\alpha_beta_diversity.R', 'OUTPOST\\fastANCOM.R']
 
 [main]
 version = 0.2.0
