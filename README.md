@@ -16,6 +16,7 @@ conda env create --name OUTPOST --file install/OUTPOST_without_bioconductor.yml
 conda activate OUTPOST
 
 # 4. install. Databases will also be donwnloaded, require ~500GB. The downloading time is based on your bandwith.
+# make sure your working directory is OUTPOST folder
 bash install/install_guideline.sh
 ```
 ---
@@ -40,7 +41,7 @@ To Be Remind:
 4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
 5. OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation.
 6. Do not change the column names of OUTPOST_config.tsv.
-7. Refer to install/OUTPOST_config.explanation.txt for more details.
+7. Refer to OUTPOST/OUTPOST_config.explanation.txt for more details.
 ```
 
 
