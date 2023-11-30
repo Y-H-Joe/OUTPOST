@@ -6,7 +6,7 @@
 ---
 ```
 # 1. Download `OUTPOST.yml` in `install` folder.
-git https://github.com/Y-H-Joe/OUTPOST.git
+git clone https://github.com/Y-H-Joe/OUTPOST.git
 cd OUTPOST
 
 # 2. Create the conda environment `conda env create --name OUTPOST --file OUTPOST.yml `, the bioconductor has unknown errors.
