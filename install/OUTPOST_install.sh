@@ -44,9 +44,9 @@ else
     echo "humann_databases.utility_mapping already installed. Skipping this step."
 fi
 # 8. Check your humann databases `cd /path/to/databases` then run `ll chocophlan/ | wc -l` you get a number >= 11289. run `ll uniref` you should see a `uniref90_201901b_full.dmnd` (or newer) file with >= 34G size. Run `ll utility_mapping` you should see >= 21 files and all of them have > 3M size (or some of them truncated during download).
-ll $(pwd)/databases/chocophlan | wc -l
-ll $(pwd)/databases/uniref
-ll $(pwd)/databases/utility_mapping
+ls -l $(pwd)/databases/chocophlan | wc -l
+ls -l $(pwd)/databases/uniref
+ls -l $(pwd)/databases/utility_mapping
 
 # 9. Check your humann's misc folder. Located at `/path/to/your/anaconda/envs/OUTPOST/lib/python3.9/site-packages/humann/data/misc/`. Due to conda's unknown error, usually the files are missing. To know full file list, check README.txt in the [`misc`](https://github.com/biobakery/humann/tree/master/humann/data/misc) folder. Or unzip the `misc.zip` in the `utils` folder.
 DONE_FILE="install/log/misc.done"
