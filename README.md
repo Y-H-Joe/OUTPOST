@@ -28,8 +28,10 @@
 
     # 1. prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment, data, group information)
     # 2. modify the `OUTPOST/Snakemake_config.yml` (for OUTPOST parameters)
-    # 3. run OUTPOST
-    nohup snakemake --cores 32 --verbose -s ./OUTPOST_run.py --rerun-incomplete &
+    # 3. dry-run OUTPOST to check is there any errors
+    snakemake --cores 32 --dry-run --verbose -s path/to/OUTPOST_run.py --rerun-incomplete
+    # 4. run OUTPOST
+    nohup snakemake --cores 32 --verbose -s path/to/OUTPOST_run.py --rerun-incomplete &
 
 We prepared the OUTPOST results of cat microbiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542), which can be an example for users to testify their OUTPOST installation or usage.
 
