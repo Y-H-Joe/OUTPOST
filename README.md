@@ -2,7 +2,7 @@
 
 ***
 
-# OUTPOST installation
+# Installation
 
 ***
 
@@ -22,7 +22,7 @@
 
 ***
 
-# OUTPOST usuage
+# Usuage
 
 ***
 
@@ -46,7 +46,7 @@ To Be Remind:
 
 ***
 
-# OUTPOST outputs
+# Outputs
 
 ***
 
