@@ -183,6 +183,7 @@ if [ ! -f "$DONE_FILE" ]; then
 	conda deactivate
 	conda activate OUTPOST
 	bash utils/gtdk_db_download.sh
+	touch "$DONE_FILE"
 else
 	echo "gtdbtk already installed. Skipping this step."
 fi
@@ -192,6 +193,7 @@ DONE_FILE="install/log/salmon.done"
 if [ ! -f "$DONE_FILE" ]; then
 	tar -xzf utils/v1.10.0.tar.gz -C utils/
 	chmod a+x utils/salmon-latest_linux_x86_64/bin/salmon
+	touch "$DONE_FILE"
 else
 	echo "salmon already installed. Skipping this step."
 fi
@@ -202,6 +204,7 @@ if [ ! -f "$DONE_FILE" ]; then
 	emapper_db=$(pwd)/databases/emapper_db
 	mkdir -p $emapper_db
 	python utils/outpost_download_eggnog_data.py -y --data_dir $emapper_db
+	touch "$DONE_FILE"
 else
 	echo "eggnog-mapper already installed. Skipping this step."
 fi
@@ -214,8 +217,18 @@ if [ ! -f "$DONE_FILE" ]; then
 	tar -jxf utils/card-data.tar.bz2 -C $rgi_db
 	rgi load --local -i $rgi_db/card.json
 	rgi card_annotation -i $rgi_db/card.json
+	touch "$DONE_FILE"
 else
 	echo "eggnog-mapper already installed. Skipping this step."
+fi
+
+# 27. viruses.fa unzip
+DONE_FILE="install/log/viruses.done"
+if [ ! -f "$DONE_FILE" ]; then
+	unzip utils/viruses.fa.zip -d utils/
+	touch "$DONE_FILE"
+else
+	echo "viruses.fa already unzipped. Skipping this step."
 fi
 
 
