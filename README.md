@@ -348,7 +348,7 @@ The figs folder contains all the heatmap plots for every independent database cr
 
 For example,
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.png) (If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.omnivorous_vs_dog.rel_abun.equal.top20.fillmin.scaled.heatmap.png) (If image failed to show, click it to view.)
 
 For more annotation, please refer to OUTPOST report html.
 
