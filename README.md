@@ -83,7 +83,7 @@ Each OUTPOST run accepts one assembly, all outputs are categorized in the folder
     ├── [  14]  materials
     └── [ 38K]  OUTPOST_report.html
 
-The OUTPOST report is a HTML file, which contains the general results description and annoatation.
+The [OUTPOST report](https://github.com/Y-H-Joe/OUTPOST/blob/main/OUTPOST_report_example.zip) is a HTML file with materials, which contains the general results description and annoatation.
 
 For more annotation, please refer to OUTPOST report html.
 
