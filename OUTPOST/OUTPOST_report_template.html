@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>OUTPOST Report</title>
+<style type="text/css">
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+.container {
+    max-width: 800px;
+    margin: auto;
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+h1, h2, h3, h4 {
+    color: #026ba5;
+}
+h1 {
+    text-align: center;
+    font-size: 28px;
+}
+h2 {
+    font-size: 24px;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+h3 {
+    font-size: 20px;
+    margin-top: 25px;
+    margin-bottom: 5px;
+}
+h4 {
+    font-size: 20px;
+    margin-top: 20px;
+    margin-bottom: 1px;
+}
+p, li {
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+a {
+    color: #026ba5;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+.scrollable-content, .scrollable-table {
+    border: 1px solid #ddd;
+    margin-top: 10px;
+    padding: 10px;
+    overflow: auto;
+    background-color: #f9f9f9;
+}
+.scrollable-content {
+    max-height: 400px;
+}
+.scrollable-table {
+    max-height: 400px;
+}
+.scrollable-iframe {
+    border: 1px solid #cccccc;
+    margin-top: 10px;
+    padding: 0;
+    width: 100%;
+    height: 500px; /* 根据您的需求调整 */
+    overflow: scroll; /* 允许在必要时进行滚动 */
+    background-color: #f9f9f9;
+}
+iframe {
+    width: 100%; /* 使iframe宽度为100% */
+    height: 100%; /* 高度自动适应.scrollable-iframe的高度 */
+    border: none; /* 去除iframe边框 */
+}
+.scrollable-iframe {
+    border: 1px solid #cccccc;
+    margin-top: 10px;
+    padding: 0;
+    width: 100%;
+    height: 500px; /* Adjust height as needed */
+    overflow: auto; /* Allow scrolling only when necessary */
+    background-color: #f9f9f9;
+    position: relative; /* Position relative to allow absolute positioning of the iframe */
+}
+iframe {
+    width: calc(100% + 17px); /* Adjust width to prevent the inner scrollbar, 17px is an average scrollbar width */
+    height: 100%;
+    border: none;
+    position: absolute; /* Absolute positioning to fill the parent container */
+    top: 0;
+    left: 0;
+    overflow: auto; /* Enable scrolling on the iframe itself */
+    transform-origin: top left; /* Set transform origin for zooming *//* Remove zooming if not needed */
+}
+.image-container {
+    position: relative;
+    display: inline-block; /* 或者根据你的布局需求选择合适的 display 类型 */
+    width: 100%; /* 或者指定一个固定宽度 */
+    height: 650px; /* 容器的高度，根据需要调整 */
+    overflow-y: auto; /* 如果内容超出容器高度，则显示垂直滚动条 */
+    border: 1px solid #ccc; /* 为容器添加边框 */
+    margin-top: 10px; /* 根据需要调整外边距 */
+}
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+}
+.zoom-controls button {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 20px;
+    padding: 0;
+}
+#image-to-zoom {
+    display: block; /* 防止图片下方有空隙 */
+    width: 100%; 
+    transition: transform 0.25s ease; /* 平滑变换效果 */
+}
+.zoom-button {
+    background: #fff;
+    border: 1px solid #000;
+    padding: 5px;
+    cursor: pointer;
+    margin-bottom: 2px;
+    user-select: none;
+}
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    transition: transform 0.25s ease;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+table, th, td {
+    border: 1px solid #ddd;
+}
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+th {
+    background-color: #f4f4f4;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+hr {
+    border: none;
+    height: 4px;
+    background-color: #026ba5;
+    margin-top: 20px;
+}
+.hr2 {
+    border: none;
+    height: 4px;
+    background-color: #026ba5; /* #5AAEDF */
+    margin-top: 40px;
+    width: 60%;          /* 设置宽度为父元素的50% */
+    margin-left: auto;   /* 与 margin-right 结合使用以实现居中 */
+    margin-right: auto;
+}
+#small_annotation {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+code {
+    font-family: monospace;
+    background-color: #eee;
+    padding: 2px 4px;
+    font-size: 0.9em;
+    border-radius: 4px;
+	white-space: pre-wrap;
+}
+</style>
+</head>
+<script>
+  var zoomStep = 0.1;
+
+  function zoomIn(containerId) {
+    var container = document.getElementById(containerId);
+    var img = container.querySelector('.zoomable-image');
+    img.style.transform = scaleImage(img, zoomStep);
+  }
+
+  function zoomOut(containerId) {
+    var container = document.getElementById(containerId);
+    var img = container.querySelector('.zoomable-image');
+    img.style.transform = scaleImage(img, -zoomStep);
+  }
+
+  function scaleImage(img, step) {
+    var scale = img.dataset.scale = parseFloat(img.dataset.scale || 1);
+    scale += step;
+    if (scale > 0.1) { // prevent scale from going too small
+      return 'scale(' + scale + ')';
+    } else {
+      return 'scale(0.1)';
+    }
+  }
+
+	function loadAndDisplayTextFile(filePath) {
+		// 使用fetch API获取文本文件的内容
+		fetch(filePath)
+			.then(response => {
+				// 确保请求成功
+				if (!response.ok) {
+					throw new Error('网络请求失败');
+				}
+				return response.text();
+			})
+			.then(text => {
+				// 将文本内容设置到div元素中
+				document.getElementById('textFileContent').textContent = text;
+			})
+			.catch(error => {
+				console.error('加载文本文件失败:', error);
+			});
+	}
+</script>
+
+<body>
+<div class="container">
+  <h1> OUTPOST Report </h1>
+  <p style="text-align: center;">Generated on {{report_time}} | v2.0</p>
+  <p style="text-align: center;"><a href="https://github.com/Y-H-Joe/OUTPOST" id="github_url">GitHub Repository</a></p>
+  <hr>
+	
+	
+  <h2>1. Configuration</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_1']}}</code> </p>
+	
+  <h3>1.1 Snakefile Configuration</h3>
+  <!--   warning --->
+  <p>Source: <code>{{source_dict['f_11']}}</code></p>
+  <div class="scrollable-content">
+    <object data="{{target_dict['f_11']}}" type="text/plain" width="100%" height="100%">
+      <pre>Your browser does not support viewing this file.</pre>
+    </object>
+  </div>
+  <p id="small_annotation">Annotation: This YAML file records the configuration settings for all parameters necessary to run OUTPOST. The <code>OUTPOST_run.py</code> functions as a Snakefile. </p>
+	
+  <h3>1.2 OUTPOST Configuration</h3>
+  <p>Source: <code>{{source_dict['f_12']}}</code></p>
+  <p id="small_annotation"> Annotation: This TSV file records the experimental information configurations required to operate OUTPOST. Accuracy in the table is crucial; ensure there are no errors. For additional details, please consult our GitHub page.</p>
+	
+  <h3>1.3 Running Log</h3>
+  <p>Source: <code>{{source_dict['f_13']}}</code></p>
+  <p id="small_annotation">Annotation: This folder tracks outputs and errors for each rule executed by OUTPOST. Logs are named <code>{rule_name}.log</code>. A completed rule generates a <code>{rule_name}.done</code> file. To rerun rules, delete the <code>{rule_name}.done</code> file and those for any dependent rules first.</p>
+  
+  <h3>1.4 Benchmark</h3>
+  <p>Source: <code>{{source_dict['f_14']}}</code></p>
+  <div class="scrollable-content">s h:m:s max_rss max_vms max_uss max_pss io_in io_out mean_load cpu_time<br>
+    1096.5864 0:18:16 203.16 1647.42 162.94 178.49 309.42 39.21 1.65 7.91 </div>
+  <p id="small_annotation">Annotation: Above is only one example. This TSV file logs the benchmark for the experimental information for running OUTPOST. | s: Total runtime in seconds. | h:m:s: Readable runtime. | max_rss: Peak RAM used (not swapped) in MB. | max_vms: Peak virtual memory used in MB. | max_uss: Peak unique memory (not shared) used in MB. | max_pss: Peak memory shared with other processes in MB. | io_in: Data read from disk in MB. | io_out: Data written to disk in MB. | mean_load: Average system load during the benchmark. cpu_time: Total CPU execution time in seconds.</p>
+  <hr class="hr2">
+  
+	
+  <h2>2. Quality Control</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_2']}}</code> </p>
+  <h3>2.1 Reads QC</h3>
+  <h4>2.1.1 Reads Summary and Filter</h4>
+  <p>Source: <code>{{source_dict['f_211']}}</code><br>
+  </p>
+  <div class="scrollable-iframe">
+    <iframe src="{{target_dict['f_211']}}" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+  <p id="small_annotation">Annotation: The preceding is just a single example. The interactive Fastp report provides details on read quality control. Read QC is available only if your input includes reads (both paired-end and single-end are supported). The adapter database utilized is the Fastp default.</p>
+	
+  <h4>2.1.2 Trim Adapters</h4>
+  <p>Source: <code>{{source_dict['f_212']}}</code><br>
+  </p>
+  <p id="small_annotation">Annotation: Trim results are documented in <code>TrimSummary_*.txt</code> files. OUTPOST employs Trimmomatic for additional removal of adapters or low-quality bases, beyond what Fastp does. The adapter database used is <code>utils/adapters.fa</code>.</p>
+	
+  <h3>2.2 Batch Effect</h3>
+  <p>Source: <code>{{source_dict['f_22']}}</code></p>
+  <div class="image-container"> <img src="{{target_dict['f_22']}}" alt="Zoomable Image" class="zoomable-image"> </div>
+  <p id="small_annotation">Annotation: This is merely one example. The PCA density plot merges a scatter plot with marginal density plots. OUTPOST will eliminate batch effects only if <code>rm_batch_effect=True</code> is set. The central scatter plot illustrates the dispersion of individual data points along the first two principal component axes (PC1 and PC2), with colors representing different 'batch' groups or conditions within the dataset. The marginal density plots, located at the top and right, show how the batches are distributed along PC1 and PC2, offering insights into the variance within each batch and highlighting potential batch effects in the data.</p>
+  <hr class="hr2">
+	
+	
+  <h2>3. Taxonomy Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_3']}}</code> </p>
+  <h3>3.1 Group Pair Comparison</h3>
+  <h4>3.1.1 Box plot for Group Pair Comparison for each Taxonomy</h4>
+  <p>Source: <code>{{source_dict['f_311']}}</code></p>
+  <div class="image-container"> <img src="{{target_dict['f_311']}}" alt="Zoomable Image" class="zoomable-image"> </div>
+  <p id="small_annotation">Annotation: The image provided is just one example. It showcases a box plot that compares the relative abundance of taxonomy between two groups, with the y-axis representing relative abundance and the x-axis naming the two groups. A P-value is calculated to assess statistical significance. OUTPOST automatically calculates and generates plots for all pairs of groups across all taxa levels, but only for taxa with significant differences. The levels of taxa analyzed are specified in the Snakefile configuration under <code>taxa_level</code>. The terms equal and unequal in the file name indicate whether a significant difference exists between the two groups.</p>
+	
+  <h4>3.1.2 Heatmap for Group Pair Comparison at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_312']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_312']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This image is just one example. It illustrates a heatmap depicting the top taxa at a specific taxonomy level for both equal and unequal scenarios in group comparisons. On the right, sample IDs are displayed with group names as suffixes, while the bottom labels the taxa names. The colors on the heatmap correspond to the log-scaled relative abundance of each taxa. In the file name, rmu signifies the removal of unknown taxonomy, and top indicates the number of taxa selected for display, a number that is configured in the Snakefile under <code>top</code>.</p>
+	
+  <h3>3.2 Taxonomy level</h3>
+  <h4>3.2.1 Distribution plot at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_321']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_321']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This image is merely one example. It features a distributional bar plot representing the relative abundance of each taxonomy level across all samples. The y-axis illustrates the distribution of relative abundance, while the sample IDs are displayed at the bottom. On the right, a legend correlates specific colors to their respective taxa, facilitating easy identification of each taxonomy within the plot.</p>
+	
+  <h4>3.2.2 Heatmap at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_322']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_322']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The provided image is just one example. It features a heatmap that highlights the top taxa at a specified taxonomy level. Unlike other visualizations aimed at group comparisons, this heatmap is designed to identify taxa with greater relative abundance, hence there are no suffixes following the sample IDs. This approach simplifies the observation of which taxa are more prevalent across the samples analyzed.</p>
+	
+  <h3>3.3 Intermediate Tables</h3>
+  <h4>3.3.1 Assembly Mapping Statistics</h4>
+  <p>Source: <code>{{source_dict['f_331']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>*.idxstats</code> files contain the mapping results from <code>bam</code> files of each sample to the assembly. The <code>*.pure</code> files are mapping counts extracted from <code>*.idxstats</code> files. The <code>all_samples.counts.pure</code> file is a compilation of mapping counts for all samples.</p>
+	
+  <h4>3.3.2 Assembly Annotation</h4>
+  <p>Source: <code>{{source_dict['f_332']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>_kaiju.ref</code> file records the taxonomy annotation results for the assembly obtained with Kaiju. The <code>_kaiju.ref.nm</code> file provides more detailed annotations, including taxonomy names, target sequences, and other relevant data. The <code>all_assembly_kaiju.ref.nm.tsv</code> file serves as the assembly annotation table for downstream analysis, detailing taxonomy and count information for each contig.</p>
+	
+  <h4>3.3.3 Assembly Taxonomy Statistics</h4>
+  <p>Source: <code>{{source_dict['f_333']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>all_samples.taxa_counts.rel_abun.{taxa}.csv</code> files document the relative abundance of each taxonomy level, derived from counts. The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.csv</code> files refine this by excluding unknown taxa, adjusting the sum of relative abundances to 1. The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{num}.csv</code> files focus on the most abundant taxa. To account for lesser-represented taxa, <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{num}.addOthers.csv</code> files include an 'Others' category. Lastly, the <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{num}.fillmin.scaled.csv</code> files standardize relative abundance data, substituting zeros with the global minimum value.</p>
+	
+ 	
+  <h4>3.3.4 Top Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_334']}}</code></p>
+  <p id="small_annotation">Annotation: The tables correspond closely to what was described in section 3.3.3. However, OUTPOST conducts statistical tests for all pairs of groups. The terms <code>equal</code> and <code>unequal</code> denote whether there are significant differences in these taxa across the groups.</p>
+	
+  <h4>3.3.5 Taxonomy Statistic Test for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_335']}}</code></p>
+  <p id="small_annotation">Annotation: These tables provide additional statistical details for comparisons between group pairs. The file named <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.ave_change.{equal}.csv</code> displays the average change in relative abundance between the two groups. The file <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.csv</code> illustrates the average relative abundance between the two groups. The file <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_change.{equal}.csv</code> indicates the relative abundance change between the two groups for each sample. Lastly, the file <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.u-test.two_sided.csv</code> documents whether the relative abundance for each taxonomy follows a normal distribution ('Y' or 'N'), includes the P-value from the normality test, and the results of the Wilcoxon test on the relative abundance differences between groups.</p>
+  <hr class="hr2">
+	
+	
+  <h2>4. Diversity Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_4']}}</code> </p>
+  <h3>4.1 Alpha Diversity for each Group Pair</h3>
+  <p>Source: <code>{{source_dict['f_41']}}</code></p>
+  <h4>4.1.1 Five Alpha Diversity Indices</h4>
+  <p>Source: <code>{{source_dict['f_411']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_411']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This image is just one example. It features a box plot that contrasts the alpha diversity in relative abundance between two groups, including a statistical significance marker above. OUTPOST performs calculations and generates plots for every pair of groups, utilizing five distinct alpha diversity indices at both the species and genus taxonomy levels. These indices are <code>Shannon, Simpson, Inverse Simpson, Evenness Pielou, Evenness Simpson</code>.</p>
+	
+  <h4>4.1.2 Intermediate Tables</h4>
+  <p>Source: <code>{{source_dict['f_412']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>alpha_diversity.at_{genus/species}.csv</code> tables contain the calculated alpha diversity results for each sample within a group, with each sample having the group name as its suffix.</p>
+	
+  <h3>4.2 Beta Diversity for each Group Pair</h3>
+  <h4>4.2.1 Two Beta Diversity Indices</h4>
+  <p>Source: <code>{{source_dict['f_421']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_421']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This image is merely one example. It showcases a PCoA plot that contrasts the beta diversity in relative abundance between two groups, with P-values recorded in intermediate tables. OUTPOST calculates and generates plots for each pair of groups using two distinct beta diversity indices at both species and genus levels of taxonomy relative abundance. These indices are <code>Jaccard</code> and <code>Bray–Curtis</code>.</p>
+	
+  <h4>4.2.2 Intermediate Tables</h4>
+  <p>Source: <code>{{source_dict['f_422']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>beta_pcoa_P-value.{Beta_diversity_index}.at_{genus/species}.csv</code> tables document the P-values from statistical tests for beta diversity between groups. Meanwhile, the <code>{Beta_diversity_index}.at_{genus/species}.csv</code> files detail the beta diversity measurements for each sample, providing a comprehensive overview of diversity differences across the sampled groups at both the genus and species levels.</p>
+  <hr class="hr2">
+	
+	
+  <h2>5. MetaPhlAn4 Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_5']}}</code> </p>
+  <h3>5.1 Taxonomy Analysis</h3>
+  <p>Source: <code>{{source_dict['f_51']}}</code></p>
+  <h4>5.1.1 GraPhlAn Analysis</h4>
+  <p>Source: <code>{{source_dict['f_511']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_511']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The circular cladogram illustrates the phylogenetic relationships among various taxa, with each concentric ring representing a different taxonomic level from outermost to innermost. Colors on the cladogram denote different phyla, as explained in the legend. The branching patterns depict the relationships among different taxonomic groups. Points plotted along the branches indicate the abundance or the presence/absence of specific taxa, providing insight into the distribution and diversity of life within the sampled environment.</p>
+	
+  <h4>5.1.2 Heatmap</h4>
+  <p>Source: <code>{{source_dict['f_512']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_512']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The heatmap provides a visualization of microbial community compositions across various samples, with the y-axis displaying taxa at multiple levels and the x-axis labeling each sample. The color intensity of each cell within the heatmap represents the relative abundance of a given taxon in each sample. Additionally, dendrograms along both axes offer insights into the similarity among samples and taxa, enhancing the analysis of microbial diversity and distribution patterns.</p>
+	
+  <h4>5.1.3 Krona Plot for each Sample</h4>
+  <p>Source: <code>{{source_dict['f_513']}}</code></p>
+  <div class="scrollable-iframe">
+    <iframe src="{{target_dict['f_513']}}" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+  <p id="small_annotation">Annotation: The interactive Krona plot presents phylogenetic and taxonomic information for all samples, allowing users to explore the composition and relationships of microbial communities through a dynamic and hierarchical visualization.</p>
+	
+  <h3>5.2 Diversity Analysis</h3>
+  <p>Source: <code>{{source_dict['f_52']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST computes four alpha diversity indices and four beta diversity indices. The <code>metaphlan_merge_taxa_{diversity_indices}.tsv</code> files capture the diversity information across all samples, based on Metaphlan's taxonomic data. The alpha diversity indices calculated are <code>richness, shannon, simpson,</code> and <code>gini</code>, while the beta diversity indices include <code>bray-curtis, jaccard, clr,</code> and <code>aitchison</code>.</p>
+	
+  <h3>5.3 Intermediate Tables</h3>
+  <h4>5.3.1 Taxonomy Tables</h4>
+  <p>Source: <code>{{source_dict['f_531']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}_taxa.txt</code> files document the taxonomy and relative abundance information for each individual sample. The <code>merged_abundance.tree.{annot}.txt</code> files compile the phylogenetic information from all samples.</p>
+	
+  <h4>5.3.2 Krona Tables</h4>
+  <p>Source: <code>{{source_dict['f_532']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}_krona.tsv</code> files contain taxonomy information for Krona plots.</p>
+	
+  <h3>5.4 Bowtie2 Intermediate Results</h3>
+  <p>Source: <code>{{source_dict['f_54']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}.bowtie2.bz2</code> files serve as intermediate alignment files for MetaPhlAn. These files can be utilized to rerun MetaPhlAn analyses, offering flexibility in processing and analyzing microbial community data.</p>
+  <hr class="hr2">
+	
+	
+  <h2>6. Function Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_6']}}</code> </p>
+  <h3>6.1 Function Annotation for each Group Pair</h3>
+  <h4>6.1.1 Heatmap for Various Database</h4>
+  <p>Source: <code>{{source_dict['f_611']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_611']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This is just one example. The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{num}.fillmin.scaled.heatmap.pdf</code> files showcase heatmaps of the top functional items from a database, annotated across all samples. The specific function databases and the number of top items to be displayed are predefined in the Snakefile configuration. Each heatmap column represents a different function item, and each row represents a sample. The color gradient, transitioning from blue to red, indicates the relative abundance of each function item within the samples. Hierarchical clustering is depicted through dendrograms at the top, offering insights into the relationships between samples based on the distribution of functional items.</p>
+	
+	
+  <h4>6.1.2 Heatmap for Various Database</h4>
+  <p>Source: <code>{{source_dict['f_612']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_612']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This example illustrates the use of <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.top{num}.fillmin.scaled.heatmap.pdf</code> heatmaps for presenting statistical outcomes of comparisons between groups. The presence of 'unequal' in the file name indicates items showing significant differences between groups, and conversely for 'equal'. Statistical parameters relevant to the analysis, like <code>two_sided</code> and <code>paired</code>, are configured within the Snakefile. This allows for a nuanced visualization of differences in functional item abundance between specified groups.</p>
+	
+  <h3>6.2 Intermediate Tables</h3>
+  <h4>6.2.1 HUMAnN annotation results</h4>
+  <p>Source: <code>{{source_dict['f_621']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>{sample_ID}_genefamilies.tsv</code> files capture the abundance of gene families for each sample. The <code>{sample_ID}_genefamilies.cpm.tsv</code> files adjust this abundance using Counts Per Million reads for normalization. The <code>{sample_ID}_genefamilies.relab.tsv</code> files further normalize these values to ensure the sum equals 1, representing relative abundance. Additionally, <code>{sample_ID}_genefamilies.{cpm/relab}_{database}.tsv</code> files link gene families to specific functional items, enriching the dataset with functional annotations. For a detailed understanding of <code>pathcoverage</code> and <code>pathabundance</code>, the provided forum link offers further insights. In downstream analysis, OUTPOST primarily utilizes the gene families data.</p>
+	
+  <h4>6.2.2 Top Function for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_622']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.top{num}.fillmin.scaled.csv</code> files detail the log-scaled relative abundance of function items across two groups, providing a comparative analysis of functional item distribution. This format facilitates a understanding of the differences in relative abundance of specific function items between the groups, with the log scaling.</p>
+	
+  <h4>6.2.3 Statistic Function Test for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_623']}}</code></p>
+  <p id="small_annotation">Annotation: The tables are similar as annotated in section 3.3.5, except for replacing taxonomy with function items.</p>
+  <hr class="hr2">
+	
+	
+  <h2>7. Linear Discriminant Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_7']}}</code> </p>
+  <h3>7.1 LDA for Taxonomy</h3>
+  <h4>7.1.1 LEfSe plot for Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_711']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_711']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The provided image is just one example, showing a Linear Discriminant Analysis (LDA) barplot comparing the taxonomy between two groups. The x-axis represents the log normalized LDA scores, with higher scores indicating features of the taxonomy that more effectively distinguish the two groups. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.pdf</code> files encompass all group pairs across all taxa levels, documenting those with statistically significant differences in relative abundance, whether they are marked as equal or unequal. This method allows for the identification of taxa that are potentially characteristic or indicative of each group.</p>
+	
+  <h4>7.1.2 LEfSe Intermediate Tables for Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_712']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.tsv</code> files contain tables of relative abundance formatted for LEfSe analysis. Additionally, the <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.res</code> and <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.format</code> files serve as intermediate files necessary for conducting Linear Discriminant Analysis (LDA).</p>
+	
+  <h3>7.2 LDA for Function</h3>
+  <h4>7.2.1 LEfSe plot for Function for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_721']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_721']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The image shows an LDA barplot comparing function items between two groups, with the x-axis displaying log normalized LDA scores. Higher scores indicate function items that better differentiate the groups. The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.lefse.pdf</code> files cover all pairs and databases, noting significant relative abundance differences.</p>
+	
+  <h4>7.2.2 LEfSe Intermediate Tables for Function for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_722']}}</code></p>
+  <p id="small_annotation">Annotation: The files share similar organization as section 7.1.2 . </p>
+  <hr class="hr2">
+	
+	
+  <h2>8. Antibiotic Genes Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_8']}}</code> </p>
+  <h3>8.1 Heatmap for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>{{source_dict['f_81']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_81']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: In <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files, each represents the top 20 antibiotic gene counts, along with their associated taxonomy, for a specific group pair. The x-axis lists antibiotic gene names, while the y-axis displays corresponding taxonomy. Since gene names in the plot are simplified, users can refer to the <code>GENE</code> column in <code>outpost_assembly.antibiotic.tsv</code> to find the original gene names.</p>
+	
+  <h4>8.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_82']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_82']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: In the <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files, each depicts the log-normalized counts of the top 20 antibiotic genes and their respective groups for a specific pair. Antibiotic gene names are on the x-axis, while normalized counts are on the y-axis.</p>
+	
+  <h4>8.3 Intermediate Tables</h4>
+  <h4>8.3.1 Antibiotic Genes Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_831']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each antibiotic genes and corresponding taxonomy and group.</p>
+	
+  <h4>8.3.2 Antibiotic Genes Abundance among Assembly Contigs</h4>
+  <p>Source: <code>{{source_dict['f_832']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>outpost_assembly.{database}.tsv</code> files hold the antibiotic gene annotation outcomes for each contig in the assembly, utilizing various databases such as <code>CARD, EcOH, MEGARES, NCBI-AMR, Resfinder,</code> and <code>ARG-ANNOT</code>. Additionally, the <code>outpost_assembly.antibiotic.tsv</code> file provides a consolidated summary of all annotation results.</p>
+  <hr class="hr2">
+	
+	
+  <h2>9. Virulence Factors Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_9']}}</code> </p>
+  <h3>9.1 Heatmap for each Group Pair at each Taxonomy level</h3>  
+  <p>Source: <code>{{source_dict['f_91']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_91']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files illustrate the log-normalized counts of the top 20 virulence factors and their associated taxonomy for each group pair. The x-axis displays virulence factor names, while the y-axis shows corresponding taxonomy. As gene names in the plot are simplified, users can refer to the <code>GENE</code> column in <code>outpost_assembly.virulence.tsv</code> to identify the original gene names.</p>
+	
+  <h4>9.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_92']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_92']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files depict the log-normalized counts of the top 20 virulence factors and their associated groups for each group pair. Virulence factor names are shown on the x-axis, while normalized counts are displayed on the y-axis.</p>
+	
+  <h4>9.3 Intermediate Tables</h4>
+  <h4>9.3.1 Virulence Factors Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_931']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each virulence factor and corresponding taxonomy and group.</p>
+	
+  <h4>9.3.2 Virulence Factors Abundance among Assembly Contigs</h4>
+  <p>Source: <code>{{source_dict['f_932']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>outpost_assembly.{database}.tsv</code> files hold the annotation outcomes for virulence factors found in each contig of the assembly, utilizing databases such as <code>Ecoli_VF</code> and <code>VFDB</code>. Additionally, the <code>outpost_assembly.virulence.tsv</code> file provides a consolidated summary of all virulence factor annotation results.</p>
+  <hr class="hr2">
+	
+	
+  <h2>10. Plasmids Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_10']}}</code> </p>
+  <h3>10.1 Heatmap for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>{{source_dict['f_101']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{source_dict['f_101']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files illustrate the log-normalized counts of the top plasmids and their associated taxonomy for each group pair. Plasmid names are displayed on the x-axis, while the y-axis shows corresponding taxonomy. As gene names in the plot are simplified, users can refer to the <code>GENE</code> column in <code>outpost_assembly.plasmidfinder.tsv</code> to identify the original gene names.</p>
+	
+  <h4>10.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_102']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{source_dict['f_102']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: The <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files display the log-normalized counts of the top plasmids and their associated groups for each group pair. Plasmid names are shown on the x-axis, while normalized counts are depicted on the y-axis.</p>
+	
+  <h4>10.3 Intermediate Tables</h4>
+  <h4>10.3.1 Plasmids Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>{{source_dict['f_1031']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each plasmid and corresponding taxonomy and group.</p>
+	
+  <h4>10.3.2 Plasmids Abundance among Assembly Contigs</h4>
+  <p>Source: <code>{{source_dict['f_1032']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>outpost_assembly.plasmidfinder.tsv</code> contain the plasmids annoation results for each contig in assembly.</p>
+  <hr class="hr2">
+	
+	
+  <h2>11. Assembly Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_11']}}</code> </p>
+  <h3>11.1 Assemble Contigs</h3>
+  <p>Source: <code>{{source_dict['f_111']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST utilized either <code>MEGAHIT</code> or <code>metaSPAdes</code> for contig assembly, as specified in the Snakefile configuration under <code>assembly_method</code>. The resulting assemblies are stored in files named <code>final.contigs.fa</code> or <code>contigs.fasta</code>.</p>
+	
+  <h4>11.2 Final assembly</h4>
+  <p>Source: <code>{{source_dict['f_112']}}</code></p>
+  <p id="small_annotation">Annotation: The file <code>outpost_nonrd_contigs.fasta</code> represents the non-redundant assembly generated through cd-hit processing. Additionally, other files serve as indices for assembly alignment. The <code>outpost_assembly_split</code> folder contains split files for each contig.</p>
+	
+  <h4>11.3 Assembly Quality Control</h4>
+  <p>Source: <code>{{source_dict['f_113']}}</code></p>
+  <div class="scrollable-iframe">
+    <iframe src="{{target_dict['f_113']}}" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+  <p id="small_annotation">Annotation: This image represents a box plot comparing the relative abundance of taxonomy between two groups, with a statistical significance marker indicated. OUTPOST generates and plots these comparisons for all group pairs across all specified taxa levels, as configured in the Snakefile under <code>taxa_level</code>.</p>
+	
+  <h4>11.4 Assembly Genes Prediction</h4>
+  <p>Source: <code>{{source_dict['f_114']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST utilized two different software to annotate the assembly.</p>
+	
+  <h4>11.4.1 MetaGeneMark Assembly Genes Prediction</h4>
+  <p>Source: <code>{{source_dict['f_1141']}}</code></p>
+  <p id="small_annotation">Annotation: The file <code>outpost_assembly_metagenemark_prot.fa</code> comprises protein sequences and their corresponding predicted genes from the assembly. Additionally, the <code>outpost_assembly_metagenemark_gene.{nonrd}.fa</code> files contain gene sequences predicted from the assembly, with "nonrd" indicating redundancy removal. Lastly, the <code>outpost_assembly_metagenemark.gtf</code> file provides assembly annotation information in GTF format.</p>
+	
+  <h4>11.4.2 Prodigal Assembly Genes Prediction</h4>
+  <p>Source: <code>{{source_dict['f_1142']}}</code></p>
+  <p id="small_annotation">Annotation: Following the pattern in section 11.4.1, OUTPOST also annotated genes, proteins, and GFF files. The <code>outpost_assembly_prodigal_gene_scores.txt</code> file holds gene annotation details for each contig. Additionally, the <code>outpost_assembly_prodigal_complete_genomes.fa</code> file contains predicted complete genomes, where "partial == 0".</p>
+	
+  <h4>11.5 Assembly Genes Annotation </h4>
+  <p>Source: <code>{{source_dict['f_115']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST used three different software to annotate the predicted genes.</p>
+	
+  <h4>11.5.1 Assembly Genes EggNOG Mapping</h4>
+  <p>Source: <code>{{source_dict['f_1151']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST annotated protein predictions from MetaGeneMark and Prodigal. It leverages precomputed Orthologous Groups (OGs) and phylogenies from the EggNOG database to transfer functional information solely from fine-grained orthologs.</p>
+	
+  <h4>11.5.2 Assembly Genes Resistance Gene Identification</h4>
+  <p>Source: <code>{{source_dict['f_1152']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST conducted gene prediction using results from MetaGeneMark and Prodigal, respectively. It also predicts antibiotic resistomes from protein or nucleotide data through homology and SNP models. Reference data from the CARD is utilized for this purpose.</p>
+	
+  <h4>11.5.3 Assembly Genes Genome Taxonomy Annotation</h4>
+  <p>Source: <code>{{source_dict['f_1153']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST annotated the taxonomy using the splited assembly contigs using GTDB-Tk. The <code>outpost_assembly.*.summary.tsv</code> files contain the annotation results.</p>
+	
+  <h4>11.6 Assembly Genes Quantification</h4>
+  <p>Source: <code>{{source_dict['f_116']}}</code></p>
+  <p id="small_annotation">Annotation: OUTPOST performed quantification on the gene prediction results obtained from MetaGeneMark and Prodigal, respectively. Salmon, operating in mapping-based mode, executes in two phases: indexing and quantification. The indexing step, which is independent of the reads, only needs to be run once for a specific set of reference transcripts. The resulting quantification is stored in the <code>quant.sf</code> file. Further details regarding this file can be found at <code>https://salmon.readthedocs.io/en/nb/file_formats.html</code>.</p>
+	
+  <h4>11.7 Assembly Genes Taxonomy Counts</h4>
+  <p>Source: <code>{{source_dict['f_117']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>all_samples.taxa_counts.tsv</code> file contains the taxaonomy annoatation results and mapped counts for each contig across each sample.</p>
+  <hr class="hr2">
+	
+	
+  <h2>12. Biomarkers Analysis</h2>
+  <p id="small_annotation">In report: <code>{{report_dict['c_12']}}</code> </p>
+  <h3>12.1 OUTPOST Biomarkers for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>{{source_dict['f_121']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>OUTPOST_biomarker_scores.{group1}_vs_{group2}.{taxa_level}.tsv</code> files encompass biomarkers for all group pairs across all taxa levels. Biomarkers are ranked based on higher OUTPOST_biomarker_score to lower. The OUTPOST_biomarker_score operates on the principle of meta-analysis, incrementing by one if the biomarker meets certain criteria. These criteria include <code>taxa_abun_top_100, taxa_abun_signicant, LDA_larger_than_2, virulence_top_100, plasmid_top_100, antibiotic_top_100,</code> and <code>ANCOM_identified</code>.</p>
+	
+  <h4>12.2 ANCOM Biomarkers for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>{{source_dict['f_122']}}</code></p>
+  <h4>12.2.1 ANCOM Biomarkers Dot plot</h4>
+  <p>Source: <code>{{source_dict['f_1221']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_1221']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: This example illustrates OUTPOST's utilization of ANCOM as an additional approach for biomarker identification. The <code>ancom_biomarkers.dotplot.{group1}_vs_{group2}.at_{taxa_level}.pdf</code> plots depict potential biomarkers for all group pairs across all taxa levels. Identified biomarkers are indicated by red triangles.</p>
+	
+  <h4>12.2.2 ANCOM Biomarkers Volcano plot</h4>
+  <p>Source: <code>{{source_dict['f_1222']}}</code></p>
+  <div class="image-container"> <img id="image-to-zoom" src="{{target_dict['f_1222']}}" alt="Zoomable Image"> </div>
+  <p id="small_annotation">Annotation: Similarly, the <code>ancom_biomarkers.volcano.{group1}_vs_{group2}.at_{taxa_level}.pdf</code> plots represent potential biomarkers for all group pairs across all taxa levels. Identified biomarkers are highlighted by red dots.</p>
+	
+  <h4>12.3 ANCOM Biomarkers Tables</h4>
+  <p>Source: <code>{{source_dict['f_123']}}</code></p>
+  <p id="small_annotation">Annotation: The <code>ancom_biomarker.{group1}_vs_{group2}.at_{taxa_level}.tsv</code> tables comprise the ANCOM-calculated results for all group pairs across all taxa levels.</p>
+  
+	
+	<p><br>
+  </p>
+  <hr>
+</div>
+</body>
+</html>

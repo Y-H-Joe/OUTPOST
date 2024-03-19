@@ -1,69 +1,88 @@
-## command parameters
-python3: 'python3'
-Rscript: 'Rscript'
-samtools: 'samtools'
-kaiju: 'kaiju'
-kaiju_addTaxonNames: 'kaiju-addTaxonNames'
-kaiju_nodes: '/home/yh/softwares/databases/kaiju_databases/nodes.dmp'
-kaiju_fmi: '/home/yh/softwares/databases/kaiju_databases/kaiju_db_nr.fmi'
-kaiju_names: '/home/yh/softwares/databases/kaiju_databases/names.dmp'
-humann: '/home/yh/miniconda3/envs/OUTPOST/bin/humann3'
-humann_renorm_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_renorm_table'
-humann_regroup_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_regroup_table'
-humann_join_tables: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_join_tables'
-humann_split_stratified_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_split_stratified_table'
-humann_rename_table: '/home/yh/miniconda3/envs/OUTPOST/bin/humann_rename_table'
-lefse_format_input: 'lefse_format_input.py'
-lefse_run: 'lefse_run.py'
-abricate: 'abricate'
-config: "/scratch/mammals/OUTPOST/OUTPOST/OUTPOST_config.tsv" 
-mgm: "/scratch/mammals/MetaGeneMark_linux_64/mgm/gmhmmp "
-mod_file: "/scratch/mammals/MetaGeneMark_linux_64/mgm/MetaGeneMark_v1.mod"
-cdhit : "cd-hit-est"
-# number of CPUs to use
-cores: 80 
-# batch size of samples run LDA and humann in parallel
-process_batch_size : 80
+## OUTPOST settings
+output_dir: /home/z/zhouyh/softwares/OUTPOST/results2
+config: /home/z/zhouyh/softwares/OUTPOST/OUTPOST/OUTPOST_config.tsv 
 
-##   settings
-# True or False, determine the statisctic method to use
-paired: False 
-# True or False, determine the statisctic method to use
-two_sided: True 
-# select one from [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
-qvalue: "Benjamini-Hochberg" 
-# True or False
-skip_assembly_analysis: True 
-# True or False
-skip_humann_init: True
-# True or False
-skip_kaiju: True
-# True or False
-rm_batch_effect: True
-# threshould for cd-hit
-cdhit_cutoff: 0.97
-# True or False
-skip_metagenemark: False
-# number of items to show in heatmap
-top: 20
-# range of biomarkers candidates
-biomarker_num : 100
-# LDA score threshold
-LDA_cutoff: 2
-# taxonomy levels. select from ['taxaID','superkingdom','phylum','class','order','family','genus','species']
+## software and command
+abricate: abricate
+bamToFastq: bamToFastq
+bwa: /home/z/zhouyh/softwares/OUTPOST/utils/bwa-mem2-2.2.1_x64-linux/bwa-mem2
+cdhit : cd-hit-est
+diamond: /home/z/zhouyh/softwares/OUTPOST/utils/diamond
+emapper: emapper.py
+export2graphlan: /home/z/zhouyh/softwares/OUTPOST/OUTPOST/outpost_export2graphlan.py
+fastp: /home/z/zhouyh/softwares/OUTPOST/utils/fastp
+graphlan: /home/z/zhouyh/softwares/OUTPOST/utils/graphlan/outpost_graphlan.py
+graphlan_annotate: /home/z/zhouyh/softwares/OUTPOST/utils/graphlan/graphlan_annotate.py
+humann: humann3
+humann_join_tables: humann_join_tables
+humann_regroup_table: humann_regroup_table
+humann_rename_table: humann_rename_table
+humann_renorm_table: humann_renorm_table
+humann_split_stratified_table: humann_split_stratified_table
+kaiju: kaiju
+kaiju_addTaxonNames: kaiju-addTaxonNames
+ktimporttext: ktImportText
+lefse_format_input: lefse_format_input.py
+lefse_run: lefse_run.py
+megahit: megahit
+merge_metaphlan_tables: merge_metaphlan_tables.py
+metaphlan: metaphlan
+metaspades: metaspades.py
+mgm: /home/z/zhouyh/softwares/OUTPOST/utils/MetaGeneMark_linux_64/mgm/gmhmmp 
+prodigal: prodigal
+python3: python3
+quast: quast.py
+rgi: rgi
+Rscript: Rscript
+salmon: /home/z/zhouyh/softwares/OUTPOST/utils/salmon-latest_linux_x86_64/bin/salmon
+samtools: samtools
+seqkit: seqkit
+trimmomatic: trimmomatic
+
+## database
+adapters: /home/z/zhouyh/softwares/OUTPOST/utils/adapters.fa
+emapper_db: /home/z/zhouyh/softwares/OUTPOST/databases/eggnog_mapper
+kaiju_fmi: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/kaiju_db_nr_euk.fmi
+kaiju_names: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/names.dmp
+kaiju_nodes: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/nodes.dmp
+mod_file: /home/z/zhouyh/softwares/OUTPOST/utils/MetaGeneMark_linux_64/mgm/MetaGeneMark_v1.mod
+virus_genome: /home/z/zhouyh/softwares/OUTPOST/utils/viruses.fa
+
+## settings
+assemble_contigs: True # assemble contigs using OUTPOST or not
+assembly_method: megahit # megahit or metaspades
+biomarker_num : 100 # number of biomarkers candidates
+clean_unnecessary: True # True or False
+cdhit_cutoff: 0.97 # threshould for cd-hit
+cores: 80 # number of CPUs to use
+downsample_reads: 300000 # 0 or number of reads
+LDA_cutoff: 2 # LDA score threshold
+memory_use: minimum # minimum or maximum
+paired: False # True or False, determine the statisctic method to use
+process_batch_size : 16 # batch size of samples run humann in parallel
+qvalue: Benjamini-Hochberg # select one from [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
+rm_batch_effect: True # True or False
+skip_assembly_qtest: True # True or False
+skip_humann_init: False # True or False
+skip_kaiju: False # True or False
+top: 20 # number of items to show in heatmap
+two_sided: True # True or False, determine the statisctic method to use
+
+# taxonomy levels. select from [taxaID,superkingdom,phylum,class,order,family,genus,species]
 taxa_level:
-  - 'taxaID'
-  - 'superkingdom'
-  - 'phylum'
-  - 'class'
-  - 'order'
-  - 'family'
-  - 'genus'
-  - 'species'
-# metabolism independent databases. select from ['rxn','eggnog','ko','level4ec','pfam']
+  - taxaID
+  - superkingdom
+  - phylum
+  - class
+  - order
+  - family
+  - genus
+  - species
+  
+# metabolism independent databases. select from [rxn,eggnog,ko,level4ec,pfam]
 databases:
-  - 'rxn'
-  - 'eggnog'
-  - 'ko'
-  - 'level4ec'
-  - 'pfam'
+  - rxn
+  - eggnog
+  - ko
+  - level4ec
+  - pfam

@@ -70,7 +70,7 @@ dependencies:
   - decorator=5.1.1=pyhd8ed1ab_0
   - defusedxml=0.7.1=pyhd8ed1ab_0
   - dendropy=4.5.2=pyh3252c3a_0
-  - diamond=2.0.14=hb97b32f_1
+  - diamond=2.0.15=hb97b32f_0
   - docutils=0.18.1=py39hf3d152e_1
   - dpath=2.0.6=py39hf3d152e_1
   - dropbox=11.29.0=pyhd8ed1ab_0

@@ -23,19 +23,17 @@ Contact: yihangjoe@foxmail.com
 ####=======================================================================####
 """
 import sys
-import re
 import os
 import time
+import subprocess
 import OUTPOST.check_config
 import OUTPOST.decorators
 import OUTPOST.functools
+import OUTPOST.check_snakefile_config
 
 sys.path.append(os.getcwd())
-check_config = OUTPOST.check_config.check_config
-func_begin = OUTPOST.functools.func_begin
-func_end = OUTPOST.functools.func_end
 
-def wait_unti_file_exists(dp_list, error_log, max_circle = 30):
+def wait_until_file_exists(dp_list, error_log, max_circle = 30):
     print(f"OUTPOST: waiting for {dp_list}")
     circle = 0
     for dp in dp_list:
@@ -51,3 +49,22 @@ def wait_unti_file_exists(dp_list, error_log, max_circle = 30):
             if circle == max_circle:
                 print(f"OUTPOST: reached max_circle {max_circle}. quit waiting.")
     return True
+
+def index_genome(genome, bwa, samtools, need_fai = False):
+    if not os.path.exists(f"{genome}.bwt.2bit.64"):
+        subprocess.run([bwa, 'index', genome])
+    if need_fai:
+        if not os.path.exists(f"{genome}.fai"):
+            subprocess.run([samtools, 'faidx', genome])
+            if not os.path.exists(f"{genome}.fai"):
+                subprocess.run(['gzip -d', genome])
+                subprocess.run(['bgzip', genome])
+                subprocess.run([samtools, 'faidx', genome])
+
+def func_begin(*args, **kwargs):
+    from OUTPOST.functools import func_begin as fb
+    return fb(*args, **kwargs)
+
+def func_end(*args, **kwargs):
+    from OUTPOST.functools import func_end as fe
+    return fe(*args, **kwargs)

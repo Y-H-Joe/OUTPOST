@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>OUTPOST Report</title>
+<style type="text/css">
+body {
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	background-color: #f4f4f4;
+	margin: 0;
+	padding: 20px;
+	color: #333;
+}
+.container {
+	max-width: 800px;
+	margin: auto;
+	background-color: #fff;
+	padding: 20px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+h1, h2, h3, h4 {
+	color: #026ba5;
+}
+h1 {
+	text-align: center;
+	font-size: 28px;
+}
+h2 {
+	font-size: 24px;
+	margin-top: 30px;
+	margin-bottom: 10px;
+}
+h3 {
+	font-size: 20px;
+	margin-top: 25px;
+	margin-bottom: 5px;
+}
+h4 {
+	font-size: 20px;
+	margin-top: 20px;
+	margin-bottom: 1px;
+}
+p, li {
+	font-size: 16px;
+	line-height: 1.6;
+	margin: 10px 0;
+}
+a {
+	color: #026ba5;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+.scrollable-content, .scrollable-table {
+	border: 1px solid #ddd;
+	margin-top: 10px;
+	padding: 10px;
+	overflow: auto;
+	background-color: #f9f9f9;
+}
+.scrollable-content {
+	max-height: 400px;
+}
+.scrollable-table {
+	max-height: 400px;
+}
+.scrollable-iframe {
+  border: 1px solid #cccccc;
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+  height: 500px; /* 根据您的需求调整 */
+  overflow: scroll; /* 允许在必要时进行滚动 */
+  background-color: #f9f9f9;
+}
+iframe {
+  width: 100%; /* 使iframe宽度为100% */
+  height: 100%; /* 高度自动适应.scrollable-iframe的高度 */
+  border: none; /* 去除iframe边框 */
+}
+.scrollable-iframe {
+  border: 1px solid #cccccc;
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+  height: 500px; /* Adjust height as needed */
+  overflow: auto; /* Allow scrolling only when necessary */
+  background-color: #f9f9f9;
+  position: relative; /* Position relative to allow absolute positioning of the iframe */
+}
+
+iframe {
+  width: calc(100% + 17px); /* Adjust width to prevent the inner scrollbar, 17px is an average scrollbar width */
+  height: 100%;
+  border: none;
+  position: absolute; /* Absolute positioning to fill the parent container */
+  top: 0;
+  left: 0;
+  overflow: auto; /* Enable scrolling on the iframe itself */
+  transform-origin: top left; /* Set transform origin for zooming */
+  /* Remove zooming if not needed */
+}
+
+.image-container {
+  position: relative;
+  display: inline-block; /* 或者其他适合你布局的display类型 */
+}
+
+.zoom-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.zoom-controls button {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  margin-bottom: 5px;
+  font-size: 20px;
+  padding: 0;
+}
+
+#image-to-zoom {
+  display: block; /* 防止图片下方有空隙 */
+  width: 100%; /* 你可能需要调整这个值 */
+  transition: transform 0.25s ease; /* 平滑变换效果 */
+}
+
+.zoom-button {
+    background: #fff;
+    border: 1px solid #000;
+    padding: 5px;
+    cursor: pointer;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+ img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    transition: transform 0.25s ease;
+  }
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+}
+table, th, td {
+	border: 1px solid #ddd;
+}
+th, td {
+	text-align: left;
+	padding: 8px;
+}
+th {
+	background-color: #f4f4f4;
+}
+tr:nth-child(even) {
+	background-color: #f9f9f9;
+}
+hr {
+	border: none;
+	height: 4px;
+	background-color: #026ba5;
+	margin-top: 20px;
+}
+	
+.hr2 {
+	border: none;
+	height: 4px;
+	background-color: #026ba5; /* #5AAEDF */
+	margin-top: 40px;
+  	width: 60%;          /* 设置宽度为父元素的50% */
+ 	margin-left: auto;   /* 与 margin-right 结合使用以实现居中 */
+ 	margin-right: auto;  
+}
+#small_annotation {
+	font-size: 14px;
+	color: #666;
+	font-style: italic;
+}
+code {
+	font-family: monospace;
+	background-color: #eee;
+	padding: 2px 4px;
+	font-size: 0.9em;
+	border-radius: 4px;
+}
+</style>
+</head>
+
+	
+	
+<script>
+  var zoomStep = 0.1;
+
+  function zoomIn(containerId) {
+    var container = document.getElementById(containerId);
+    var img = container.querySelector('.zoomable-image');
+    img.style.transform = scaleImage(img, zoomStep);
+  }
+
+  function zoomOut(containerId) {
+    var container = document.getElementById(containerId);
+    var img = container.querySelector('.zoomable-image');
+    img.style.transform = scaleImage(img, -zoomStep);
+  }
+
+  function scaleImage(img, step) {
+    var scale = img.dataset.scale = parseFloat(img.dataset.scale || 1);
+    scale += step;
+    if (scale > 0.1) { // prevent scale from going too small
+      return 'scale(' + scale + ')';
+    } else {
+      return 'scale(0.1)';
+    }
+  }
+
+	function loadAndDisplayTextFile(filePath) {
+		// 使用fetch API获取文本文件的内容
+		fetch(filePath)
+			.then(response => {
+				// 确保请求成功
+				if (!response.ok) {
+					throw new Error('网络请求失败');
+				}
+				return response.text();
+			})
+			.then(text => {
+				// 将文本内容设置到div元素中
+				document.getElementById('textFileContent').textContent = text;
+			})
+			.catch(error => {
+				console.error('加载文本文件失败:', error);
+			});
+	}
+</script>
+
+	
+<body>
+<div class="container">
+  <h1> OUTPOST Report </h1>
+  <p style="text-align: center;">Generated on {time} | v2.0</p>
+  <p style="text-align: center;"><a href="https://github.com/Y-H-Joe/OUTPOST" id="github_url">GitHub Repository</a></p>
+  <hr>
+  <h2>1. Configuration</h2>
+	  <p id="small_annotation">In report: <code>D:\Projects\GEMINI\results2_cp\report\materials\1_configuration</code> </p>
+  <h3>1.1 Snakefile Configuration</h3>
+  <!--   warning --->
+  <p>Source: <code>D:\Projects\GEMINI\outpost2\OUTPOST\Snakefile_config.yml</code></p>
+	
+<div class="scrollable-content">
+    <object data="D:\Projects\GEMINI\results2_cp\report\materials\1_configuration\Snakefile_config.yml" type="text/plain" width="100%" height="100%">
+        <pre>Your browser does not support viewing this file.</pre>
+    </object>
+</div>
+
+  <p id="small_annotation">Annotation: This YAML file logs the configuration for all parameters for running OUTPOST. <i>The OUTPOST_run.py</i> is a Snakefile. </p>
+
+  <h3>1.2 OUTPOST Configuration</h3>
+  <p>Source: <code>D:\Projects\GEMINI\reults2_cp\log</code></p>
+  <p id="small_annotation">
+  Annotation: This TSV file logs the configuration for the experimental information for running OUTPOST. The table is very important, make sure there is no mistakes. Please refer to our Github page for more explanation.</p>
+	
+	
+  <h3>1.3 Running Log</h3>
+  <p>Source: <code>D:\Projects\GEMINI\reults2_cp\log</code></p>
+  <p id="small_annotation">Annotation: This folder logs any outputs or errors for each rule during running OUTPOST. The name of each log is <code>{rule_name}.log</code>. Notice, if rule finished, then there will a <code>{rule_name}.done</code>, if you want to re-run any rules, please delete the corresponding and all downstream <code>{rule_name}.done</code> files first.</p>
+	
+	
+  <h3>1.4 Benchmark</h3>
+  <p>Source: <code>D:\Projects\GEMINI\reults2_cp\benchmark</code></p>
+  <div class="scrollable-content">s h:m:s max_rss max_vms max_uss max_pss io_in io_out mean_load cpu_time<br>
+    1096.5864 0:18:16 203.16 1647.42 162.94 178.49 309.42 39.21 1.65 7.91 </div>
+  <p id="small_annotation">Annotation: Above is only one example. This TSV file logs the benchmark for the experimental information for running OUTPOST. | s: Total runtime in seconds. | h:m:s: Readable runtime. | max_rss: Peak RAM used (not swapped) in MB. | max_vms: Peak virtual memory used in MB. | max_uss: Peak unique memory (not shared) used in MB. | max_pss: Peak memory shared with other processes in MB. | io_in: Data read from disk in MB. | io_out: Data written to disk in MB. | mean_load: Average system load during the benchmark. cpu_time: Total CPU execution time in seconds.</p>
+	
+ <hr class="hr2">
+  <h2>2. Quality Control</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\2_quality_control</code> </p>
+  <h3>2.1 Reads QC</h3>
+  <h4>2.1.1 Reads Summary and Filter</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\qc</code><br>
+  </p>
+  <div class="scrollable-iframe">
+    <iframe src="file:///D:/Projects/GEMINI/results2_cp/qc/buffalo_1.fastp.html" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+  <p id="small_annotation">Annotation: Above is only one example. The interactive Fastp report contains the information for reads quality control. The Reads QC only exist if your input contains reads (both PE and SE are acceptable). The adapters database used is Fastp default.</p>
+  <h4>2.1.2 Trim Adapters</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\qc</code><br>
+  </p>
+  <p id="small_annotation">Annotation: The trim results are logged in TrimSummmry_*.txt files. OUTPOST uses Trimmomatic to further remove adapters or low quality bases besides Fastp. The adapters database is <code>utils/adapters.fa</code>.</p>
+	
+  <h3>2.2 Batch Effect</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\batch_effect</code></p>
+	
+<div class="image-container">
+  <img src="file:///D:/Projects/GEMINI/results2_cp/batch_effect/all_samples.taxa_counts.rel_abun.order.rmU.batch_effect_PCA.png" alt="Zoomable Image" class="zoomable-image">
+</div>
+	
+  <p id="small_annotation">Annotation: Above is only one example. This PCA density plot combines a scatter plot and marginal density plots. OUTPOST will only remove the batch effect if <code>rm_batch_effect=True</code>. The scatter plot at the center shows individual points spread across two principal component axes (PC1 and PC2). The points are color-coded by 'batch,' indicating distinct groups or conditions with in the dataset. The marginal density plots at the top and right display the distribution of the batches along the PC1 and PC2 axes, respectively. These density plots provide insight into the variation within each batch, potentially indicative of batch effects within the dataset.</p>
+
+	
+<hr class="hr2">
+  <h2>3. Taxonomy Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\3_taxonomy</code> </p>
+  <h3>3.1 Group Pair Comparison</h3>	
+  <h4>3.1.1 Box plot for Comparison for each Taxonomy</h4>
+	  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\boxplot_*</code></p>
+	
+
+<div class="image-container">
+  <img src="file:///D:\Projects\GEMINI\results2_cp\taxonomy_analysis\boxplot_omnivorous_vs_herbivore\family\all_samples.rel_abun.omnivorous_vs_herbivore.at_family.rel_abun.unequal.Carnobacteriaceae.boxplot.png" alt="Zoomable Image" class="zoomable-image">
+</div>
+
+	<p id="small_annotation">Annotation: Above is only one example. The image displays a box plot comparing the relative abundance of the taxonomy between two groups. The y-axis is the relaive abundance, the x-axis is the name of two groups. The P-value is also calculated. OUTPOST calculate and draw the plots for all group pairs across all taxa levels for all taxa with significant difference. The taxa levels are set in Snakefile configuration <code>taxa_level</code>. The <code>equal</code> and <code>unequal</code> in file name means whether there is significant difference between two groups.</p>
+
+	
+	<h4>3.1.2 Heatmap for Comparison at each Taxonomy level</h4>
+	<p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\figs\all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa_level}.rel_abun.*.heatmap.pdf</code></p>
+	
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="file:///D:\Projects\GEMINI\results2_cp\taxonomy_analysis\figs\all_samples.rel_abun.pig_vs_herbivore.at_family.rel_abun.unequal.top20.fillmin.scaled.heatmap.png" alt="Zoomable Image">
+</div>
+	
+
+  <p id="small_annotation">Annotation: Above is only one example. The image displays a heatmap plot with the top taxa at certain taxonomy level, for <code>equal</code> and <code>unequal</code> respectively, for the group comparison. The right side shows sample ID with group name as suffix. The bottom shows taxa nems. The color represents log scaled relative abundance. The <code>rmu</code> in the file name means 'removed unknown taxonomy'. The <code>top</code> in the file name shows the number of selected items to show, which is set in Snakefile configuration <code>top</code>. </p>
+
+  <h3>3.2 Taxonomy level</h3>
+  <h4>3.2.1 Distribution plot at each Taxonomy level</h4>
+	<p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\figs\all_samples.taxa_counts.rel_abun.{taxa}.*barplot.pdf</code></p>
+
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\taxonomy_analysis\figs\all_samples.taxa_counts.rel_abun.class.rmU.top20.barplot.png" alt="Zoomable Image">
+</div>
+
+
+  <p id="small_annotation">Annotation: Above is only one example. The image displays a distributional bar plot for all samples across each taxonomy level. <code>taxa_level</code>. The y-axis shows the relative abundance distribution. The bottom shows the sample IDs. The right legend shows the color-taxonomy pairs.</p>
+	
+	
+  <h4>3.2.2 Heatmap at each Taxonomy level</h4>
+	<p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\boxplot_*</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\taxonomy_analysis\figs\all_samples.taxa_counts.rel_abun.class.rmU.top20.fillmin.scaled.heatmap.png" alt="Zoomable Image">
+</div>
+	  <p id="small_annotation">Annotation: Above is only one example. The image displays a heatmap with the top taxa at certain taxonomy level. This not for group comparison, just to check which taxa has richer relative abundance, so no suffix after sample IDs.</p>
+	
+	
+  <h3>3.3 Intermediate Tables</h3>
+  <h4>3.3.1 Assembly Mapping Statistics</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\temp</code></p>
+  <p id="small_annotation">Annotation: The <code>*.idxstats</code> files contains the mapping results from <code>bam</code> of each sample to the assembly. The <code>*.pure</code> files are mapping counts extracted from <code>*.idxstats</code> files. The <code>all_samples.counts.pure</code> file is combined mapping counts for all samples.</p>
+	
+  <h4>3.3.2 Assembly Annotation</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\kaiju</code></p>
+	  <p id="small_annotation">Annotation: The <code>*_kaiju.ref</code> file is the taxonomy annotation result for the assembly using Kaiju. The <code>*_kaiju.ref.nm</code> file is the further annotation, containing taxonomy names, target sequences, etc. The <code>all_assembly_kaiju.ref.nm.tsv</code> file is the tsv format assembly annotation table for downstream analysis, which contains taxonomy/counts information for each contig.</p>
+
+	
+  <h4>3.3.3 Assembly Taxonomy Statistics</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\counts_tables</code></p>
+	  <p id="small_annotation">Annotation: The <code>all_samples.taxa_counts.rel_abun.{taxa}.csv</code> files record the relative abundance (calculated from counts) for each taxonomy level. The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.csv</code> files are the refurbished ones without unknown taxa (renormalized to sum relative abundance to 1). The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{#}.csv</code> files only included the top abundant taxa. The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{#}.addOthers.csv</code> files add 'Others' to represent the rest taxa. The <code>all_samples.taxa_counts.rel_abun.{taxa}.rmU.top{#}.fillmin.scaled.csv</code> files log normalized the relative abudance and used the global minimum value to replace zeros.</p>
+	
+	
+  <h4>3.3.4 Top Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\top_taxa_*</code></p>
+	  <p id="small_annotation">Annotation: These tables basically have the same meaning as 3.3.3 explained. But OUTPOST processed statistical test for all group pairs. <code>equal</code> and <code>unequal</code> indicates whether these taxa has significant differences between the groups.</p>
+	
+	
+  <h4>3.3.5 Statistic Taxonomy Test for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\taxonomy_analysis\utest_*</code></p>
+	  <p id="small_annotation">Annotation: These tables have more statistical information for group pairs. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.ave_change.{equal}.csv</code> shows the average relative abudance change between the two groups. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.csv</code> shows the average relative abudance between the two groups. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_change.{equal}.csv</code> shows the realtive abuance change between the two groups for each sample. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.u-test.two_sided.csv</code> records whether the relative abundance of each taxonomy is normal ('Y' or 'N'), the P-value for the normality test, the Wilcoxon test result of relative abudance difference between groups. </p>
+	
+<hr class="hr2">
+  <h2>4. Diversity Analysis</h2>
+  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\4_diveristy</code> </p>
+  <h3>4.1 Alpha Diversity for each Group Pair</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_{group1}_vs_{group2}</code></p>
+  <h4>4.1.1 Five Alpha Diversity Indices</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_{group1}_vs_{group2}\{Alpha_diversity_index}_alpha_diveristy.at_{genus/species}.pdf</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_omnivorous_vs_herbivore\Pielou_evennessalpha_diveristy.at_genus.png" alt="Zoomable Image">
+</div>
+	
+  <p id="small_annotation">Annotation: Above is only one example. The image displays a box plot comparing the alpha diversity of the relative abundance between two groups. A statistical significance marker above. OUTPOST calculate and draw the plots for all group pairs using five different alpha diversity indices, with both species and genus level taxonomy relative abundance. The five diversity indices include <code>Shannon, Simpson, Inverse Simpson, Evenness Pielou, Evenness Simpson</code>.</p>
+	
+	
+  <h4>4.1.2 Intermediate Tables</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The <code>alpha_diversity.at_{genus/species}.csv</code> tables includes the calculated alpha diversity results for each sample in the group, the sample has group name as suffix.</p>
+	
+	
+  <h3>4.2 Beta Diversity for each Group Pair</h3>
+  <h4>4.2.1 Two Beta Diversity Indices</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_{group1}_vs_{group2}\PCoA{#}.{Beta_diversity_index}.at_{genus/species}.pdf</code></p>
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_omnivorous_vs_herbivore\PCoA12.bray.at_genus.png" alt="Zoomable Image">
+</div>
+	  <p id="small_annotation">Annotation: Above is only one example. The image displays a PCoA plot comparing the beta diversity of the relative abundance between two groups. The P-values are stored in intermediate tables. OUTPOST calculate and draw the plots for all group pairs using five different alpha diversity indices, with both species and genus level taxonomy relative abundance. The two diversity indices include <code>Jaccard, Bray–Curtis</code>.</p>
+	
+	
+  <h4>4.2.2 Intermediate Tables</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\diversity_analysis\alpha_beta_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The <code>beta_pcoa_P-value.{Beta_diversity_index}.at_{genus/species}.csv</code> tables records the P-value of statistic test for beta diversity between groups. The <code>{Beta_diversity_index}.at_{genus/species}.csv</code> files contain the beta diversity for each sample.</p>
+	
+<hr class="hr2">
+  <h2>5. MetaPhlAn4 Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\5_metaphlan</code> </p>
+  <h3>5.1 Taxonomy Analysis</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs</code></p>
+
+  <h4>5.1.1 GraPhlAn Analysis</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\graphlan.pdf</code></p>
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\graphlan.png" alt="Zoomable Image">
+</div>
+	  <p id="small_annotation">Annotation: This circular cladogram is to visualize phylogenetic relationships among various taxa. Each ring represents a taxonomic level, from the outermost ring to the innermost. The color-coding corresponds to different phyla, as indicated in the legend. The branching patterns illustrate how different groups of taxa are related to each other. The plotted points on the cladogram's branches  represents the abundance or presence/absence of taxa.</p>
+	
+	
+  <h4>5.1.2 Heatmap</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\metaphlan_merge_taxa.heatmap.pdf</code></p>
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\metaphlan_merge_taxa.heatmap.png" alt="Zoomable Image">
+</div>
+	  <p id="small_annotation">Annotation: This heatmap visualizes the composition of microbial communities across different samples. The y-axis lists various taxa at multiple levels while the x-axis labels individual samples. The colored cells within the heatmap correspond to the relative abundance of each taxon in each sample. Dendrograms are presented along both axes.</p>
+	
+  <h4>5.1.3 Krona Plot for each Sample</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\krona.html</code></p>
+	
+  <div class="scrollable-iframe">
+    <iframe src="D:\Projects\GEMINI\results2_cp\metaphlan_analysis\figs\krona.html" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+	
+	  <p id="small_annotation">Annotation: The interactive Krona plot includes the phylogenetic and taxonomy information for all samples.</p>
+	
+	
+  <h3>5.2 Diversity Analysis</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\diversity</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST calculated four alpha diversity indices and four beta diversiy indices. The <code>metaphlan_merge_taxa_{diveristy_indices}.tsv</code> reocrds the diveristy information for all samples by metaphlan taxonomy information. The four alpha diversity indices include <code>richness, shannon, simpson, gini</code>. The four beta diversity indices include <code>bray-curtis, jaccard, clr, aitchison</code>.</p>
+	
+  <h3>5.3 Intermediate Tables</h3>
+  <h4>5.3.1 Taxonomy Tables</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\taxonomy</code></p>
+	  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}_taxa.txt</code> files record the taxonomy and relative abundance for each sample. The <code>merged_abundance.tree.{annot}.txt</code> files contain the combined phylogenetic information for all samples.</p>
+  <h4>5.3.2 Krona Tables</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\krona</code></p>
+	  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}_krona.tsv</code> files contain taxonomy information for Krona plots.</p>
+  <h3>5.4 Bowtie2 Intermediate Results</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\metaphlan_analysis\bowtie2</code></p>
+	  <p id="small_annotation">Annotation: The <code>metaphlan_{sample_ID}.bowtie2.bz2</code> files are the intermediate alignment files for MetaPhlAn, which can be used to re-run MetaPhlAn.</p>
+	
+	<hr class="hr2">
+  <h2>6. Function Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\6_function</code> </p>
+  <h3>6.1 Function Annotation for each Group Pair</h3>
+  <h4>6.1.1 Heatmap for Various Database</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\function_analysis\figs</code></p>
+
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\function_analysis\figs\allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.top20.fillmin.scaled.heatmap.png" alt="Zoomable Image">
+</div>
+
+
+  <p id="small_annotation">Annotation: Above is only one example. The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.top{#}.fillmin.scaled.heatmap.pdf</code> heatmaps display top items in a function database annotated across samples. The function databases and number of top items were set Snakefile configuration. Each column corresponds to a different database item, while each row signifies a specific sample. The color gradient from blue to red represents the relative abundance of each function item in the samples Hierarchical clustering is represented by the dendrograms on the top.</p>
+
+	
+  <h4>6.1.2 Heatmap for Various Database</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\function_analysis\figs</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\function_analysis\figs\allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.pig_vs_herbivore.rel_abun.unequal.top20.fillmin.scaled.heatmap.png" alt="Zoomable Image">
+</div>
+	
+	
+  <p id="small_annotation">Annotation: Above is only one example.  The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.top{#}.fillmin.scaled.heatmap.pdf</code> heatmaps display the statistic results of group comparison. If it is 'unequal' in file name, then it shows the unequal item for group comparison, vice versa. The statisic related parameters, such as <code>two_sided</code> and <code>paired</code>, were set in Snakefile configuration. </p>
+
+	
+  <h3>6.2 Intermediate Tables</h3>
+  <h4>6.2.1 HUMAnN annotation results</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\function_analysis\humann3\ori_results</code></p>
+	  <p id="small_annotation">Annotation: The <code>{sample_ID}_genefamilies.tsv</code> files record the abundance of each gene families for the sample. The <code>{sample_ID}_genefamilies.cpm.tsv</code> files normalized the abundance with Counts Per Million reads. The <code>{sample_ID}_genefamilies.relab.tsv</code> files normalized the abundance to be relative (sum to be 1). The <code>{sample_ID}_genefamilies.{cpm/relab}_{database}.tsv</code> annotated the genefamilies with function items. For more explanation for <code>pathcoverage</code> and <code>pathabundance</code>, you can refer <code>https://forum.biobakery.org/t/genefamilies-pathabundance-pathcoverage/4120/2</code>. OUTPOST only used genefamilies information for downstream analysis.</p>
+	
+  <h4>6.2.2 Top Function for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\function_analysis\humann3\top_humann_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.top{#}.fillmin.scaled.csv</code> files record the log scaled relative abundance of each function items in two groups.</p>
+	
+  <h4>6.2.3 Statistic Function Test for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\function_analysis\humann3\utest_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The tables are similar as annotated in section 3.3.5, except for replacing taxonomy with function items.</p>
+	
+	
+	<hr class="hr2">
+  <h2>7. Linear Discriminant Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\7_lda</code> </p>
+  <h3>7.1 LDA for Taxonomy</h3>
+  <h4>7.1.1 LEfSe plot for Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\LDA_analysis\figs_taxa</code></p>
+	
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\LDA_analysis\figs_taxa\all_samples.rel_abun.omnivorous_vs_horse.at_family.rel_abun.unequal.lefse.png" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. The image displays a LDA barplot of the taxonomy between two groups. The x-axis is the log normalized LDA score, the higher score means the more feature this taxonomy is, to distinguish two groups. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.pdf</code> files include all the group pairs crossing all taxa levels with equal or unequal statisticaly tested relative abundance difference.</p>
+  <h4>7.1.2 LEfSe Intermediate Tables for Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\LDA_analysis\taxa_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.tsv</code> files are the relative abundance table which are reformated to be LEfSe style. The <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.res</code> and  <code>all_samples.rel_abun.{group1}_vs_{group2}.at_{taxa}.rel_abun.{equal}.lefse.format</code> files are the intermedite files for running LDA analysis</p>
+  <h3>7.2 LDA for Function</h3>
+  <h4>7.2.1 LEfSe plot for Function for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\LDA_analysis\figs_humann</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\LDA_analysis\figs_humann\allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.pig_vs_buffalo.rel_abun.equal.lefse.png" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. The image displays a LDA barplot of the taxonomy between two groups. The x-axis is the log normalized LDA score, the higher score means the more feature this function item is, to distinguish two groups. The <code>allSamples_genefamilies_uniref90names_relab_{database}_unstratified.named.rel_abun_format.{group1}_vs_{group2}.rel_abun.{equal}.lefse.pdf</code> files include all the group pairs crossing all function databases with equal or unequal statisticaly tested relative abundance difference.</p>
+	
+  <h4>7.2.2 LEfSe Intermediate Tables for Function for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\LDA_analysis\humann_{group1}_vs_{group2}</code></p>
+	  <p id="small_annotation">Annotation: The files share similar organization as section 7.1.2 . </p>
+	
+	<hr class="hr2">
+  <h2>8. Antibiotic Genes Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\8_antibiotic</code> </p>
+  <h3>8.1 Heatmap for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based\genes_phylum_pig_vs_camel_heatmap.png" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. For <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files, they represent the log normalized top 20 antibiotic genes counts and their belonged taxonomy, for each group pair. The x-axis shows the antibiotic genes names, y-axis shows the belonged taxonomy. Since the gene name in the plot is simplified, users can search the <code>GENE</code> column in <code>outpost_assembly.antibiotic.tsv</code> to find the matched orginal gene name.</p>
+	
+  <h4>8.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based</code></p>
+	
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based\genes_buffalo_vs_camel_distrplot.png" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. The <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files represent the log normalized top 20 antibiotic genes counts and their belonged group, for each group pair. The x-axis shows the antibiotic genes names, y-axis shows the normalized counts.</p>
+	
+  <h4>8.3 Intermediate Tables</h4>
+  <h4>8.3.1 Antibiotic Genes Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based\genes_taxa_counts_{group1}_vs_{group2}.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each antibiotic genes and corresponding taxonomy and group.</p>
+	
+	
+  <h4>8.3.2 Antibiotic Genes Abundance among Assembly Contigs</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\antibiotic_genes_analysis\assembly_based\outpost_assembly.antibiotic.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>outpost_assembly.{database}.tsv</code> contain the antibiotic genes annoation results for each contig in assembly using different databases. The databases include <code>card, ecoh, megares, ncbiAMR, resfinder, argannot</code>. The <code>outpost_assembly.antibiotic.tsv</code> is the summary of all annotation results.</p>
+	
+	
+  <hr class="hr2">
+  <h2>9. Virulence Factors Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\9_virulence_factors</code> </p>
+  <h3>9.1 Heatmap for each Group Pair at each Taxonomy level</h3>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based\genes_class_omnivorous_vs_pig_heatmap.png" alt="Zoomable Image">
+</div>
+	
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based</code></p>
+	  <p id="small_annotation">Annotation: Above is only one example. For <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files, they represent the log normalized top 20 antibiotic genes counts and their belonged taxonomy, for each group pair. The x-axis shows the virulence factors names, y-axis shows the belonged taxonomy. Since the gene name in the plot is simplified, users can search the <code>GENE</code> column in <code>outpost_assembly.virulence.tsv</code> to find the matched orginal gene name.</p>
+	
+	
+  <h4>9.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based</code></p>
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based\genes_buffalo_vs_camel_distrplot.png" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. The <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files represent the log normalized top 20 virulence factors counts and their belonged group, for each group pair. The x-axis shows the virulence factors names, y-axis shows the normalized counts.</p>
+	
+	
+  <h4>9.3 Intermediate Tables</h4>
+  <h4>9.3.1 Virulence Factors Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based\genes_taxa_counts_horse_vs_herbivore.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each virulence factor and corresponding taxonomy and group.</p>
+	
+  <h4>9.3.2 Virulence Factors Abundance among Assembly Contigs</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\virulence_factors_analysis\assembly_based\outpost_assembly.virulence.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>outpost_assembly.{database}.tsv</code> contain the virulence factors annoation results for each contig in assembly using different databases. The databases include <code>ecoli_vf, vfdb</code>. The <code>outpost_assembly.virulence.tsv</code> is the summary of all annotation results.</p>
+	
+	
+	
+	<hr class="hr2">
+  <h2>10. Plasmids Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\10_plasmids</code> </p>
+  <h3>10.1 Heatmap for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\plasmids_analysis\assembly_based</code></p>
+	
+	<div class="image-container">
+  <img id="image-to-zoom" src="" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: For <code>genes_{taxa_level}_{group1}_vs_{group2}_heatmap.pdf</code> files, they represent the log normalized top plasmids counts and their belonged taxonomy, for each group pair. The x-axis shows the plasmids names, y-axis shows the belonged taxonomy. Since the gene name in the plot is simplified, users can search the <code>GENE</code> column in <code>outpost_assembly.plasmidfinder.tsv</code> to find the matched orginal gene name.</p>
+	
+	
+  <h4>10.2 Distribution plot for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\plasmids_analysis\assembly_based</code></p>
+	
+		<div class="image-container">
+  <img id="image-to-zoom" src="" alt="Zoomable Image">
+</div>
+	
+	  <p id="small_annotation">Annotation: Annotation: Above is only one example. The <code>genes_{group1}_vs_{group2}_distrplot.pdf</code> files represent the log normalized top plasmids counts and their belonged group, for each group pair. The x-axis shows the plasmids names, y-axis shows the normalized counts.</p>
+	
+	
+  <h4>10.3 Intermediate Tables</h4>
+  <h4>10.3.1 Antibiotic Genes Abundance among Taxonomy for each Group Pair</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\plasmids_analysis\assembly_based\genes_taxa_counts_horse_vs_herbivore.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>genes_taxa_counts_{group1}_vs_{group2}.tsv</code> files include the counts of each virulence factor and corresponding taxonomy and group.</p>
+  <h4>10.3.2 Antibiotic Genes Abundance among Assembly Contigs</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\plasmids_analysis\assembly_based\outpost_assembly.plasmidfinder.tsv</code></p>
+	  <p id="small_annotation">Annotation: The <code>outpost_assembly.plasmidfinder.tsv</code> contain the plasmids annoation results for each contig in assembly.</p>
+	
+	
+  <hr class="hr2">
+  <h2>11. Assembly Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\11_assembly</code> </p>
+  <h3>11.1 Assemble Contigs</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\contigs</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST used <code>megahit</code> or <code>metaspades</code> to assemble the contigs, which is set in Snakefile configuration <code>assembly_method</code>. The <code>final.contigs.fa</code> or <code>contigs.fasta</code> are the results.</p>
+  <h4>11.2 Final assembly</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\outpost_contigs</code></p>
+	  <p id="small_annotation">Annotation: The <code>outpost_nonrd_contigs.fasta</code> is the non-redundant assembly processed by cd-hit. The rest of the files are index of the assembly for alignment. The <code>outpost_assembly_split</code> folder contains the splited files of each contigs. </p>
+  <h4>11.3 Assembly Quality Control</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\quast</code></p>
+	
+  <div class="scrollable-iframe">
+    <iframe src="file:///D:\Projects\GEMINI\results2_cp\assembly_analysis\quast\report.html" title="Embedded Page" style="width:100%; height:500px;" frameborder="0"> Your browser does not support iframes. </iframe>
+  </div>
+	
+	  <p id="small_annotation">Annotation: Above is only one example. The image displays a box plot comparing the relative abundance of the taxonomy between two groups. A statistical significance marker above. OUTPOST calculate and draw the plots for all group pairs across all taxa levels. The taxa levels are set in Snakefile configuration <code>taxa_level</code>.</p>
+  <h4>11.4 Assembly Genes Prediction</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\annotation</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST utilized two different software to annotate the assembly.</p>
+	
+  <h4>11.4.1 Metagenemark Assembly Genes Prediction</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\quantify\annotation\metagenemark</code></p>
+	  <p id="small_annotation">Annotation: The <code>outpost_assembly_metagenemark_prot.fa</code> file contains the proteins sequences and corresponding genes predicted from the assembly. The <code>outpost_assembly_metagenemark_gene.{nonrd}.fa</code> files contain the genes sequences predicted from the assembly, and <code>nonrd</code> means redundance removed. The <code>outpost_assembly_metagenemark.gtf</code> file contains the generation annotation information of assembly in GTF format.</p>
+	
+  <h4>11.4.2 Prodigal Assembly Genes Prediction</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\quantify\quantify\prodigal</code></p>
+	  <p id="small_annotation">Annotation: Similarly as section 11.4.1, OUTPOST annotated the genes, proteins and GFF files. The <code>outpost_assembly_prodigal_gene_scores.txt</code> file contains the genes annotation information for each contig. The <code>outpost_assembly_prodigal_complete_genomes.fa</code> file contains the predicted complete genomes (partial == 0).</p>
+	
+  <h4>11.5 Assembly Genes Annotation </h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\annotation</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST used three different software to annotate the predicted genes.</p>
+	
+  <h4>11.5.1 Assembly Genes EggNOG Mapping</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\annotation\eggmapper</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST annotated the Metagenemark and Prodigal results of protein prediction, respectively. It uses precomputed Orthologous Groups (OGs) and phylogenies from the EggNOG database (http://eggnog5.embl.de) to transfer functional information from fine-grained orthologs only.</p>
+	
+  <h4>11.5.2 Assembly Genes Resistance Gene Identification</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\annotation\rgi</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST annotated the Metagenemark and Prodigal results of gene prediction, respectively. It predicts antibiotic resistome(s) from protein or nucleotide data based on homology and SNP models. The application uses reference data from the Comprehensive Antibiotic Resistance Database (CARD).</p>
+	
+  <h4>11.5.3 Assembly Genes Genome Taxonomy Annotation</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\annotation\gtdbtk</code></p>
+  <p id="small_annotation">Annotation: OUTPOST annotated the taxonomy using the splited assembly contigs using GTDB-Tk. The <code>outpost_assembly.*.summary.tsv</code> files contain the annotation results.</p>
+	
+  <h4>11.6 Assembly Genes Quantification</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\quantify</code></p>
+	  <p id="small_annotation">Annotation: OUTPOST quantified the Metagenemark and Prodigal results of gene prediction, respectively. The mapping-based mode of Salmon runs in two phases; indexing and quantification. The indexing step is independent of the reads, and only needs to be run once for a particular set of reference transcripts. The <code>quant.sf</code> file is the quantification results,  the more explanation of this file can be found at <code>https://salmon.readthedocs.io/en/nb/file_formats.html</code>. </p>
+	
+
+  <h4>11.7 Assembly Genes Taxonomy Counts</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\assembly_analysis\taxa_counts</code></p>
+	  <p id="small_annotation">Annotation: The <code>all_samples.taxa_counts.tsv</code> file contains the taxaonomy annoatation results and mapped counts for each contig across each sample.</p>
+	
+	<hr class="hr2">
+  <h2>12. Biomarkers Analysis</h2>
+	  <p id="small_annotation">In report: <code> D:\Projects\GEMINI\results2_cp\report\materials\12_biomarkers</code> </p>
+  <h3>12.1 OUTPOST Biomarkers for each Group Pair at each Taxonomy level</h3>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\biomarkers_analysis\OUTPOST_biomarker_scores*</code></p>
+	  <p id="small_annotation">Annotation: The <code>OUTPOST_biomarker_scores.{group1}_vs_{group2}.{taxa_level}.tsv</code> files contain the biomarkers for all group pairs across all taxa levels. The biomarkers are ranked from higer OUTPOST_biomarker_score to lower. The basic idea of OUTPOST_biomarker_score is meta-analysis. The score will add one if the biomarker passed one criteria. The criteria include <code>taxa_abun_top_100, taxa_abun_signicant, LDA_larger_than_2, virulence_top_100, plasmid_top_100, antibiotic_top_100, ANCOM_identified</code>.</p>
+	
+	
+  <h4>12.2 ANCOM Biomarkers for each Group Pair at each Taxonomy level</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification</code></p>
+	
+  <h4>12.2.1 ANCOM Biomarkers Dot plot</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification\</code></p>
+	
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification\ancom_biomarkers.dotplot.omnivorous_vs_herbivore.at_family.png" alt="Zoomable Image">
+</div>
+	
+  <p id="small_annotation">Annotation: Above is only one example. OUTPOST utilized ANCOM as a second approach to identify biomarkers. The <code>ancom_biomarkers.dotplot.{group1}_vs_{group2}.at_{taxa_level}.pdf</code> plots contains the possible biomarkers for all group pairs across all taxa levels. The red triangle shows the identified biomarkers.</p>
+
+  <h4>12.2.2 ANCOM Biomarkers Volcano plot</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification\</code></p>
+	
+	
+<div class="image-container">
+  <img id="image-to-zoom" src="D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification\ancom_biomarkers.volcano.omnivorous_vs_omnivorous.at_species.png" alt="Zoomable Image">
+</div>
+	
+  <p id="small_annotation">Annotation: Above is only one example. The <code>ancom_biomarkers.volcano.{group1}_vs_{group2}.at_{taxa_level}.pdf</code> plots contains the possible biomarkers for all group pairs across all taxa levels. The red dots shows the identified biomarkers.</p>
+	
+  <h4>12.2.2 ANCOM Biomarkers Tables</h4>
+  <p>Source: <code>D:\Projects\GEMINI\results2_cp\biomarkers_analysis\ANCOM_identification\</code></p>
+	  <p id="small_annotation">Annotation: The <code>ancom_biomarker.{group1}_vs_{group2}.at_{taxa_level}.tsv</code> tables contain the ANCOM calculated results for all group pairs across all taxa levels.</p>
+	
+  <p><br>
+  </p>	
+	<hr>
+</div>
+</body>
+</html>

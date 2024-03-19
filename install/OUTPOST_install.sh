@@ -18,6 +18,10 @@ if [ -z "$humann_path" ]; then
 fi
 
 # 5. Download 1st humann databases `humann_databases --download chocophlan full /path/to/databases --update-config yes`
+# if failed, run following:
+# wget -c http://huttenhower.sph.harvard.edu/humann_data/chocophlan/full_chocophlan.v201901_v31.tar.gz --no-check-certificate
+# humann_databases --download chocophlan full  $(pwd)/databases --database-location ./full_chocophlan.v201901_v31.tar.gz  --update-config yes
+# touch install/log/humann_databases.utility_mapping.done
 DONE_FILE="install/log/humann_databases.chocophlan.done"
 if [ ! -f "$DONE_FILE" ]; then
 	mkdir -p databases
@@ -28,6 +32,10 @@ else
 fi
 
 # 6. Download 2nd humann databases `humann_databases --download uniref uniref90_diamond /path/to/databases --update-config yes`
+# if failed, run following:
+# wget -c http://huttenhower.sph.harvard.edu/humann_data/uniprot/uniref_annotated/uniref90_annotated_v201901b_full.tar.gz --no-check-certificate
+# 
+# touch install/log/humann_databases.utility_mapping.done
 DONE_FILE="install/log/humann_databases.uniref.done"
 if [ ! -f "$DONE_FILE" ]; then
 	humann_databases --download uniref uniref90_diamond  $(pwd)/databases --update-config yes
@@ -36,6 +44,10 @@ else
     echo "humann_databases.uniref already installed. Skipping this step."
 fi
 # 7. Download 3rd humann databases `humann_databases --download utility_mapping full /path/to/databases --update-config yes`
+# if failed, run following:
+# wget -c http://huttenhower.sph.harvard.edu/humann_data/full_mapping_v201901b.tar.gz --no-check-certificate
+# humann_databases --download utility_mapping full $(pwd)/databases --database-location ./full_mapping_v201901b.tar.gz --update-config yes
+# touch install/log/humann_databases.utility_mapping.done
 DONE_FILE="install/log/humann_databases.utility_mapping.done"
 if [ ! -f "$DONE_FILE" ]; then
 	humann_databases --download utility_mapping full $(pwd)/databases --update-config yes
@@ -141,6 +153,71 @@ fi
 # 19. You should see all the outputs in `name_of_your_assembly` folder. If no errors occured. then you're good to go.
 
 # 20. In a summary, OUTPOST itself is just a list of scripts, which is easy to use. The above installation guide actually is helping you to install other tools, such as humann3 and kaiju. On the other hand, if you have installed these tools somewhere else, you can just modify the `Snakefile_config.yml` file to skip the above installation procedure.
+
+# 21. fastp
+DONE_FILE="install/log/fastp.done"
+if [ ! -f "$DONE_FILE" ]; then
+	chmod a+x utils/fastp
+	touch "$DONE_FILE"
+else
+	echo "fastp already installed. Skipping this step."
+fi
+
+# 22. bwa-mem2
+DONE_FILE="install/log/bwa_mem2.done"
+if [ ! -f "$DONE_FILE" ]; then
+	tar -jxf utils/bwa-mem2-2.2.1_x64-linux.tar.bz2 -C utils/
+	chmod a+x utils/bwa-mem2-2.2.1_x64-linux/bwa-mem2
+	touch "$DONE_FILE"
+else
+	echo "bwa-mem2 already installed. Skipping this step."
+fi
+
+# 23. gtdbtk
+DONE_FILE="install/log/gtdbtk.done"
+if [ ! -f "$DONE_FILE" ]; then
+	python -m pip install gtdbtk
+	gtdbtk_db=$(pwd)/databases/gtdbdk
+	mkdir -p $gtdbtk_db
+	conda env config vars set GTDBTK_DATA_PATH=$gtdbtk_db
+	conda deactivate
+	conda activate OUTPOST
+	bash utils/gtdk_db_download.sh
+else
+	echo "gtdbtk already installed. Skipping this step."
+fi
+
+# 24. salmon
+DONE_FILE="install/log/salmon.done"
+if [ ! -f "$DONE_FILE" ]; then
+	tar -xzf utils/v1.10.0.tar.gz -C utils/
+	chmod a+x utils/salmon-latest_linux_x86_64/bin/salmon
+else
+	echo "salmon already installed. Skipping this step."
+fi
+
+# 25. eggnog-mapper
+DONE_FILE="install/log/eggnog_mapper.done"
+if [ ! -f "$DONE_FILE" ]; then
+	emapper_db=$(pwd)/databases/emapper_db
+	mkdir -p $emapper_db
+	python utils/outpost_download_eggnog_data.py -y --data_dir $emapper_db
+else
+	echo "eggnog-mapper already installed. Skipping this step."
+fi
+
+# 26. CARD rgi
+DONE_FILE="install/log/rgi.done"
+if [ ! -f "$DONE_FILE" ]; then
+	rgi_db=$(pwd)/databases/rgi
+	mkdir -p $rgi_db
+	tar -jxf utils/card-data.tar.bz2 -C $rgi_db
+	rgi load --local -i $rgi_db/card.json
+	rgi card_annotation -i $rgi_db/card.json
+else
+	echo "eggnog-mapper already installed. Skipping this step."
+fi
+
 
 echo "OUTPOST installed successfully!"
 

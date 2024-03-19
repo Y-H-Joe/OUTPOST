@@ -9,7 +9,9 @@ Contact: yihangjoe@foxmail.com
          https://github.com/Y-H-Joe/
 
 ####============================ description ==============================####
-
+df_config: dataframe
+rm_batch_effect: true or false
+# mode: reads | assembly | bam
 =================================== input =====================================
 
 =================================== output ====================================
@@ -36,7 +38,8 @@ def check_config(df_config, rm_batch_effect):
         return {x for x in s if x==x}
 
     # the column names should be formated
-    samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col,batch_col = 0,0,0,0,0,0,0
+    samples_col,refgenome_col, r1_fq_dir_col, r2_fq_dir_col, se_fq_dir_col,bam_dir_col,\
+        assembly_col,assembly_dir_col,group_col,batch_col = 0,0,0,0,0,0,0,0,0,0
     cols = df_config.columns
 
     if len(cols) > len(rm_nan_from_set(set(cols))):
@@ -45,71 +48,171 @@ def check_config(df_config, rm_batch_effect):
     for col in cols:
         if col == 'samples':
             samples_col += 1
-            continue
-
-        elif col == 'fq_dir':
-            fq_dir_col += 1
-            continue
-
+        elif col == 'refgenome':
+            refgenome_col += 1
+        elif col == 'r1_fq_dir':
+            r1_fq_dir_col += 1
+        elif col == 'r2_fq_dir':
+            r2_fq_dir_col += 1
+        elif col == 'se_fq_dir':
+            se_fq_dir_col += 1
         elif col == 'bam_dir':
             bam_dir_col += 1
-            continue
-
         elif col == 'assembly':
             assembly_col += 1
-            continue
-
         elif col == 'assembly_dir':
             assembly_dir_col += 1
-            continue
-
         elif col == 'group':
             group_col += 1
-            continue
-
         elif col == 'batch':
             batch_col += 1
-            continue
-
-    assert all([x == 1 for x in [samples_col,fq_dir_col,bam_dir_col,assembly_col,assembly_dir_col,group_col,batch_col]]),\
-    "OUTPOST: detected errors in columns of contig.tsv. exit."
+    
+    assert all([x == 1 for x in [samples_col,refgenome_col, r1_fq_dir_col, 
+                                 r2_fq_dir_col, se_fq_dir_col, bam_dir_col, 
+                                 assembly_col, assembly_dir_col, group_col, batch_col]]),\
+    f"""OUTPOST: detected errors in columns names of {[samples_col,refgenome_col, r1_fq_dir_col, 
+                                 r2_fq_dir_col, se_fq_dir_col, bam_dir_col, 
+                                 assembly_col, assembly_dir_col, group_col, batch_col]}. exit."""
 
     ###================= check each column =================###
-    # the id of each sample should be unique
+    # id
+    # the id of each sample should be unique 
     samples = df_config['samples']
     assert len(samples) == len(rm_nan_from_set(set(samples))),\
     "OUTPOST: sample ids are not unique. exit."
     sample_list = [x.strip() for x in samples]
 
-    # the bam of each sample should be unique
-    bams = df_config['bam_dir']
-    assert len(bams) == len(rm_nan_from_set(set(bams))),\
-    "OUTPOST: bam directory is not unique. exit."
-    bam_list = [x.strip() for x in bams]
-
+    # refgenome
+    # the refgenome of each sample should match samples
+    refgenome = df_config['refgenome']
+    if len(rm_nan_from_set(refgenome)) > 0:
+        assert len(refgenome) == len(samples),\
+        "OUTPOST: the refgenome records not match sample records. exit."
+        refgenome_list = [x.strip() for x in refgenome]
+        for file in refgenome_list:
+            if not os.path.exists(file):
+                sys.exit(f"OUTPOST: detect {file} doesn't exist. exit")
+    else:
+        refgenome_list = []
+        
+    # fq
+    # 保证fastq全有或者全不有。全有时，保证每一个sample都有。每个sample都有时，保证PE全有或全缺，若缺，则有SE顶上
+    # 允许PE、SE混杂；允许不同sample有相同的fq
     # the fq of each sample should be unique
-    fqs = df_config['fq_dir']
-    assert len(fqs) == len(rm_nan_from_set(set(fqs))),\
-    "OUTPOST: fastq files are not unique. exit."
-    fq_list = [x.strip() for x in fqs]
+    r1_fqs = df_config['r1_fq_dir']
+    r2_fqs = df_config['r2_fq_dir']
+    se_fqs = df_config['se_fq_dir']
+    # samples should all have fq or all not have fq
+    if len(rm_nan_from_set(r1_fqs)) > 0 or len(rm_nan_from_set(r2_fqs)) > 0:
+        r1_fq_list, r2_fq_list = [],[]
+        for x in r1_fqs:
+            try:
+                r1_fq_list.append(x.strip())
+            except:
+                r1_fq_list.append('')
+        for x in r2_fqs:
+            try:
+                r2_fq_list.append(x.strip())
+            except:
+                r2_fq_list.append('')
+    else:
+        r1_fq_list = []
+        r2_fq_list = []
+    if len(rm_nan_from_set(se_fqs)) > 0:
+        se_fq_list = []
+        for x in se_fqs:
+            try:
+                se_fq_list.append(x.strip())
+            except:
+                se_fq_list.append('')
+    else:
+        se_fq_list = []
 
-    # only one assembly is accepted each run
-    assert len(rm_nan_from_set(set(df_config['assembly']))) == 1,\
-    "OUTPOST: multiple assemblies. exit."
-    assembly = list(df_config['assembly'])[0]
+    if r1_fq_list.count('') == len(r1_fq_list):
+        r1_fq_list = []
+    if r2_fq_list.count('') == len(r2_fq_list):
+        r2_fq_list = []
+    if se_fq_list.count('') == len(se_fq_list):
+        se_fq_list = []
+        
+    if len(r1_fq_list + r2_fq_list + se_fq_list) > 0: #samples should all have fq
+        for file in r1_fq_list + r2_fq_list + se_fq_list:
+            if file : # exclude ""
+                if not os.path.exists(file):
+                    sys.exit(f"OUTPOST: detect {file} doesn't exist. exit")
+                
+        for i,s in enumerate(sample_list):
+            r1 = r1_fqs[i]
+            r2 = r2_fqs[i]
+            se = se_fqs[i]
+            # r1 and r2 both exist or both nan
+            assert (r1 == r1) is (r2 == r2), f"OUTPOST: sample {s}'s r1_fq, r2_fq doesn't match. exit."
+            if not (r1 == r1): # if PE reads are nan, there must exist SE read
+                assert (se == se), f"OUTPOST: sample {s} has no fastq. exit."
+    
+    
+    # bam
+    # 全有或全无；若全有，当存在
+    # 允许不同sample有相同bam
+    bams = df_config['bam_dir']
+    bam_dir_list = []
+    if len(rm_nan_from_set(bams)) > 0:
+        for x in bams:
+            try:
+                bam_dir_list.append(x.strip())
+            except:
+                bam_dir_list.append('')
+    if bam_dir_list.count('') == len(bam_dir_list):
+        bam_dir_list = []
+    if len(bam_dir_list) > 0:
+        for file in bam_dir_list:
+            if file : # exclude ""
+                if not os.path.exists(file):
+                    sys.exit(f"OUTPOST: detect {file} doesn't exist. exit")
+    
+    
+    # assembly, assembly_dir
+    # 需要与assembly_dir 同时有、同时没有
+    # 允许部分有，但应该全部存在
+    assemblys = df_config['assembly']
+    assembly_dirs = df_config['assembly_dir']
+    assembly_list, assembly_dir_list = [], []
+    if len(rm_nan_from_set(assemblys)) > 0:
+        for x in assemblys:
+            try:
+                assembly_list.append(x.strip())
+            except:
+                assembly_list.append('')
+    if len(rm_nan_from_set(assembly_dirs)) > 0:
+        for x in assembly_dirs:
+            try:
+                assembly_dir_list.append(x.strip())
+            except:
+                assembly_dir_list.append('')
+    if assembly_list.count('') == len(assembly_list):
+        assembly_list = []
+    if assembly_dir_list.count('') == len(assembly_dir_list):
+        assembly_dir_list = []
+    for i,s in enumerate(sample_list):
+        assembly = assemblys[i]
+        assembly_dir = assembly_dirs[i]
+        # assembly and assembly_dir both exist or both nan
+        assert (assembly == assembly) is (assembly_dir == assembly_dir), f"OUTPOST: sample {s}'s assembly, assembly_dir doesn't match. exit."
+    if len(assembly_dir_list) > 0: #samples should all have fq
+        for file in assembly_dir_list:
+            if file : # exclude ""
+                if not os.path.exists(file):
+                    sys.exit(f"OUTPOST: detect {file} doesn't exist. exit")
 
-    # same assembly should have the same dir
-    assert len(rm_nan_from_set(set(df_config['assembly_dir']))) == 1,\
-    "OUTPOST: multiple assembly_dir. exit."
-    assembly_dir = list(df_config['assembly_dir'])[0]
 
+    # group
     # each group should have at least 3 samples
     # return comparison_dict:{'group1':[sample1,sample3],'group2':[sample2,sample3]}
     groups_list = df_config['group']
     assert len(set(groups_list)) == len(rm_nan_from_set(set(groups_list))),\
     "OUTPOST: detected sample which belongs to no group. exit."
     groups_list = [x.strip().split(',') for x in groups_list]
-    group_list = [val for sublist in groups_list for val in sublist]
+    group_list = [val.strip() for sublist in groups_list for val in sublist]
     group_count = dict(Counter(group_list))
     assert all([x >= 3 for x in group_count.values()]),\
     "OUTPOST: each group should have at least 3 samples. exit."
@@ -120,7 +223,8 @@ def check_config(df_config, rm_batch_effect):
             if group in groups_of_this_sample:
                 samples.append(sample_list[index])
         comparison_dict[group] = samples
-
+    
+    # batch
     # batch column should be full or empty
     batch_list = [x for x in df_config['batch']]
     assert sum(pd.isna(batch_list)) in [0,len(batch_list)],\
@@ -135,27 +239,11 @@ def check_config(df_config, rm_batch_effect):
 
 
     ###================= check others =================###
-    # detect files existence
-    files = bam_list + fq_list + [assembly_dir]
-    for file in files:
-        if not os.path.exists(file):
-            sys.exit(f"OUTPOST: detect missing {file}. exit")
-    # assert all([os.path.exists(x) for x in files]),\
-    # "OUTPOST: detect missing files (fq/bam/assembly). exit."
 
     # detect unwanted symbols
-    assert "," not in "".join(sample_list + fq_list + bam_list) + assembly_dir + assembly,\
+    assert "," not in "".join(sample_list + refgenome_list + r1_fq_list + 
+                              r2_fq_list + se_fq_list + bam_dir_list + assembly_list + assembly_dir_list), \
     "OUTPOST: ',' is not allowed in names. exit."
 
-    # duplicate sample_list/fq_list/bam_list/comparison_dict for downstream comparison analysis
-    if len(group_list) == 1:
-        print("OUTPOST: only one group detected. Duplicate to smooth downstream analysis")
-        sample_list_copy = [sample + '_copy' for sample in sample_list]
-        sample_list = sample_list + sample_list_copy
-        fq_list = fq_list * 2
-        bam_list = bam_list * 2
-        comparison_dict.update({(group_list[0] + '_copy') : sample_list_copy})
-
-    return sample_list, fq_list, bam_list, assembly, assembly_dir, comparison_dict
-
+    return sample_list, refgenome_list, r1_fq_list, r2_fq_list, se_fq_list, bam_dir_list, assembly_list, assembly_dir_list, batch_list, comparison_dict
 

@@ -29,11 +29,9 @@ import pandas as pd
 col = sys.argv[1] ## col usually is 4, because the 4th col is the counts col
 names = sys.argv[2].split(',')
 output = sys.argv[3]
-config = sys.argv[4]
-
+batch_list = [int(x) for x in sys.argv[4].split(',')]
 rm_batch_effect = eval(sys.argv[5])
 
-df_config=pd.read_csv(config,sep='\t')
 res = {}
 output_tmp = output+'_tmp'
 output_tmp2 = output + '_has_batch_effect'
@@ -51,11 +49,20 @@ os.system(str("paste"+" "+input_paste+" > "+output_tmp))
 
 # check output
 name_num = len(names)
+# update v2, now assembly_list will have multiple assembly
+# for multiple-assembly, fill the nan with a small value
+df = pd.read_csv(output_tmp, header = None, sep = '\t')
+df = df.fillna(0.000001)
+df.to_csv(output_tmp, header = None, index = None, sep = '\t')
+
 with open(output_tmp,'r') as r,open(output_tmp2,'w') as w:
     for line in r.readlines():
         items = line.strip().split('\t')
+        """
+        # update v2, now assembly_list will have multiple assembly
         if len(items)-1 != name_num:
             sys.exit("OUTPOST: the bam files were not mapped to the same assembly, or truncated.")
+        """
         if items[0] != '*':
             w.write(line)
 
@@ -65,7 +72,8 @@ os.system(f"rm {output_tmp}")
 # use CPM to remove the batch effect
 # apply CPM to each group
 if rm_batch_effect:
-    batch_list = list(df_config['batch'])
+    #df_config=pd.read_csv(config,sep='\t')
+    #batch_list = list(df_config['batch'])
     batch_num = len(set(batch_list))
     batch_dict = {}
     for idx,batch in enumerate(batch_list):

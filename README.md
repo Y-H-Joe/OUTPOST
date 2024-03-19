@@ -11,7 +11,7 @@
     cd OUTPOST
 
     # 2. Create the conda environment `conda env create --name OUTPOST --file OUTPOST.yml `, the bioconductor has unknown errors.
-    conda env create --name OUTPOST --file install/OUTPOST_without_bioconductor.yml
+    conda env create --name OUTPOST --file install/OUTPOST.yml
 
     # 3. Activate the environment `conda activate OUTPOST`.
     conda activate OUTPOST
@@ -28,22 +28,21 @@
 
     # 1. prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment, data, group information)
     # 2. modify the `OUTPOST/Snakemake_config.yml` (for OUTPOST parameters)
-    # 3. dry-run OUTPOST to check is there any errors
-    snakemake --cores 32 --dry-run --verbose -s path/to/OUTPOST_run.py --rerun-incomplete
+    # 3. run `python ~/softwares/OUTPOST/OUTPOST/check_snakefile_config.py path/to/Snakefile_config.yml` . If no errors, then you are good to go.
     # 4. run OUTPOST
-    nohup snakemake --cores 32 --verbose -s path/to/OUTPOST_run.py --rerun-incomplete &
+    `nohup snakemake --cores 32 --verbose -s ./OUTPOST_run.py --rerun-incomplete &`
 
-We prepared the OUTPOST results of cat microbiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542), which can be an example for users to testify their OUTPOST installation or usage.
+We prepared the example dataset and corresponding results in [figshare](https://figshare.com/articles/dataset/The_OUTPOST_results_for_example_dataset_and_report_/25434553), which can be used for testing your installation.
+
+We also uploaded our independant analysis of a cat icrobiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542).
 
 To Be Remind:
 
-    1. The working directory must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path. To be more specific, you have a folder `test`, you have all scripts of OUTPOST in `test` folder, you have `test\Snakefile.py` and `test\OUTPOST`. You `cd test`, then run  `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`, you will get all outputs in `test\name_of_your_assembly` folder.
-    2. Snakemake (the framework OUTPOST relied on) will lock working directory during running. So you should prepare two working directories if you're running two OUTPOST pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire OUTPOST folder to `folder1/` and `folder2/`. Then `cd folder1`, run OUTPOST. Then `cd folder2`, run OUTPOST.
-    3. One OUTPOST process only take one assembly. If you have multi assemblies to analyze, run OUTPOST multiple times (in parallel) (in different working directories).
-    4. Humann analysis is very time/computation consuption. I personally prefer to use computer cluster to distributedly run Humann. The Snakemake based OUTPOST can also be deployed on cluster, but maybe not [easy](https://snakemake.readthedocs.io/en/stable/executing/cluster.html). So OUTPOST provide `skip_humann_init` option. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder. If `skip_humann_init = True`, OUTPOST will check the outputs existence first then skip the humann step. Make sure these humann outptus are from the same fastq you offered to OUTPOST.
-    5. OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation.
-    6. Do not change the column names of OUTPOST_config.tsv.
-    7. Refer to OUTPOST/OUTPOST_config.explanation.txt for more details.
+1. The working directory (where you run OUTPOST) must be the parent directory of `OUTPOST`, becasue some scripts in Snakemake.py use relative path. To be more specific, you have a folder `test`, you have all scripts of OUTPOST in `test` folder, you have `test\Snakefile.py` and `test\OUTPOST`. You `cd test`, then run  `nohup snakemake --cores 32 --verbose -s ./Snakefile.py --rerun-incomplete &`, you will get all outputs in `test\name_of_your_assembly` folder.
+2. Snakemake (the framework OUTPOST relied on) will lock working directory during running. So you should prepare two working directories if you're running two OUTPOST pipelines (or any other Snakemake based softwares). To be more specific, `mkdir folder1/` and `mkdir folder2/`, copy the entire OUTPOST folder to `folder1/` and `folder2/`, respectively. Then `cd folder1`, run OUTPOST. Then `cd folder2`, run OUTPOST.
+3.  The Snakemake based OUTPOST can also be deployed on [cluster](https://snakemake.readthedocs.io/en/stable/executing/cluster.html) .
+4. Do not change the column names of OUTPOST_config.tsv or the parameter names of Snakefile_config.yml.
+5. Refer to OUTPOST/OUTPOST_config.explanation.txt for more details.
 
 ***
 
@@ -51,46 +50,110 @@ To Be Remind:
 
 ***
 
-We prepared the OUTPOST results of cat microbiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542), which can be an example for users to testify their OUTPOST installation or usage.
+We prepared the example dataset and corresponding results in [figshare](https://figshare.com/articles/dataset/The_OUTPOST_results_for_example_dataset_and_report_/25434553), which can be used for testing your installation.
+
+We also uploaded our independant analysis of a cat icrobiome dataset (described in our article) in [figshare](https://figshare.com/articles/figure/OUTPOST_results_of_cat_microbiome_dataset/24082542) using OUTPOST version 1.0 .
+
+We strongly suggest to read the OUTPOST_report.html in `OUTPOST_report_example.zip`.
 
 Each OUTPOST run accepts one assembly, all outputs are categorized in the folder named by the assembly.
 
-    total 60K
-    drwxrwxr-x 15 yihang yihang 4.0K Sep  4 12:03 ./
-    drwxrwxr-x  5 yihang yihang 4.0K Sep  4 12:58 ../
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 09:37 antibiotic_genes_analysis/
-    drwxrwxr-x  3 yihang yihang 4.0K Sep  4 10:08 assembly_analysis/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 10:08 batch_effect/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 09:37 benchmark/
-    drwxrwxr-x  3 yihang yihang 4.0K Sep  4 12:06 biomarkers_analysis/
-    drwxrwxr-x  3 yihang yihang 4.0K Sep  4 10:06 diversity_analysis/
-    drwxrwxr-x  4 yihang yihang 4.0K Sep  4 06:55 function_analysis/
-    drwxrwxr-x  6 yihang yihang 4.0K Sep  4 10:10 LDA_analysis/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 12:32 log/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 08:22 plasmids_analysis/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 12:31 report/
-    drwxrwxr-x  9 yihang yihang 4.0K Sep  4 12:06 taxonomy_analysis/
-    drwxrwxr-x  2 yihang yihang 4.0K Sep  4 08:52 virulence_factors_analysis/
+    antibiotic_genes_analysis
+    assembly_analysis
+    batch_effect
+    benchmark
+    biomarkers_analysis
+    data
+    diversity_analysis
+    function_analysis
+    LDA_analysis
+    log
+    metaphlan_analysis
+    plasmids_analysis
+    qc
+    report
+    taxonomy_analysis
+    virulence_factors_analysis
 
-### OUTPOST outputs: assembly analysis
+### 1. OUTPOST reports
 
 ***
 
-    assembly_analysis/
-    ├── [175M]  cat.normal_vs_obese.contig_table.processed.tsv
-    ├── [ 61M]  cat.normal_vs_obese.contig_table.tsv
-    ├── [ 954]  cat.taxa_counts.summarized.tsv
-    ├── [ 53M]  cat.taxa_counts.tsv
-    └── [4.0K]  metagenemark
-        ├── [1.3G]  cat.gtf
-        ├── [939M]  cat.nucl.fa
-        ├── [920M]  cat.nucl.nonrd.fa
-        ├── [ 56M]  cat.nucl.nonrd.fa.clstr
-        └── [417M]  cat.prot.fa
+    [   4]  report/
+    ├── [  14]  materials
+    └── [ 38K]  OUTPOST_report.html
 
-I set `skip_assembly_analysis` to True, so I only have one table. The MAG analysis table can refer to Table S1 of our paper.
+The OUTPOST report is a HTML file, which contains the general results description and annoatation.
 
-### OUTPOST outputs: taxonomy analysis
+For more annotation, please refer to OUTPOST report html.
+
+### 2. log
+***
+
+    log/
+    ├── [   0]  alpha_beta_diversity.done
+    ...
+    ├── [   0]  virulence_factors_analysis.done
+    ├── [   0]  virulence_factors_analysis.log
+    ├── [   0]  visualize_batch_effect.done
+    └── [   0]  visualize_batch_effect.log
+The `log` folder contains the log for all processing modules of OUTPOST. Notably, OUTPOST use these log files with suffix of `.done` to judge the status of each rule. Users can check the `Snakemake.py`, if the `done` files for certain rule exists, OUTPOST will regart it as successfully finished. If users want to re-run certain rules, they should remove the corressponding `done` files in the first place.
+
+### 3. benchmark
+
+***
+
+
+    benchmark/
+    ├── [ 141]  alpha_beta_diversity.benchmark
+    ...
+    ├── [ 143]  virulence_analysis.benchmark
+    ├── [ 145]  virulence_factors_analysis.benchmark
+    └── [ 140]  visualize_batch_effect.benchmark
+
+    $cat benchmark/alpha_beta_diversity.benchmark 
+    s	h:m:s	max_rss	max_vms	max_uss	max_pss	io_in	io_out	mean_load	cpu_time
+    14.7261	0:00:14	487.06	19615.18	446.61	461.81	5.42	3.06	186.02	29.58
+
+The `benchmark` folder contains the log information of each computation module in OUTPOST. Users can check the benchmark files for diagnosis. For example,
+
+For more annotation, please refer to OUTPOST report html.
+
+### 4. quality control
+
+***
+
+
+    [  56]  qc/
+    ├── [234K]  buffalo_1.fastp.html
+    ...
+    ├── [ 51K]  pig_3.fastp.json
+    ├── [   0]  TrimSummmry_buffalo_1.txt
+    ...
+    ├── [   0]  TrimSummmry_pig_1.txt
+    ├── [   0]  TrimSummmry_pig_2.txt
+    └── [   0]  TrimSummmry_pig_3.txt
+
+The `qc` folder contains quality control results for reads. For example,
+
+### 5. batch effect
+
+***
+
+    [  10]  batch_effect/
+    ├── [ 32K]  all_samples.taxa_counts.rel_abun.class.rmU.batch_effect_PCA.pdf
+    ...
+    ├── [ 25K]  all_samples.taxa_counts.rel_abun.species.rmU.batch_effect_PCA.pdf
+    ├── [ 32K]  all_samples.taxa_counts.rel_abun.superkingdom.rmU.batch_effect_PCA.pdf
+    └── [ 25K]  all_samples.taxa_counts.rel_abun.taxaID.rmU.batch_effect_PCA.pdf
+
+If `rm_batch_effect` is `True`, OUTPOST will visualize the principal components (PCA) as well as the variance distribution. To check the batch effect, users can compare the plots before and after batch effect removal. For example,
+
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.family.rmU.batch_effect_PCA.png) (If image failed to show, click it to view.)
+
+For more annotation, please refer to OUTPOST report html.
+
+### 6. taxonomy analysis
 
 ***
 
@@ -98,12 +161,7 @@ I set `skip_assembly_analysis` to True, so I only have one table. The MAG analys
     ├── [628K]  boxplot_normal_vs_obese
     │   ├── [4.0K]  class
     │   ├── [ 28K]  family
-    │   ├── [ 92K]  genus
-    │   ├── [ 12K]  order
-    │   ├── [4.0K]  phylum
-    │   ├── [ 92K]  species
-    │   ├── [4.0K]  superkingdom
-    │   └── [444K]  taxaID
+    ...
     ├── [4.0K]  counts_tables
     │   ├── [ 31K]  cat.taxa_counts.rel_abun.class.csv
     │   ├── [ 31K]  cat.taxa_counts.rel_abun.class.rmU.csv
@@ -141,56 +199,23 @@ I set `skip_assembly_analysis` to True, so I only have one table. The MAG analys
         ├── [833K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.csv
         └── [630K]  cat.rel_abun.normal_vs_obese.at_taxaID.u-test.two_sided.csv
 
-The `boxplot` folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons.
-For example, boxplot\_healthy\_vs\_ill/human62\_batch\_effect2.rel\_abun.healthy\_vs\_ill.at\_species.rel\_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf . We designed all file names to make them easy to understand. From this name, we know it is relative abundance of a significant species Alistipes.finegoldii.CAG.68 comparing between healthy and ill. Also, all plots generated by OUTPOST are vector PDF format for the convenience of publication.
+The `boxplot` folder contains the boxplots for all significant taxa crossing all taxonomy levels for all group-pair comparisons. Also, all plots generated by OUTPOST are vector PDF format for the convenience of publication.
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.pdf) (If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.healthy_vs_ill.at_species.rel_abun.unequal.Alistipes.finegoldii.CAG.68.boxplot.png) (If image failed to show, click it to view.)
 
-The `figs` folder contains the heatmap and barplots:
-OUTPOST not only draws heatmap for unequal taxa, but also for equal taxa.
+The `figs` folder contains the heatmap and barplots: OUTPOST not only draws heatmap for unequal taxa, but also for equal taxa.
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_family.rel_abun.equal.top20.fillmin.scaled.heatmap.pdf)
-(If image failed to show, click it to view.)
-OUTPOST produces barplot for all taxonomy levels. Here we have top 20 taxa, the 20 here is an adjustable parameter.
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_family.rel_abun.equal.top20.fillmin.scaled.heatmap.png) (If image failed to show, click it to view.) OUTPOST produces barplot for all taxonomy levels. Here we have top 20 taxa, the 20 here is an adjustable parameter.
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.barplot.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.phylum.rmU.top20.barplot.png) (If image failed to show, click it to view.)
 
-The `csv` files here are intermediate tables. OUTPOST include these tables for user's convenience.
-The `kaiju` folder contains the taxonomy annotated contigs table:
-The `top_taxa` folders contain the intermediate tables for top abundant taxa crossing all taxonomy levels for every group pair.
-The `utes`t folders contain the statistical results.
+The `csv` files here are intermediate tables. OUTPOST include these tables for user's convenience. The `kaiju` folder contains the taxonomy annotated contigs table: The `top_taxa` folders contain the intermediate tables for top abundant taxa crossing all taxonomy levels for every group pair. The `utes`t folders contain the statistical results.
 
-### OUTPOST outputs: batch effect
+For more annotation, please refer to OUTPOST report html.
+
+### 7. diversity analysis
 
 ***
-
-If `rm_batch_effect` is `True`, OUTPOST will visualize the principal components (PCA) as well as the variance distribution. To check the batch effect, users can compare the plots before and after batch effect removal.
-For example,
-
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.taxa_counts.rel_abun.family.rmU.batch_effect_PCA.pdf)
-(If image failed to show, click it to view.)
-
-    batch_effect/
-    ├── [ 17K]  cat.taxa_counts.rel_abun.class.rmU.not_rm_batch_effect_PCA.pdf
-    ├── [ 17K]  cat.taxa_counts.rel_abun.family.rmU.not_rm_batch_effect_PCA.pdf
-    ...
-    ├── [ 17K]  cat.taxa_counts.rel_abun.species.rmU.not_rm_batch_effect_PCA.pdf
-    ├── [ 16K]  cat.taxa_counts.rel_abun.superkingdom.rmU.not_rm_batch_effect_PCA.pdf
-    └── [ 17K]  cat.taxa_counts.rel_abun.taxaID.rmU.not_rm_batch_effect_PCA.pdf
-
-### OUTPOST outputs: diversity analysis
-
-***
-
-This folder contains all the alpha and beta diversity analysis crossing every group-pair.
-
-    (base) yh@superServer:human62_batch_effect2$ l diversity_analysis/
-    alpha_beta_asian_vs_euro/     alpha_beta_asian_vs_ill/   alpha_beta_female_vs_euro/   alpha_beta_healthy_vs_female/  alpha_beta_male_vs_euro/
-    alpha_beta_asian_vs_female/   alpha_beta_asian_vs_male/  alpha_beta_female_vs_ill/    alpha_beta_healthy_vs_ill/     alpha_beta_male_vs_female/
-    alpha_beta_asian_vs_healthy/  alpha_beta_euro_vs_ill/    alpha_beta_healthy_vs_euro/  alpha_beta_healthy_vs_male/    alpha_beta_male_vs_ill/
-
-Each sub-folder contains alpha and beta diversity analysis intermediate tables and graphs.
 
     diversity_analysis/
     └── [4.0K]  alpha_beta_normal_vs_obese
@@ -218,61 +243,47 @@ Each sub-folder contains alpha and beta diversity analysis intermediate tables a
         ├── [5.8K]  Simpson_evenness.alpha_diveristy.at_genus.pdf
         └── [5.8K]  Simpson_evenness.alpha_diveristy.at_species.pdf
 
+This folder contains all the alpha and beta diversity analysis crossing every group-pair.
+
+    (base) yh@superServer:human62_batch_effect2$ l diversity_analysis/
+    alpha_beta_asian_vs_euro/     alpha_beta_asian_vs_ill/   alpha_beta_female_vs_euro/   alpha_beta_healthy_vs_female/  alpha_beta_male_vs_euro/
+    alpha_beta_asian_vs_female/   alpha_beta_asian_vs_male/  alpha_beta_female_vs_ill/    alpha_beta_healthy_vs_ill/     alpha_beta_male_vs_female/
+    alpha_beta_asian_vs_healthy/  alpha_beta_euro_vs_ill/    alpha_beta_healthy_vs_euro/  alpha_beta_healthy_vs_male/    alpha_beta_male_vs_ill/
+
+Each sub-folder contains alpha and beta diversity analysis intermediate tables and graphs.
+
 For example,
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/PCoA12.bray.at_species.pdf)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/PCoA12.bray.at_species.png)
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/Shannon.alpha_diveristy.at_.species.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/Shannon.alpha_diveristy.at_.species.png) (If image failed to show, click it to view.)
 
-### OUTPOST outputs: LDA analysis
+For more annotation, please refer to OUTPOST report html.
+
+### 8. MetaPhlAn4 analysis
 
 ***
+    [   7]  metaphlan_analysis/
+    ├── [  20]  bowtie2
+    ├── [  11]  diversity
+    ├── [   5]  figs
+    ├── [  20]  krona
+    └── [  24]  taxonomy
 
-This folder contains the metabolism and taxonomy LDA results for every group-pair.
 
-    LDA_analysis/
-    ├── [4.0K]  figs_humann
-    │   ├── [ 70K]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.pdf
-    │   ├── [ 27K]  allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.pdf
-    ...
-    │   └── [ 39K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.pdf
-    ├── [4.0K]  figs_taxa
-    │   ├── [ 11K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.lefse.pdf
-    │   ├── [ 14K]  cat.rel_abun.normal_vs_obese.at_family.rel_abun.unequal.lefse.pdf
-    ...
-    │   ├── [ 13K]  cat.rel_abun.normal_vs_obese.at_species.rel_abun.equal.lefse.pdf
-    │   ├── [ 36K]  cat.rel_abun.normal_vs_obese.at_species.rel_abun.unequal.lefse.pdf
-    │   └── [ 26K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.pdf
-    ├── [ 12K]  humann_normal_vs_obese
-    │   ├── [3.9M]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.format
-    │   ├── [959K]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.res
-    │   ├── [3.8M]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.tsv
-    ...
-    │   ├── [181K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.format
-    │   ├── [ 93K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.res
-    │   └── [253K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.tsv
-    └── [ 12K]  taxa_normal_vs_obese
-        ├── [ 13K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.equal.lefse.format
-        ├── [2.3K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.equal.lefse.res
-    ...
-        ├── [312K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.lefse.res
-        ├── [548K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.format
-        ├── [156K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.res
-        └── [833K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.tsv
+This folder contains all the analysis results using MetaPhlan4, including some results specially generated by OUTPOST. This folder include diversity analysis, taxonomy analysis, and more. 
 
-The `figs_humann` and `figs_taxa` folders contain the lefSE results.
+OUTPOST generated GraPhlAn plot, heatmap and Krona Plot for each Sample. The tables for taxonomy, Krona and Bowtie2 intermediates are also stored.
 
 For example,
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.lefse.pdf)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/graphlan.png) (If image failed to show, click it to view.)
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/metaphlan_merge_taxa.heatmap.png) (If image failed to show, click it to view.)
 
-Other sub-folders contain the intermediate tables for user's convenience.
+For more annotation, please refer to OUTPOST report html.
 
-### OUTPOST outputs: function analysis
+### 9. function analysis
 
 ***
 
@@ -337,14 +348,64 @@ The figs folder contains all the heatmap plots for every independent database cr
 
 For example,
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_pfam_unstratified.named.rel_abun_format.healthy_vs_ill.rel_abun.unequal.top20.fillmin.scaled.heatmap.png) (If image failed to show, click it to view.)
 
-### OUTPOST outputs: antibiotic genes analysis/plasmids analysis/virulence factors analysis
+For more annotation, please refer to OUTPOST report html.
+
+### 10. LDA analysis
 
 ***
 
-These folders contain the dist plot and heatmap plot for all features with responding taxonomy, as well as intermediate tables.
+
+    LDA_analysis/
+    ├── [4.0K]  figs_humann
+    │   ├── [ 70K]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.pdf
+    │   ├── [ 27K]  allSamples_genefamilies_uniref90names_relab_ko_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.pdf
+    ...
+    │   └── [ 39K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.pdf
+    ├── [4.0K]  figs_taxa
+    │   ├── [ 11K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.unequal.lefse.pdf
+    │   ├── [ 14K]  cat.rel_abun.normal_vs_obese.at_family.rel_abun.unequal.lefse.pdf
+    ...
+    │   ├── [ 13K]  cat.rel_abun.normal_vs_obese.at_species.rel_abun.equal.lefse.pdf
+    │   ├── [ 36K]  cat.rel_abun.normal_vs_obese.at_species.rel_abun.unequal.lefse.pdf
+    │   └── [ 26K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.pdf
+    ├── [ 12K]  humann_normal_vs_obese
+    │   ├── [3.9M]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.format
+    │   ├── [959K]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.res
+    │   ├── [3.8M]  allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.equal.lefse.tsv
+    ...
+    │   ├── [181K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.format
+    │   ├── [ 93K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.res
+    │   └── [253K]  allSamples_genefamilies_uniref90names_relab_rxn_unstratified.named.rel_abun_format.normal_vs_obese.rel_abun.unequal.lefse.tsv
+    └── [ 12K]  taxa_normal_vs_obese
+        ├── [ 13K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.equal.lefse.format
+        ├── [2.3K]  cat.rel_abun.normal_vs_obese.at_class.rel_abun.equal.lefse.res
+    ...
+        ├── [312K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.lefse.res
+        ├── [548K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.format
+        ├── [156K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.res
+        └── [833K]  cat.rel_abun.normal_vs_obese.at_taxaID.rel_abun.unequal.lefse.tsv
+
+
+This folder contains the metabolism and taxonomy LDA results for every group-pair.
+
+The `figs_humann` and `figs_taxa` folders contain the lefSE results.
+
+For example,
+
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/allSamples_genefamilies_uniref90names_relab_eggnog_unstratified.named.rel_abun_format.asian_vs_euro.rel_abun.unequal.lefse.png)
+
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/human62_batch_effect2.rel_abun.asian_vs_euro.at_genus.rel_abun.unequal.lefse.png) (If image failed to show, click it to view.)
+
+Other sub-folders contain the intermediate tables for user's convenience.
+
+For more annotation, please refer to OUTPOST report html.
+
+### 11. antibiotic genes analysis/plasmids analysis/virulence factors analysis
+
+***
+
 
     antibiotic_genes_analysis/
     ├── [250K]  cat.antibiotic.tsv
@@ -356,12 +417,14 @@ These folders contain the dist plot and heatmap plot for all features with respo
     ├── [105K]  genes_taxa_counts_normal_vs_obese.tsv
     └── [ 49K]  genes_taxaID_normal_vs_obese_heatmap.pdf
 
+
+These folders contain the dist plot and heatmap plot for all features with responding taxonomy, as well as intermediate tables.
+
 For example,
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_asian_vs_euro_distrplot.pdf)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_asian_vs_euro_distrplot.png)
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_class_healthy_vs_ill_heatmap.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/genes_class_healthy_vs_ill_heatmap.png) (If image failed to show, click it to view.)
 
 OUTPOST also provide all the annotation information in `utils/abricate.annoatations.txt`, which can assist users to determine the antibiotic genes/plasmids/virulence factors. Also, the intermediate tables are helpful. The `*.antibiotic.tsv` `*.virulence.tsv` `*.plasmidfinder.tsv` are summary tables.
 
@@ -374,11 +437,66 @@ OUTPOST also provide all the annotation information in `utils/abricate.annoatati
     ...0
     /home/yihang/refgenomes/cat_microbiome/GCA_022675345.1_ASM2267534v1_genomic.fna	JAIZPE010022089.1	8462	8940	VanY-G_1	340-818/840	......=========	0/0	57.02	75.99	resfinder	DQ212986
 
-### OUTPOST outputs: biomarkers analysis
+For more annotation, please refer to OUTPOST report html.
+
+
+### 12. assembly analysis
 
 ***
 
-The `biomarkers_analysis` folder contains the biomarkers inference across all taxonomy levels for all group-pairs. The ANCOM (Analysis of compositions of microbiomes) figures are in `ANCOM_identification`.
+        [   8]  assembly_analysis/
+    ├── [   7]  annotation
+    │   ├── [   4]  eggmapper
+    │   ├── [  10]  gtdbtk
+    │   ├── [   7]  metagenemark
+    │   ├── [   9]  prodigal
+    │   └── [   6]  rgi
+    ├── [   8]  contigs
+    │   ├── [ 262]  checkpoints.txt
+    │   ├── [   0]  done
+    │   ├── [ 15M]  final.contigs.fa
+    │   ├── [  80]  intermediate_contigs
+    │   ├── [184K]  log
+    │   └── [2.9K]  options.json
+    ├── [  11]  outpost_contigs
+    │   ├── [ 23K]  outpost_assembly_split
+    │   ├── [ 15M]  outpost_nonrd_contigs.fasta
+    │   ├── [ 28M]  outpost_nonrd_contigs.fasta.0123
+    │   ├── [  17]  outpost_nonrd_contigs.fasta.amb
+    │   ├── [1.2M]  outpost_nonrd_contigs.fasta.ann
+    │   ├── [ 45M]  outpost_nonrd_contigs.fasta.bwt.2bit.64
+    │   ├── [940K]  outpost_nonrd_contigs.fasta.clstr
+    │   ├── [3.5M]  outpost_nonrd_contigs.fasta.pac
+    │   └── [   2]  stdin.split
+    ├── [   4]  quantify
+    │   ├── [   4]  index
+    │   └── [   4]  quantify
+    ├── [  15]  quast
+    │   ├── [   6]  basic_stats
+    │   ├── [ 52K]  icarus.html
+    │   ├── [   3]  icarus_viewers
+    │   ├── [   6]  predicted_genes
+    │   ├── [4.4K]  quast.log
+    │   ├── [418K]  report.html
+    │   ├── [ 31K]  report.pdf
+    │   ├── [1.5K]  report.tex
+    │   ├── [ 778]  report.tsv
+    │   ├── [1.7K]  report.txt
+    │   ├── [1.3K]  transposed_report.tex
+    │   ├── [ 778]  transposed_report.tsv
+    │   └── [1.3K]  transposed_report.txt
+    └── [   4]  taxa_counts
+        ├── [1.0K]  all_samples.taxa_counts.summarized.tsv
+        └── [4.4M]  all_samples.taxa_counts.tsv
+
+This folder contains assemble contigs, final assembly, assembly quality control, assembly genes prediction, assembly genes annotation, assembly genes quantification, and assembly genes taxonomy counts. 
+
+For more annotation, please refer to OUTPOST report html.
+
+
+### 13. biomarkers analysis
+
+***
 
     biomarkers_analysis/
     ├── [4.0K]  ANCOM_identification
@@ -408,47 +526,17 @@ The higher OUTPOST\_biomarker\_score, the more likely the taxonomy is the biomar
     Bifidobacterium pseudolongum	1.0	1.0	1.0	1.0	0.0	1.0	0.0	5.0
     Helicobacter canis	1.0	1.0	1.0	1.0	0.0	0.0	1.0	5.0
 
-### OUTPOST outputs: OUTPOST report
 
-***
+The `biomarkers_analysis` folder contains the biomarkers inference across all taxonomy levels for all group-pairs. The ANCOM (Analysis of compositions of microbiomes) figures are in `ANCOM_identification`.
 
-The `report` contains the automatic generated reports for all group-pairs.
+For example, 
 
-    report/
-    └── [5.2M]  OUTPOST_report_normal_vs_obese.pdf
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/ancom_biomarkers.dotplot.pig_vs_horse.at_order.png) (If image failed to show, click it to view.)
 
-![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/OUTPOST_report_normal_vs_obese.pdf)
-(If image failed to show, click it to view.)
+![image](https://github.com/Y-H-Joe/OUTPOST/blob/main/figs/ancom_biomarkers.volcano.omnivorous_vs_pig.at_phylum.png) (If image failed to show, click it to view.)
 
-## log
+For more annotation, please refer to OUTPOST report html.
 
-The `log` folder contains the log for all processing modules of OUTPOST. Notably, OUTPOST use these log files with suffix of `.done` to judge the status of each rule. Users can check the `Snakemake.py`, if the `done` files for certain rule exists, OUTPOST will regart it as successfully finished. If users want to re-run certain rules, they should remove the corressponding `done` files in the first place.
-
-    log/
-    ├── [   0]  alpha_beta_diversity.done
-    ...
-    ├── [   0]  virulence_factors_analysis.done
-    ├── [   0]  virulence_factors_analysis.log
-    ├── [   0]  visualize_batch_effect.done
-    └── [   0]  visualize_batch_effect.log
-
-### OUTPOST outputs: benchmark
-
-***
-
-The `benchmark` folder contains the log information of each computation module in OUTPOST. Users can check the benchmark files for diagnosis.
-For example,
-
-    benchmark/
-    ├── [ 141]  alpha_beta_diversity.benchmark
-    ...
-    ├── [ 143]  virulence_analysis.benchmark
-    ├── [ 145]  virulence_factors_analysis.benchmark
-    └── [ 140]  visualize_batch_effect.benchmark
-
-    $cat benchmark/alpha_beta_diversity.benchmark 
-    s	h:m:s	max_rss	max_vms	max_uss	max_pss	io_in	io_out	mean_load	cpu_time
-    14.7261	0:00:14	487.06	19615.18	446.61	461.81	5.42	3.06	186.02	29.58
 
 ***
 
@@ -482,11 +570,7 @@ run `conda install -c biobakery humann=3.1.1`. This is because humann internal e
 
 ### 6. The assembly looks normal, but no plasmids/antibiotic/virus table generated
 
-Reformat your assembly file.
-from
-`>human63_000000000001
-TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAACTGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCGGTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCGATTGCCAAAAGCA`
-to
+Reformat your assembly file. from `>human63_000000000001 TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCATTCCGCTATTGAACAGCGTCTCGCAGAAAAAGGATTGCCGGAACATCTGCTTCATCGTAAGGAACGCAGACAGGAAAAACTGAATCATCCTGCTGTAAAAACGACAAAGCCCCACAGAAAGAAGAAAAAGAAACAGGTGTTCGAGCCGCTCTTGGAACAGAATGATGATTTCTTCTTTATTGCTGGTTATACTTCTGGCGGTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGAGCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCGATTGCCAAAAGCA` to
 
     >human63_000000000001
     TTTCCTTCGATGAGTTCTATGCCGTATATAATAAAAAGCA
@@ -498,4 +582,8 @@ to
     GTGCCCCTTATGGTGTCACATGGGAAGAAATGGGACTAGA
     GCCTTGGGAAGAACTTGTATAAATATTATTGCCATTGCCG
     ATTGCCAAAAGCA
+### 7. Skip humann and assembly
 
+Humann analysis is very time/computation consuption. You can use the `downsample_reads` parameters, or you can set `skip_humann_init` if you already have the init resutls. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder.
+
+OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation.

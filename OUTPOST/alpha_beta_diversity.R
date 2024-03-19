@@ -56,7 +56,7 @@ alphas = colnames(alpha_diversity)
 alphas = alphas[alphas!="Group"]
 
 for (alpha in alphas){
-  pdf(file=paste(alpha,"alpha_diveristy.at_",level,".pdf",sep=""))
+  pdf(file=paste(alpha,"_alpha_diversity.at_",level,".pdf",sep=""))
   #draw scatter-plots and mark outliers
   p <- ggboxplot(alpha_diversity,x="Group",y=alpha,add="dotplot",color = "Group", palette = "jco") +
       theme(legend.position="right") +
