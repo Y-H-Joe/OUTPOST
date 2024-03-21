@@ -2322,21 +2322,25 @@ if len(r1_fq_list + se_fq_list) > 0:
                         shell("{bwa} mem -t {threads} {host_genome} {r1}_trim.fq {r2}_trim.fq \
                                | {samtools} view -@ {threads} -bS -f 12 -F 256  > {nonhost_bam}")
                         shell("{bamToFastq} -i {nonhost_bam} -fq {nonhost_r1} -fq2 {nonhost_r2}")
-                        # Align to virus genome
-                        # virus_aligned_sam = f"{output_dir}/data/{sample}_virus_aligned.sam"
-                        shell("{bwa} mem -t {threads} {virus_genome} {nonhost_r1} {nonhost_r2} \
-                               | {samtools} view -@ {threads} -bS -f 12 -F 256 > {nonvirus_bam}")
-                        shell("{samtools} sort -@ {threads} {nonvirus_bam} -o {nonvirus_bam1}")
-                        shell("{samtools} index -@ {threads} {nonvirus_bam1}")
-                        shell("{bamToFastq} -i {nonvirus_bam1} -fq {nonvirus_r1} -fq2 {nonvirus_r2}")
-
+                        if rm_virus_contamination:
+                            # Align to virus genome
+                            # virus_aligned_sam = f"{output_dir}/data/{sample}_virus_aligned.sam"
+                            shell("{bwa} mem -t {threads} {virus_genome} {nonhost_r1} {nonhost_r2} \
+                                   | {samtools} view -@ {threads} -bS -f 12 -F 256 > {nonvirus_bam}")
+                            shell("{samtools} sort -@ {threads} {nonvirus_bam} -o {nonvirus_bam1}")
+                            shell("{samtools} index -@ {threads} {nonvirus_bam1}")
+                            shell("{bamToFastq} -i {nonvirus_bam1} -fq {nonvirus_r1} -fq2 {nonvirus_r2}")
+                        else:
+                            shell("cp {nonhost_r1} {nonvirus_r1}")
+                            shell("cp {nonhost_r2} {nonvirus_r2}")
                         # Cleanup intermediate files
                         if clean_unnecessary:
                             try:
                                 os.remove(nonhost_bam)
-                                os.remove(nonvirus_bam)
                                 os.remove(nonhost_r1)
                                 os.remove(nonhost_r2)
+                                if rm_virus_contamination:
+                                    os.remove(nonvirus_bam)
                                 os.remove(f"{output_dir}/data/{r1}_trim.fq")
                                 os.remove(f"{output_dir}/data/{r2}_trim.fq")
                                 os.remove(f"{output_dir}/data/{r1}_trim_Unp.fq")
@@ -2344,8 +2348,17 @@ if len(r1_fq_list + se_fq_list) > 0:
                             except Exception as e:
                                 pass
                     else:
-                        shell("cp {r1} {nonvirus_r1}")
-                        shell("cp {r2} {nonvirus_r2}")
+                        if rm_virus_contamination:
+                            # Align to virus genome
+                            # virus_aligned_sam = f"{output_dir}/data/{sample}_virus_aligned.sam"
+                            shell("{bwa} mem -t {threads} {virus_genome} {r1} {r2} \
+                                   | {samtools} view -@ {threads} -bS -f 12 -F 256 > {nonvirus_bam}")
+                            shell("{samtools} sort -@ {threads} {nonvirus_bam} -o {nonvirus_bam1}")
+                            shell("{samtools} index -@ {threads} {nonvirus_bam1}")
+                            shell("{bamToFastq} -i {nonvirus_bam1} -fq {nonvirus_r1} -fq2 {nonvirus_r2}")
+                        else:
+                            shell("cp {r1} {nonvirus_r1}")
+                            shell("cp {r2} {nonvirus_r2}")
                 shell("touch {output_dir}/log/reads_QC_PE.done")
                     
                 

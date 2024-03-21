@@ -194,12 +194,16 @@ target_dict = {
 
 
 #%% put materials to folder
-def find_and_copy(pattern, original_dir, target_dir):
+def find_and_copy(pattern, original_dir, target_dir, exclude_keyword = None):
     # 使用os.walk遍历original_dir及其所有子目录
     for root, dirs, files in os.walk(original_dir):
         for name in files:
             # 检查文件名是否匹配给定的模式
             if glob.fnmatch.fnmatch(name, pattern):
+                # 跳过名中含有 exclude_keyword 的文件
+                if exclude_keyword:
+                    if exclude_keyword in name:
+                        continue
                 # 构建完整的文件路径
                 file_path = os.path.join(root, name)
                 # 确保目标目录存在
@@ -244,8 +248,8 @@ target_dict['f_22'] = os.path.join(report_2, os.path.basename(target_dp2.replace
 run_command([python3, "OUTPOST/pdf2png.py", report_2_abs])
 
 # 3
-target_dp1 = find_and_copy("all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.*.boxplot.pdf", os.path.join(results_dir, 'taxonomy_analysis'), report_3_abs)
-source_dict['f_311'] = os.path.join(results_dir, 'taxonomy_analysis', "all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.*.boxplot.pdf")
+target_dp1 = find_and_copy("all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.*.boxplot.pdf", os.path.join(results_dir, 'taxonomy_analysis'), report_3_abs, exclude_keyword = 'taxaID')
+source_dict['f_311'] = os.path.join(results_dir, 'taxonomy_analysis','boxplot_*_vs*', "all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.*.boxplot.pdf")
 target_dict['f_311'] = os.path.join(report_3, os.path.basename(target_dp1.replace('.pdf','.png')))
 target_dp2 = find_and_copy("all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.top*.fillmin.scaled.heatmap.pdf", os.path.join(results_dir, 'taxonomy_analysis'), report_3_abs)
 source_dict['f_312'] = os.path.join(results_dir, 'taxonomy_analysis', "all_samples.rel_abun.*_vs_*.at_*.rel_abun.*.top*.fillmin.scaled.heatmap.pdf")
@@ -259,10 +263,10 @@ target_dict['f_322'] = os.path.join(report_3, os.path.basename(target_dp4.replac
 run_command([python3, "OUTPOST/pdf2png.py", report_3_abs])
 
 #4
-target_dp1 = find_and_copy("*alpha_diversity.at_*.pdf", os.path.join(results_dir, 'diversity_analysis'), report_4_abs)
+target_dp1 = find_and_copy("*alpha_diversity.at_*.pdf", os.path.join(results_dir, 'diversity_analysis'), report_4_abs, exclude_keyword = 'taxaID')
 source_dict['f_411'] = os.path.join(results_dir, 'diversity_analysis', "*alpha_diversity.at_*.pdf")
 target_dict['f_411'] = os.path.join(report_4, os.path.basename(target_dp1.replace('.pdf','.png')))
-target_dp2 = find_and_copy("PCoA*.*.at_*.pdf", os.path.join(results_dir, 'diversity_analysis'), report_4_abs)
+target_dp2 = find_and_copy("PCoA*.*.at_*.pdf", os.path.join(results_dir, 'diversity_analysis'), report_4_abs, exclude_keyword = 'taxaID')
 source_dict['f_421'] = os.path.join(results_dir, 'diversity_analysis', "PCoA*.*.at_*.pdf")
 target_dict['f_421'] = os.path.join(report_4, os.path.basename(target_dp2.replace('.pdf','.png')))
 run_command([python3, "OUTPOST/pdf2png.py", report_4_abs])
@@ -298,7 +302,7 @@ target_dict['f_721'] = os.path.join(report_7, os.path.basename(target_dp2.replac
 run_command([python3, "OUTPOST/pdf2png.py", report_7_abs])
 
 #8
-target_dp1 = find_and_copy("genes_*_*_vs_*_heatmap.pdf", os.path.join(results_dir, 'antibiotic_genes_analysis', 'assembly_based'), report_8_abs)
+target_dp1 = find_and_copy("genes_*_*_vs_*_heatmap.pdf", os.path.join(results_dir, 'antibiotic_genes_analysis', 'assembly_based'), report_8_abs, exclude_keyword = 'taxaID')
 source_dict['f_81'] = os.path.join(results_dir, 'antibiotic_genes_analysis', 'assembly_based', "genes_*_*_vs_*_heatmap.pdf")
 target_dict['f_81'] = os.path.join(report_8, os.path.basename(target_dp1.replace('.pdf','.png')))
 target_dp2 = find_and_copy("genes_*_vs_*_distrplot.pdf", os.path.join(results_dir, 'antibiotic_genes_analysis', 'assembly_based'), report_8_abs)
@@ -308,7 +312,7 @@ run_command([python3, "OUTPOST/pdf2png.py", report_8_abs])
 
 
 #9
-target_dp1 = find_and_copy("genes_*_*_vs_*_heatmap.pdf", os.path.join(results_dir, 'virulence_factors_analysis', 'assembly_based'), report_9_abs)
+target_dp1 = find_and_copy("genes_*_*_vs_*_heatmap.pdf", os.path.join(results_dir, 'virulence_factors_analysis', 'assembly_based'), report_9_abs, exclude_keyword = 'taxaID')
 source_dict['f_91'] = os.path.join(results_dir, 'virulence_factors_analysis', 'assembly_based', "genes_*_*_vs_*_heatmap.pdf")
 target_dict['f_91'] = os.path.join(report_9, os.path.basename(target_dp1.replace('.pdf','.png')))
 target_dp2 = find_and_copy("genes_*_vs_*_distrplot.pdf", os.path.join(results_dir, 'virulence_factors_analysis', 'assembly_based'), report_9_abs)
@@ -331,7 +335,7 @@ source_dict['f_113'] = os.path.join(results_dir, 'assembly_analysis', 'quast')
 target_dict['f_113'] = os.path.join(report_11, 'quast', 'report.html')
 
 #12
-target_dp1 = find_and_copy("ancom_biomarkers.dotplot.*_vs_*.at_*.pdf", os.path.join(results_dir, 'biomarkers_analysis', 'ANCOM_identification'), report_12_abs)
+target_dp1 = find_and_copy("ancom_biomarkers.dotplot.*_vs_*.at_*.pdf", os.path.join(results_dir, 'biomarkers_analysis', 'ANCOM_identification'), report_12_abs, exclude_keyword = 'taxaID')
 source_dict['f_1221'] = os.path.join(results_dir, 'biomarkers_analysis', 'ANCOM_identification', "ancom_biomarkers.dotplot.*_vs_*.at_*.pdf")
 target_dict['f_1221'] = os.path.join(report_12, os.path.basename(target_dp1.replace('.pdf','.png')))
 target_dp2 = find_and_copy("ancom_biomarkers.volcano.*_vs_*.at_*.pdf", os.path.join(results_dir, 'biomarkers_analysis', 'ANCOM_identification'), report_12_abs)

@@ -49,7 +49,7 @@ mod_file: /home/z/zhouyh/softwares/OUTPOST/utils/MetaGeneMark_linux_64/mgm/MetaG
 virus_genome: /home/z/zhouyh/softwares/OUTPOST/utils/viruses.fa
 
 ## settings
-assemble_contigs: True # assemble contigs using OUTPOST or not
+assemble_contigs: True # assemble contigs or use assembly in OUTPOST configuration
 assembly_method: megahit # megahit or metaspades
 biomarker_num : 100 # number of biomarkers candidates
 clean_unnecessary: True # True or False
@@ -62,6 +62,7 @@ paired: False # True or False, determine the statisctic method to use
 process_batch_size : 16 # batch size of samples run humann in parallel
 qvalue: Benjamini-Hochberg # select one from [Bonferroni, Bonferroni-Holm, Benjamini-Hochberg]
 rm_batch_effect: True # True or False
+rm_virus_contamination: True # True of False
 skip_assembly_qtest: True # True or False
 skip_humann_init: False # True or False
 skip_kaiju: False # True or False
@@ -79,7 +80,7 @@ taxa_level:
   - genus
   - species
   
-# metabolism independent databases. select from [rxn,eggnog,ko,level4ec,pfam]
+# metabolism independent databases. select from [rxn: MetaCyc, eggnog: eggNOG, ko: KEGG ORTHOLOGY, level4ec: EC, pfam : Pfam]
 databases:
   - rxn
   - eggnog
