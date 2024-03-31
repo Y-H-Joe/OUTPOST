@@ -22,7 +22,7 @@
 
 ***
 
-# Usuage
+# Usage
 
 ***
 
