@@ -1,4 +1,4 @@
-# OUTPOST: a comprehensive and useful downstream analysis pipeline for whole-metagenome shotgun sequencing.
+# OUTPOST: a comprehensive analysis software for whole-metagenome shotgun sequencing incorporating group stratification.
 
 ***
 
