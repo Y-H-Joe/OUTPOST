@@ -28,7 +28,7 @@
 
     # 1. prepare the `OUTPOST/OUTPOST_config.tsv` (for experiment, data, group information)
     # 2. modify the `OUTPOST/Snakemake_config.yml` (for OUTPOST parameters)
-    # 3. run `python ~/softwares/OUTPOST/OUTPOST/check_snakefile_config.py path/to/Snakefile_config.yml` . If no errors, then you are good to go.
+    # 3. run `python path/to/OUTPOST/check_snakefile_config.py path/to/Snakefile_config.yml` . If no errors, then you are good to go.
     # 4. run OUTPOST
     `nohup snakemake --cores 32 --verbose -s ./OUTPOST_run.py --rerun-incomplete &`
 
