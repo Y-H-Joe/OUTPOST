@@ -790,8 +790,7 @@ if len(r1_fq_list + se_fq_list) > 0:
     if not skip_humann_init:
         rule humann_init:
             input:
-                [f"{output_dir}/log/reads_QC_PE.done"] * bool(len(r1_fq_list) > 0) +\
-                [f"{output_dir}/log/reads_QC_SE.done"] * bool(len(se_fq_list) > 0)
+                "{output_dir}/log/cat_reads.done"
             output:
                 "{output_dir}/log/humann_init.done"
             log:
@@ -2228,18 +2227,18 @@ if len(r1_fq_list + se_fq_list) > 0:
         threads: cores
         run:
             contigs_output = f"{output_dir}/assembly_analysis/contigs"
-            # os.makedirs(f"{output_dir}/assembly_analysis/figs", exist_ok=True)
+            os.makedirs(f"{output_dir}/assembly_analysis/contigs", exist_ok=True)
             
             if assembly_method == 'megahit':
-                command_megahit = "-1 " + ",".join([_ for _ in r1_fq_list if _ != '']) +\
-                                  " -2 " + ",".join([_ for _ in r2_fq_list if _ != '']) +\
-                                  " -r " + ",".join([_ for _ in se_fq_list if _ != ''])
+                command_megahit = "-1 " * bool(len(r1_fq_list)) + ",".join([_ for _ in r1_fq_list if _ != '']) +\
+                                  " -2 " * bool(len(r1_fq_list)) + ",".join([_ for _ in r2_fq_list if _ != '']) +\
+                                  " -r " * bool(len(r1_fq_list)) + ",".join([_ for _ in se_fq_list if _ != ''])
                 shell("{megahit} --continue -t {threads} {command_megahit} -o {contigs_output}")
             elif assembly_method == 'metaspades':
                 command_spades = ""
                 for r1_fq, r2_fq in zip(r1_fq_list, r2_fq_list):
                     if r1_fq != '':
-                        command_spades += rf" --pe1-1 {r1_fq} --pe1-2 {r1_fq} "
+                        command_spades += rf" --pe1-1 {r1_fq} --pe1-2 {r2_fq} "
                 for se_fq in se_fq_list:
                     if se_fq != '':
                         command_spades += rf" --s1 {se_fq} "
@@ -2263,8 +2262,14 @@ if len(r1_fq_list + se_fq_list) > 0:
             run:
                 for i, sample in enumerate(sample_list):
                     has_pe_reads, has_se_reads = False, False
-                    r1 = r1_fq_list[i]
-                    se = se_fq_list[i]
+                    try:
+                        r1 = r1_fq_list[i]
+                    except:
+                        r1 = ''
+                    try:
+                        se = se_fq_list[i]
+                    except:
+                        se = ''
                     if r1 != '':
                         has_pe_reads = True
                     if se != '':
@@ -2298,7 +2303,6 @@ if len(r1_fq_list + se_fq_list) > 0:
                     r1 = f"{output_dir}/data/{sample}.fp.r1.fastq"
                     r2 = f"{output_dir}/data/{sample}.fp.r2.fastq"
                     
-                    host_genome = refgenome_list[i]
                     trimm_log = f"{output_dir}/qc/TrimSummmry_{sample}.txt"
                     nonhost_bam = f"{output_dir}/data/{sample}_onlyPE_nonhost_unsorted.bam"
                     nonvirus_bam = f"{output_dir}/data/{sample}_onlyPE_nonhostvirus_unsorted.bam"
@@ -2310,6 +2314,7 @@ if len(r1_fq_list + se_fq_list) > 0:
                     nonvirus_r2 = f"{output_dir}/data/{sample}_nonhostvirus_r2.fq"
                     
                     if len(refgenome_list) > 0:
+                        host_genome = refgenome_list[i]
                         # Index the host genome
                         index_genome(host_genome, bwa, samtools)
                         # Trimming reads with Trimmomatic
@@ -2443,7 +2448,6 @@ if len(r1_fq_list + se_fq_list) > 0:
                         continue
                     
                     se = f"{output_dir}/data/{sample}.fp.se.fastq"
-                    host_genome = refgenome_list[i]
                     trimm_log = f"{output_dir}/qc/TrimSummmry_{sample}.txt"
                     nonhost_bam = f"{output_dir}/data/{sample}_onlySE_nonhost_unsorted.bam"
                     nonhost_sam = f"{output_dir}/data/{sample}_onlySE_nonhost_unsorted.sam"
@@ -2454,6 +2458,7 @@ if len(r1_fq_list + se_fq_list) > 0:
                     
                     index_genome(host_genome, bwa, samtools)
                     if len(refgenome_list) > 0:
+                        host_genome = refgenome_list[i]
                         # Index the host genome
                         # Trimming reads with Trimmomatic
                         shell("{trimmomatic} SE -phred33 {se} {se}_trim.fq \
