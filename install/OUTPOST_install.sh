@@ -3,6 +3,7 @@
 # 1. Download `OUTPOST.yml` in `install` folder.
 # git https://github.com/Y-H-Joe/OUTPOST.git
 # cd OUTPOST
+pip install git+https://github.com/arpcard/rgi.git
 
 # 2. Create the conda environment `conda env create --name OUTPOST --file OUTPOST.yml `, the bioconductor has unknown errors.
 # conda env create --name OUTPOST --file install/OUTPOST_without_bioconductor.yml

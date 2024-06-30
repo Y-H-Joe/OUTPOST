@@ -44,7 +44,8 @@ if len(r1_fq_list + se_fq_list) > 0:
         # overwrite original assembly, because we cannot handle multiassemble vs one sample
         assembly_list = ["outpost_assembly"] * len(sample_list)
         assembly_dir_list = [f"{output_dir}/assembly_analysis/outpost_contigs/outpost_nonrd_contigs.fasta"] * len(sample_list)
-process_batch_size = min(process_batch_size, len(sample_list))
+# process_batch_size = min(process_batch_size, len(sample_list))
+process_batch_size = min(2, len(sample_list))
 
 # %% starts
 shell("ulimit -s 65535")
@@ -153,19 +154,22 @@ if len(r1_fq_list + se_fq_list) > 0:
             "{output_dir}/benchmark/metaphlan_krona.benchmark"
         threads: 1
         run:
-            krona_tsvs = []
-            for i, sample in enumerate(sample_list):
-                metaphlan_output = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_{sample}_taxa.txt"
-                krona_tsv = rf"{output_dir}/metaphlan_analysis/krona/metaphlan_{sample}_krona.tsv"
-                krona_tsvs.append(krona_tsv)
-                shell("{python3}  OUTPOST/outpost_metaphlan2krona.py -p {metaphlan_output} -k {krona_tsv}" )
-            # pass multiple tsv to krona
-            krona_plot = rf"{output_dir}/metaphlan_analysis/figs/krona.html"
-            # pass multiple tsv to kiimporttext will generate embedded html
-            krona_tsvs_list_str = ' '.join(krona_tsvs)
-            shell("{ktimporttext} {krona_tsvs_list_str}  -o {krona_plot} ")
+            output_merged = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt"
+            with open(output_merged, 'r') as o:
+                lines = len(o.readlines())
+            if lines > 3:
+                krona_tsvs = []
+                for i, sample in enumerate(sample_list):
+                    metaphlan_output = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_{sample}_taxa.txt"
+                    krona_tsv = rf"{output_dir}/metaphlan_analysis/krona/metaphlan_{sample}_krona.tsv"
+                    krona_tsvs.append(krona_tsv)
+                    shell("{python3}  OUTPOST/outpost_metaphlan2krona.py -p {metaphlan_output} -k {krona_tsv}" )
+                # pass multiple tsv to krona
+                krona_plot = rf"{output_dir}/metaphlan_analysis/figs/krona.html"
+                # pass multiple tsv to kiimporttext will generate embedded html
+                krona_tsvs_list_str = ' '.join(krona_tsvs)
+                shell("{ktimporttext} {krona_tsvs_list_str}  -o {krona_plot} ")
             shell("touch {output_dir}/log/metaphlan_krona.done")
-    
     
     rule metaphlan_graphlan:
         input:
@@ -179,18 +183,21 @@ if len(r1_fq_list + se_fq_list) > 0:
         threads: 1
         run:
             output_merged = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt"
-            tree_file = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.tree.txt"
-            tree_anno = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.tree.annot.txt"
-            shell("{python3} {export2graphlan} --skip_rows 0 -i {output_merged} \
-                  --tree {tree_file} --annotation {tree_anno} \
-                  --most_abundant 1000 --abundance_threshold 0.01 --least_biomarkers 10 \
-                  --annotations 1,2,3,4,5,6 --external_annotations 7")
-                  
-            graphlan_xml = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.graphlan.xml"
-            shell("python {graphlan_annotate} --annot {tree_anno} {tree_file} {graphlan_xml}")
-            
-            graphlan_pdf = rf"{output_dir}/metaphlan_analysis/figs/graphlan.pdf"
-            shell("{graphlan} {graphlan_xml} {graphlan_pdf} --size 20 ")
+            with open(output_merged, 'r') as o:
+                lines = len(o.readlines())
+            if lines > 3:
+                tree_file = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.tree.txt"
+                tree_anno = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.tree.annot.txt"
+                shell("{python3} {export2graphlan} --skip_rows 0 -i {output_merged} \
+                      --tree {tree_file} --annotation {tree_anno} \
+                      --most_abundant 1000 --abundance_threshold 0.01 --least_biomarkers 10 \
+                      --annotations 1,2,3,4,5,6 --external_annotations 7")
+                      
+                graphlan_xml = rf"{output_dir}/metaphlan_analysis/taxonomy/merged_abundance.graphlan.xml"
+                shell("python {graphlan_annotate} --annot {tree_anno} {tree_file} {graphlan_xml}")
+                
+                graphlan_pdf = rf"{output_dir}/metaphlan_analysis/figs/graphlan.pdf"
+                shell("{graphlan} {graphlan_xml} {graphlan_pdf} --size 20 ")
             shell("touch {output_dir}/log/metaphlan_graphlan.done")
     
     
@@ -206,12 +213,15 @@ if len(r1_fq_list + se_fq_list) > 0:
         threads: 1
         run:
             output_merged = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt"
-            heatmap = rf"{output_dir}/metaphlan_analysis/figs/metaphlan_merge_taxa.heatmap.pdf"
-            shell("{python3} OUTPOST/metaphlan_hclust2.py -i {output_merged} \
-                  -o {heatmap} --skip_rows 0 --ftop 50 --f_dist_f correlation \
-                 --s_dist_f euclidean --cell_aspect_ratio 1 -s --flabel_size 4 \
-                 --sname_row 0 --max_flabel_len 200 --metadata_height 0.075  \
-                  --minv 0.01  --slinkage average  ")
+            with open(output_merged, 'r') as o:
+                lines = len(o.readlines())
+            if lines > 3:
+                heatmap = rf"{output_dir}/metaphlan_analysis/figs/metaphlan_merge_taxa.heatmap.pdf"
+                shell("{python3} OUTPOST/metaphlan_hclust2.py -i {output_merged} \
+                      -o {heatmap} --skip_rows 0 --ftop 50 --f_dist_f correlation \
+                     --s_dist_f euclidean --cell_aspect_ratio 1 -s --flabel_size 4 \
+                     --sname_row 0 --max_flabel_len 200 --metadata_height 0.075  \
+                      --minv 0.01  --slinkage average  ")
             shell("touch {output_dir}/log/metaphlan_heatmap.done")
     
     
@@ -226,32 +236,36 @@ if len(r1_fq_list + se_fq_list) > 0:
             "{output_dir}/benchmark/metaphlan_diverisy.benchmark"
         threads: 1
         run:
-            # beta diversity
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d beta -m bray-curtis -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d beta -m jaccard -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d beta -m clr -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d beta -m aitchison -o {output_dir}/metaphlan_analysis/diversity")
-            # alpha diversity
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d alpha -m richness -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d alpha -m shannon -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d alpha -m simpson -o {output_dir}/metaphlan_analysis/diversity")
-            shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
-                   -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
-                   -d alpha -m gini -o {output_dir}/metaphlan_analysis/diversity")
+            output_merged = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt"
+            with open(output_merged, 'r') as o:
+                lines = len(o.readlines())
+            if lines > 3:
+                # beta diversity
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d beta -m bray-curtis -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d beta -m jaccard -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d beta -m clr -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d beta -m aitchison -o {output_dir}/metaphlan_analysis/diversity")
+                # alpha diversity
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d alpha -m richness -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d alpha -m shannon -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d alpha -m simpson -o {output_dir}/metaphlan_analysis/diversity")
+                shell("{Rscript} OUTPOST/outpost_metaphlan_calculate_diversity.R \
+                       -f {output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt \
+                       -d alpha -m gini -o {output_dir}/metaphlan_analysis/diversity")
             shell("touch {output_dir}/log/metaphlan_diverisy.done")
     
     
@@ -274,7 +288,7 @@ if len(r1_fq_list + se_fq_list) > 0:
             metaphlan_output_list = []
             for i, sample in enumerate(sample_list):
                 fq = rf"{output_dir}/data/{sample}_nonhostvirus.fq"
-                output = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_{sample}_taxa.txt"
+                output = rf"{output_dir}    metaphlan_{sample}_taxa.txt"
                 metaphlan_output_list.append(output)
                 bowtie_tmp = rf"{output_dir}/metaphlan_analysis/bowtie2/metaphlan_{sample}.bowtie2.bz2"
                 if os.path.exists(bowtie_tmp):
@@ -812,11 +826,11 @@ if len(r1_fq_list + se_fq_list) > 0:
                     genefamilies_tsv = os.path.join(wkdir,f"{fq_humann}_genefamilies.tsv")
                     pathabundance_tsv = os.path.join(wkdir,f"{fq_humann}_pathabundance.tsv")
                     pathcoverage_tsv = os.path.join(wkdir,f"{fq_humann}_pathcoverage.tsv")
-                    need_to_run = False
-                    if not os.path.exists(genefamilies_tsv) and \
-                        not os.path.exists(pathabundance_tsv) and \
-                        not os.path.exists(pathcoverage_tsv):
-                        need_to_run = True
+                    need_to_run = True
+                    if  os.path.exists(genefamilies_tsv) and \
+                        os.path.exists(pathabundance_tsv) and \
+                         os.path.exists(pathcoverage_tsv):
+                        need_to_run = False
                     return need_to_run
 
                 os.makedirs(f"{output_dir}/function_analysis/humann3/ori_results/", exist_ok=True)
@@ -2227,12 +2241,12 @@ if len(r1_fq_list + se_fq_list) > 0:
         threads: cores
         run:
             contigs_output = f"{output_dir}/assembly_analysis/contigs"
-            os.makedirs(f"{output_dir}/assembly_analysis/contigs", exist_ok=True)
+            # os.makedirs(f"{output_dir}/assembly_analysis/contigs", exist_ok=True)
             
             if assembly_method == 'megahit':
                 command_megahit = "-1 " * bool(len(r1_fq_list)) + ",".join([_ for _ in r1_fq_list if _ != '']) +\
-                                  " -2 " * bool(len(r1_fq_list)) + ",".join([_ for _ in r2_fq_list if _ != '']) +\
-                                  " -r " * bool(len(r1_fq_list)) + ",".join([_ for _ in se_fq_list if _ != ''])
+                                  " -2 " * bool(len(r2_fq_list)) + ",".join([_ for _ in r2_fq_list if _ != '']) +\
+                                  " -r " * bool(len(se_fq_list)) + ",".join([_ for _ in se_fq_list if _ != ''])
                 shell("{megahit} --continue -t {threads} {command_megahit} -o {contigs_output}")
             elif assembly_method == 'metaspades':
                 command_spades = ""
