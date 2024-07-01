@@ -11,10 +11,10 @@
     cd OUTPOST
 
     # 2. Create the conda environment `conda env create --name OUTPOST --file OUTPOST.yml `, the bioconductor has unknown errors.
-    conda env create --name OUTPOST --file install/OUTPOST.yml
     export PIP_DEFAULT_TIMEOUT=100
     mkdir -p ~/.pip
     echo -e "[global]\ntimeout = 100\n" > ~/.pip/pip.conf
+    conda env create --name OUTPOST --file install/OUTPOST.yml
 
     # 3. Activate the environment `conda activate OUTPOST`.
     conda activate OUTPOST
