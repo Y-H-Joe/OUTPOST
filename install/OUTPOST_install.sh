@@ -181,6 +181,7 @@ if [ ! -f "$DONE_FILE" ]; then
 	gtdbtk_db=$(pwd)/databases/gtdbdk
 	mkdir -p $gtdbtk_db
 	conda env config vars set GTDBTK_DATA_PATH=$gtdbtk_db
+	conda init
 	conda deactivate
 	conda activate OUTPOST
 	bash utils/gtdk_db_download.sh
@@ -218,7 +219,8 @@ if [ ! -f "$DONE_FILE" ]; then
 	tar -jxf utils/card-data.tar.bz2 -C $rgi_db
 	rgi load --local -i $rgi_db/card.json
 	rgi card_annotation -i $rgi_db/card.json
-	touch "$DONE_FILE"
+	mv card_database_*fasta 
+	touch "$DONE_FILE" $rgi_db/
 else
 	echo "eggnog-mapper already installed. Skipping this step."
 fi
