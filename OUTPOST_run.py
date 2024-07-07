@@ -288,7 +288,7 @@ if len(r1_fq_list + se_fq_list) > 0:
             metaphlan_output_list = []
             for i, sample in enumerate(sample_list):
                 fq = rf"{output_dir}/data/{sample}_nonhostvirus.fq"
-                output = rf"{output_dir}    metaphlan_{sample}_taxa.txt"
+                output = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_{sample}_taxa.txt"
                 metaphlan_output_list.append(output)
                 bowtie_tmp = rf"{output_dir}/metaphlan_analysis/bowtie2/metaphlan_{sample}.bowtie2.bz2"
                 if os.path.exists(bowtie_tmp):
@@ -977,6 +977,7 @@ if len(assembly_dir_list) > 0:
             "{output_dir}/benchmark/rgi_gene_annotation.benchmark"
         threads: cores
         run:
+            os.makedirs(f"{output_dir}/assembly_analysis/annotation/rgi", exist_ok=True)
             rgi_annotate_prodigal_prefix = f"{output_dir}/assembly_analysis/annotation/rgi/prodigal"
             rgi_annotate_metagenemark_prefix = f"{output_dir}/assembly_analysis/annotation/rgi/metagenemark"
             for assembly,assembly_dir in set(zip(assembly_list,assembly_dir_list)):
@@ -2241,7 +2242,7 @@ if len(r1_fq_list + se_fq_list) > 0:
         threads: cores
         run:
             contigs_output = f"{output_dir}/assembly_analysis/contigs"
-            # os.makedirs(f"{output_dir}/assembly_analysis/contigs", exist_ok=True)
+            os.makedirs(f"{output_dir}/assembly_analysis/", exist_ok=True)
             
             if assembly_method == 'megahit':
                 command_megahit = "-1 " * bool(len(r1_fq_list)) + ",".join([_ for _ in r1_fq_list if _ != '']) +\

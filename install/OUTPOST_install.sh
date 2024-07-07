@@ -218,7 +218,7 @@ if [ ! -f "$DONE_FILE" ]; then
 	tar -jxf utils/card-data.tar.bz2 -C $rgi_db
 	rgi load --local -i $rgi_db/card.json
 	rgi card_annotation -i $rgi_db/card.json
-	mv card_database_*fasta 
+	mv card_database_*fasta $rgi_db/
 	touch "$DONE_FILE" $rgi_db/
 else
 	echo "CARD rgi already installed. Skipping this step."

@@ -1,18 +1,18 @@
 ## OUTPOST settings
-output_dir: /home/z/zhouyh/softwares/OUTPOST/results2
-config: /home/z/zhouyh/softwares/OUTPOST/OUTPOST/OUTPOST_config.tsv 
+output_dir: /mnt/rna01/zyh/software/OUTPOST/results
+config: /mnt/rna01/zyh/software/OUTPOST/OUTPOST/OUTPOST_config.tsv 
 
 ## software and command
 abricate: abricate
 bamToFastq: bamToFastq
-bwa: /home/z/zhouyh/softwares/OUTPOST/utils/bwa-mem2-2.2.1_x64-linux/bwa-mem2
+bwa: /mnt/rna01/zyh/software/OUTPOST/utils/bwa-mem2-2.2.1_x64-linux/bwa-mem2
 cdhit : cd-hit-est
-diamond: /home/z/zhouyh/softwares/OUTPOST/utils/diamond
+diamond: diamond
 emapper: emapper.py
-export2graphlan: /home/z/zhouyh/softwares/OUTPOST/OUTPOST/outpost_export2graphlan.py
-fastp: /home/z/zhouyh/softwares/OUTPOST/utils/fastp
-graphlan: /home/z/zhouyh/softwares/OUTPOST/utils/graphlan/outpost_graphlan.py
-graphlan_annotate: /home/z/zhouyh/softwares/OUTPOST/utils/graphlan/graphlan_annotate.py
+export2graphlan: /mnt/rna01/zyh/software/OUTPOST/OUTPOST/outpost_export2graphlan.py
+fastp: /mnt/rna01/zyh/software/OUTPOST/utils/fastp
+graphlan: /mnt/rna01/zyh/software/OUTPOST/utils/graphlan/outpost_graphlan.py
+graphlan_annotate: /mnt/rna01/zyh/software/OUTPOST/utils/graphlan/graphlan_annotate.py
 humann: humann3
 humann_join_tables: humann_join_tables
 humann_regroup_table: humann_regroup_table
@@ -28,25 +28,25 @@ megahit: megahit
 merge_metaphlan_tables: merge_metaphlan_tables.py
 metaphlan: metaphlan
 metaspades: metaspades.py
-mgm: /home/z/zhouyh/softwares/OUTPOST/utils/MetaGeneMark_linux_64/mgm/gmhmmp 
+mgm: /mnt/rna01/zyh/software/OUTPOST/utils/MetaGeneMark_linux_64/mgm/gmhmmp 
 prodigal: prodigal
 python3: python3
 quast: quast.py
 rgi: rgi
 Rscript: Rscript
-salmon: /home/z/zhouyh/softwares/OUTPOST/utils/salmon-latest_linux_x86_64/bin/salmon
+salmon: /mnt/rna01/zyh/software/OUTPOST/utils/salmon-latest_linux_x86_64/bin/salmon
 samtools: samtools
 seqkit: seqkit
 trimmomatic: trimmomatic
 
 ## database
-adapters: /home/z/zhouyh/softwares/OUTPOST/utils/adapters.fa
-emapper_db: /home/z/zhouyh/softwares/OUTPOST/databases/eggnog_mapper
-kaiju_fmi: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/kaiju_db_nr_euk.fmi
-kaiju_names: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/names.dmp
-kaiju_nodes: /home/z/zhouyh/softwares/OUTPOST/databases/kaijudb/nodes.dmp
-mod_file: /home/z/zhouyh/softwares/OUTPOST/utils/MetaGeneMark_linux_64/mgm/MetaGeneMark_v1.mod
-virus_genome: /home/z/zhouyh/softwares/OUTPOST/utils/viruses.fa
+adapters: /mnt/rna01/zyh/software/OUTPOST/utils/adapters.fa
+emapper_db: /mnt/rna01/zyh/software/OUTPOST/databases/emapper_db
+kaiju_fmi: /mnt/rna01/zyh/software/OUTPOST/databases/kaijudb/kaiju_db_nr_euk.fmi
+kaiju_names: /mnt/rna01/zyh/software/OUTPOST/databases/kaijudb/names.dmp
+kaiju_nodes: /mnt/rna01/zyh/software/OUTPOST/databases/kaijudb/nodes.dmp
+mod_file: /mnt/rna01/zyh/software/OUTPOST/utils/MetaGeneMark_linux_64/mgm/MetaGeneMark_v1.mod
+virus_genome: /mnt/rna01/zyh/software/OUTPOST/utils/viruses.fa
 
 ## settings
 assemble_contigs: True # assemble contigs or use assembly in OUTPOST configuration
