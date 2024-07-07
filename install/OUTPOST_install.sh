@@ -179,12 +179,11 @@ DONE_FILE="install/log/gtdbtk.done"
 if [ ! -f "$DONE_FILE" ]; then
 	python -m pip install gtdbtk
 	gtdbtk_db=$(pwd)/databases/gtdbdk
-	mkdir -p $gtdbtk_db
+	mkdir -p $(pwd)/databases/gtdbdk
 	conda env config vars set GTDBTK_DATA_PATH=$gtdbtk_db
-	conda init
 	conda deactivate
 	conda activate OUTPOST
-	bash utils/gtdk_db_download.sh
+	bash utils/gtdk_db_download.sh $(pwd)/databases/gtdbdk
 	touch "$DONE_FILE"
 else
 	echo "gtdbtk already installed. Skipping this step."
@@ -193,7 +192,7 @@ fi
 # 24. salmon
 DONE_FILE="install/log/salmon.done"
 if [ ! -f "$DONE_FILE" ]; then
-	tar -xzf utils/v1.10.0.tar.gz -C utils/
+	tar -xzf utils/salmon-1.10.0_linux_x86_64.tar.gz -C utils/
 	chmod a+x utils/salmon-latest_linux_x86_64/bin/salmon
 	touch "$DONE_FILE"
 else
@@ -222,7 +221,7 @@ if [ ! -f "$DONE_FILE" ]; then
 	mv card_database_*fasta 
 	touch "$DONE_FILE" $rgi_db/
 else
-	echo "eggnog-mapper already installed. Skipping this step."
+	echo "CARD rgi already installed. Skipping this step."
 fi
 
 # 27. viruses.fa unzip
