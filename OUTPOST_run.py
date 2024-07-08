@@ -45,7 +45,7 @@ if len(r1_fq_list + se_fq_list) > 0:
         assembly_list = ["outpost_assembly"] * len(sample_list)
         assembly_dir_list = [f"{output_dir}/assembly_analysis/outpost_contigs/outpost_nonrd_contigs.fasta"] * len(sample_list)
 # process_batch_size = min(process_batch_size, len(sample_list))
-process_batch_size = min(2, len(sample_list))
+process_batch_size = min(1, len(sample_list))
 
 # %% starts
 shell("ulimit -s 65535")
