@@ -295,7 +295,7 @@ if len(r1_fq_list + se_fq_list) > 0:
                     shell("{metaphlan} {bowtie_tmp}  --nproc {threads} \
                            --input_type bowtie2out -o {output}")
                 else:
-                    shell("{metaphlan} {fq} --bowtie2out {bowtie_tmp}  --nproc {threads} \
+                    shell("{metaphlan} {fq} --index mpa_vOct22_CHOCOPhlAnSGB_202212 --bowtie2out {bowtie_tmp}  --nproc {threads} \
                           --input_type fastq -o {output}")
             # merge
             metaphlan_outputs = " ".join(metaphlan_output_list)
@@ -843,7 +843,7 @@ if len(r1_fq_list + se_fq_list) > 0:
                         if need_to_run:
                             shell("{humann} --resume --input {fq}  --output {wkdir} "
                             " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
-                            " --threads {threads} --memory-use {memory_use} > {log} 2>&1 ")
+                            " --metaphlan-options '--index mpa_vOct22_CHOCOPhlAnSGB_202212' --threads {threads} --memory-use {memory_use} > {log} 2>&1 ")
                     elif len(fq_batch) > 1:
                         for fq in fq_batch[:-1]:
                             need_to_run = does_humann_need_to_run(fq, wkdir)
@@ -854,7 +854,7 @@ if len(r1_fq_list + se_fq_list) > 0:
                         fq = fq_batch[-1]
                         shell("{humann} --resume --input {fq}  --output {wkdir} "
                         " --search-mode uniref90 --diamond-options '--block-size 10 --fast' "
-                        " --threads {threads} --memory-use {memory_use} > {log} 2>&1")
+                        " --metaphlan-options '--index mpa_vOct22_CHOCOPhlAnSGB_202212' --threads {threads} --memory-use {memory_use} > {log} 2>&1")
                 # clean temp folder
                 if clean_unnecessary:
                     try:

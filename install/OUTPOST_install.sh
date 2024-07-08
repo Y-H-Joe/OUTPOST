@@ -233,6 +233,19 @@ else
 	echo "viruses.fa already unzipped. Skipping this step."
 fi
 
+# 28. metaphlan
+DONE_FILE="install/log/metaphlan.done"
+if [ ! -f "$DONE_FILE" ]; then
+	metaphlan_db=$(pwd)/databases/metaphlan_db
+	metaphlan --install --index mpa_vOct22_CHOCOPhlAnSGB_202212 --bowtie2db $metaphlan_db
+	touch "$DONE_FILE"
+else
+	echo "metaphlan database already unzipped. Skipping this step."
+fi
+
+# 29. graphlan
+chmod 755 ${pwd}/utils/graphlan/outpost_graphlan.py
+chmod 755 ${pwd}/utils/graphlan/graphlan_annotate.py
 
 echo "OUTPOST installed successfully!"
 
