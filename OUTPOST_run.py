@@ -292,10 +292,10 @@ if len(r1_fq_list + se_fq_list) > 0:
                 metaphlan_output_list.append(output)
                 bowtie_tmp = rf"{output_dir}/metaphlan_analysis/bowtie2/metaphlan_{sample}.bowtie2.bz2"
                 if os.path.exists(bowtie_tmp):
-                    shell("{metaphlan} {bowtie_tmp} --offline  --nproc {threads} \
+                    shell("{metaphlan} {bowtie_tmp}  --nproc {threads} \
                            --input_type bowtie2out -o {output}")
                 else:
-                    shell("{metaphlan} {fq} --offline --bowtie2out {bowtie_tmp}  --nproc {threads} \
+                    shell("{metaphlan} {fq} --bowtie2out {bowtie_tmp}  --nproc {threads} \
                           --input_type fastq -o {output}")
             # merge
             metaphlan_outputs = " ".join(metaphlan_output_list)
