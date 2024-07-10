@@ -157,7 +157,7 @@ if len(r1_fq_list + se_fq_list) > 0:
             output_merged = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_merge_taxa.txt"
             with open(output_merged, 'r') as o:
                 lines = len(o.readlines())
-            if lines > 3:
+            if lines > 2:
                 krona_tsvs = []
                 for i, sample in enumerate(sample_list):
                     metaphlan_output = rf"{output_dir}/metaphlan_analysis/taxonomy/metaphlan_{sample}_taxa.txt"
