@@ -19,6 +19,8 @@
     # 3. Activate the environment `conda activate OUTPOST`.
     conda activate OUTPOST
 
+    # 3.1 Check whether your CLI has 'git' command. If not, please run `conda install anaconda::git`.
+    
     # 4. install. Databases will also be donwnloaded, require ~500GB. The downloading time is based on your bandwith.
     # make sure your working directory is OUTPOST folder
     bash install/OUTPOST_install.sh
