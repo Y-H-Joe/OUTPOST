@@ -589,3 +589,10 @@ Reformat your assembly file. from `>human63_000000000001 TTTCCTTCGATGAGTTCTATGCC
 Humann analysis is very time/computation consuption. You can use the `downsample_reads` parameters, or you can set `skip_humann_init` if you already have the init resutls. Set `skip_humann_init = True` in `Snakefile_config.yml`, then OUTPOST will not run human\_init rule, but to check the human results under folder `name_of_the_assembly/metabolism_analysis/humann3/ori_results/`, so you need to put the humann output with suffix as genefamilies.tsv/pathabundance.tsv/pathcoverage.tsv under the folder.
 
 OUTPOST offers `skip_assembly_analysis`. You can skip the assembly analysis if you have a large assembly and a number of groups which will save a lot of time about MAG tables generation.
+
+***
+# Cite
+***
+OUTPOST: A comprehensive analysis software for whole-metagenome shotgun sequencing incorporating group stratification
+
+https://doi.org/10.1002/imo2.29
